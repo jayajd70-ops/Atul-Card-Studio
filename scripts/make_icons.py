@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate luxury monogram icons for Atul Birthday Card Studio.
+"""Generate luxury monogram icons for Atul Card Studio.
 
 Produces a deep-obsidian background with a radial gold sheen, a thin
 gold ring, and a serif "A" monogram rendered in a metallic gradient.

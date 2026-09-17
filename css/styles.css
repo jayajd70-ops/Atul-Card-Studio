@@ -1,5 +1,5 @@
 /* =========================================================================
-   Atul Birthday Card Studio — Luxury Design System
+   Atul Card Studio — Luxury Design System
    Mobile-first, glassmorphism + gold gradients, restrained motion.
    ========================================================================= */
 
@@ -162,6 +162,17 @@ input, select, textarea { font-family: inherit; }
   text-transform: uppercase;
   color: var(--gold-300);
   opacity: 0.85;
+}
+
+.brand-version {
+  margin-left: 4px;
+  padding: 1px 5px;
+  border-radius: 999px;
+  border: 1px solid var(--border-glass);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  color: var(--paper-200);
+  opacity: 0.7;
 }
 
 .project-title-input {
@@ -555,6 +566,88 @@ output { font-variant-numeric: tabular-nums; color: var(--gold-300); }
 .option-item strong { font-size: 13px; }
 .option-item span { font-size: 11px; color: var(--paper-200); opacity: 0.75; }
 .option-item:focus-visible { outline: 2px solid var(--gold-300); outline-offset: 2px; }
+
+/* Emotion greeting generator ------------------------------------------- */
+.emotion-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
+  gap: 8px;
+}
+.emotion-btn {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 52px;
+  padding: 9px 11px;
+  text-align: left;
+  cursor: pointer;
+  color: var(--paper-100);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-glass);
+  /* Brushed gold foil: repeating highlight bands under a soft glass wash. */
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.05), rgba(0,0,0,0.12)),
+    repeating-linear-gradient(115deg,
+      rgba(232,199,119,0.10) 0px, rgba(232,199,119,0.02) 3px,
+      rgba(255,255,255,0.07) 6px, rgba(232,199,119,0.02) 9px);
+  transition: border-color 140ms ease, transform 140ms ease, box-shadow 140ms ease;
+}
+.emotion-btn strong { font-size: 12.5px; letter-spacing: 0.2px; }
+.emotion-btn span { font-size: 10.5px; color: var(--paper-200); opacity: 0.7; line-height: 1.35; }
+.emotion-btn:hover { border-color: var(--border-glass-strong); transform: translateY(-1px); }
+.emotion-btn:active { transform: translateY(0); }
+.emotion-btn[aria-pressed="true"] {
+  border-color: var(--gold-300);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.22), 0 0 0 2px rgba(232,199,119,0.24);
+}
+.emotion-btn[aria-pressed="true"] strong {
+  background: linear-gradient(100deg, var(--gold-100), var(--gold-300) 38%, var(--gold-500) 62%, var(--gold-200));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.emotion-btn:focus-visible { outline: 2px solid var(--gold-300); outline-offset: 2px; }
+
+/* Segmented control (mask shape) --------------------------------------- */
+.segmented {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-glass);
+  background: rgba(0,0,0,0.25);
+}
+.segmented-btn {
+  flex: 1;
+  min-height: 40px;
+  padding: 8px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  color: var(--paper-200);
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  transition: background 140ms ease, color 140ms ease, border-color 140ms ease;
+}
+.segmented-btn:hover { background: rgba(255,255,255,0.05); }
+.segmented-btn[aria-checked="true"] {
+  color: var(--ink-900);
+  border-color: var(--gold-500);
+  background: linear-gradient(160deg, var(--gold-200), var(--gold-400) 55%, var(--gold-500));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.45);
+  font-weight: 600;
+}
+.segmented-btn:focus-visible { outline: 2px solid var(--gold-300); outline-offset: 2px; }
+
+/* Disabled fieldsets (e.g. the transform engine with no photo loaded) --- */
+fieldset[disabled] { opacity: 0.45; }
+fieldset[disabled] input,
+fieldset[disabled] button { cursor: not-allowed; }
+
+@media (prefers-reduced-motion: reduce) {
+  .emotion-btn, .segmented-btn { transition: none; }
+  .emotion-btn:hover { transform: none; }
+}
 
 /* Stamp gallery */
 .stamp-gallery {

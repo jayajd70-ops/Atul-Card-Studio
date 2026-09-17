@@ -1,5 +1,5 @@
 /* =========================================================================
-   Atul Birthday Card Studio — Service Worker
+   Atul Card Studio — Service Worker
    Owns application-shell caching and offline readiness only. It never
    becomes a storage mechanism for private user media: photos and audio
    live exclusively in IndexedDB (see js/app.js AssetRepository) and are
@@ -7,9 +7,11 @@
    ========================================================================= */
 "use strict";
 
-const SW_VERSION = "v1.0.0";
+// Kept in step with APP_VERSION in js/app.js: bumping either one must
+// bump the other, since the cache name is what forces clients onto a
+// freshly released shell.
+const SW_VERSION = "v1.2.0";
 const SHELL_CACHE = "atul-shell-" + SW_VERSION;
-const RUNTIME_CACHE = "atul-runtime-" + SW_VERSION;
 
 // Everything needed to open and use the editor while offline. Decorative
 // stamp/foil/texture assets are generated procedurally in js/app.js rather
@@ -18,6 +20,7 @@ const SHELL_ASSETS = [
   "./",
   "./index.html",
   "./css/styles.css",
+  "./css/fonts.css",
   "./js/app.js",
   "./manifest.json",
   "./icons/icon-192.png",
@@ -27,9 +30,32 @@ const SHELL_ASSETS = [
   "./icons/apple-touch-icon.png",
   "./icons/favicon-32.png",
   "./icons/favicon-16.png",
-];
 
-const RUNTIME_CACHE_HOSTS = ["fonts.googleapis.com", "fonts.gstatic.com"];
+  // Self-hosted web fonts. These are precached rather than runtime-cached so
+  // the very first load works with no network at all: the canvas renderer
+  // measures text against these exact faces, and falling back to system fonts
+  // would change every fitted font size and line break.
+  "./fonts/cinzel-500-latin-ext.woff2",
+  "./fonts/cinzel-500-latin.woff2",
+  "./fonts/cormorant-garamond-500-latin-ext.woff2",
+  "./fonts/cormorant-garamond-500-latin.woff2",
+  "./fonts/dm-serif-display-400-latin-ext.woff2",
+  "./fonts/dm-serif-display-400-latin.woff2",
+  "./fonts/inter-400-latin-ext.woff2",
+  "./fonts/inter-400-latin.woff2",
+  "./fonts/libre-baskerville-400-latin-ext.woff2",
+  "./fonts/libre-baskerville-400-latin.woff2",
+  "./fonts/manrope-400-latin-ext.woff2",
+  "./fonts/manrope-400-latin.woff2",
+  "./fonts/montserrat-500-latin-ext.woff2",
+  "./fonts/montserrat-500-latin.woff2",
+  "./fonts/playfair-display-500-latin-ext.woff2",
+  "./fonts/playfair-display-500-latin.woff2",
+  "./fonts/source-sans-3-400-latin-ext.woff2",
+  "./fonts/source-sans-3-400-latin.woff2",
+  "./fonts/work-sans-400-latin-ext.woff2",
+  "./fonts/work-sans-400-latin.woff2",
+];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -57,7 +83,7 @@ self.addEventListener("activate", (event) => {
       const keys = await caches.keys();
       await Promise.all(
         keys
-          .filter((key) => key !== SHELL_CACHE && key !== RUNTIME_CACHE)
+          .filter((key) => key !== SHELL_CACHE)
           .map((key) => caches.delete(key))
       );
       await self.clients.claim();
@@ -73,10 +99,6 @@ self.addEventListener("message", (event) => {
 
 function isShellRequest(url) {
   return url.origin === self.location.origin;
-}
-
-function isRuntimeCacheableHost(url) {
-  return RUNTIME_CACHE_HOSTS.includes(url.hostname);
 }
 
 // Private user media (photo/audio blobs) never travels through fetch() at
@@ -122,25 +144,7 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  if (isRuntimeCacheableHost(url)) {
-    // Cache-first for immutable-ish decorative/runtime assets (Google Fonts
-    // CSS + font files): fast after the first successful online load, and
-    // available offline afterward.
-    event.respondWith(
-      (async () => {
-        const cache = await caches.open(RUNTIME_CACHE);
-        const cached = await cache.match(request);
-        if (cached) return cached;
-        try {
-          const response = await fetch(request);
-          if (response && (response.ok || response.type === "opaque")) {
-            cache.put(request, response.clone());
-          }
-          return response;
-        } catch (err) {
-          return cached || new Response("", { status: 504 });
-        }
-      })()
-    );
-  }
+  // Nothing else is fetched cross-origin: the type library is self-hosted and
+  // user media never travels through fetch(). Anything unexpected falls
+  // through to the network untouched.
 });

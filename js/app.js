@@ -1,5 +1,5 @@
 /* =========================================================================
-   Atul Birthday Card Studio — js/app.js
+   Atul Card Studio — js/app.js
    A single-file module set (namespaced sections) implementing:
      Utils -> DB -> AssetRepository -> ThemeRegistry/FoilPresets/
      FontPairings/StampCollections -> StateStore -> LayoutEngine ->
@@ -1017,7 +1017,12 @@ const ThemeRegistry = (() => {
    applies an immutable patch, pushes history, notifies subscribers (which
    trigger a render) and schedules a debounced autosave.
    ========================================================================= */
-const CURRENT_SCHEMA_VERSION = 1;
+// Application version. Shown in the header, stamped onto exported
+// backups, and kept in step with SW_VERSION in sw.js so a released
+// shell and the code inside it always report the same number.
+const APP_VERSION = "1.2.0";
+
+const CURRENT_SCHEMA_VERSION = 2;
 
 function createDefaultProject(overrides) {
   const now = Date.now();
@@ -1029,10 +1034,20 @@ function createDefaultProject(overrides) {
     updatedAt: now,
     recipient: { name: "", relationship: "" },
     sender: { name: "" },
-    content: { greeting: "", autoGreetingEnabled: false, emotion: "warm" },
+    content: { greeting: "", autoGreetingEnabled: false, emotion: "heartfelt" },
     theme: { id: "midnight-obsidian" },
     photo: null,
-    layout: { photoScale: 1, textPosition: 0.62, textMaxWidth: 0.8 },
+    layout: {
+      photoScale: 1,
+      textPosition: 0.62,
+      textMaxWidth: 0.8,
+      // Layout-balance controls: centrepiece diameter in canvas px and a
+      // vertical nudge (px) applied to the whole text block.
+      centerpieceSize: 620,
+      textShift: 0,
+      centerpieceId: "auto",
+      photoShape: "circle",
+    },
     typography: {
       pairingId: "cinzel-source-sans",
       mood: "regal",
@@ -1049,13 +1064,109 @@ function createDefaultProject(overrides) {
   return Object.assign(base, overrides || {});
 }
 
-const AUTO_GREETINGS = {
-  warm: "Wishing you a birthday as warm and wonderful as you are.",
-  joyful: "Here's to a year ahead bursting with joy and celebration!",
-  elegant: "On this beautiful day, may every moment be as graceful as you.",
-  playful: "Cake first, resolutions later. Happy birthday!",
-  romantic: "Every year with you is a gift. Happy birthday, my love.",
-};
+/* =========================================================================
+   SECTION: GreetingGenerator
+   Emotion-based one-click message writer. Each emotion owns a pool of
+   templates using the {name} token; `generate()` picks a draft the caller
+   has not just seen, so tapping the same emotion twice yields a different
+   message. Every template is authored to stay under GREETING_MAX_CHARS so
+   a generated draft can never be the reason the text engine has to clamp.
+   ========================================================================= */
+const GREETING_MAX_CHARS = 220;
+
+const GreetingGenerator = (() => {
+  const EMOTIONS = [
+    { id: "heartfelt", label: "Heartfelt", hint: "Sincere and tender" },
+    { id: "poetic", label: "Poetic", hint: "Lyrical and image-rich" },
+    { id: "professional", label: "Professional", hint: "Warm but workplace-safe" },
+    { id: "playful", label: "Playful", hint: "Light, teasing, fun" },
+    { id: "milestone", label: "Milestone", hint: "For the big ones" },
+  ];
+
+  const POOLS = {
+    heartfelt: [
+      "{name}, you are loved more than words can hold. May this year bring you every good thing your heart has been quietly hoping for.",
+      "Thank you for being exactly who you are, {name}. The world is warmer because you are in it. Happy birthday.",
+      "Some people make life feel like home. You are one of them, {name}. Wishing you a birthday as kind as you have always been.",
+      "{name}, here is to another year of you — your laugh, your patience, your impossible generosity. You are quietly treasured.",
+      "However this year has treated you, {name}, know that you are cherished today and every day after it. Happy birthday.",
+      "There is no one quite like you, {name}. May this birthday remind you how much light you bring to the people around you.",
+    ],
+    poetic: [
+      "May your year unfold like morning light on still water, {name} — slow, golden, and entirely your own.",
+      "{name}, may you gather this year the way one gathers roses: gently, gratefully, and with room left for the wild ones.",
+      "Another orbit around the sun, {name}, and still the sky makes room for you. Happy birthday.",
+      "Let the candles be small suns tonight, {name}, and every wish a seed that knows precisely where to grow.",
+      "{name}, may the days ahead read like a good poem — unhurried, luminous, and ending somewhere kinder than they began.",
+      "Some souls arrive like music. Yours did, {name}. May this year be the long, lovely rest of the song.",
+    ],
+    professional: [
+      "Wishing you a very happy birthday, {name}. Thank you for the care and excellence you bring to everything you take on.",
+      "Happy birthday, {name}. It is a genuine pleasure to work alongside you — here is to a rewarding year ahead.",
+      "{name}, warmest wishes on your birthday. Your contribution this year has been valued more than you may realise.",
+      "On behalf of all of us, {name} — happy birthday. May the year ahead bring well-earned recognition and every success.",
+      "Happy birthday, {name}. Wishing you a year of good health, steady progress and the occasional well-deserved celebration.",
+      "Many happy returns, {name}. Thank you for your dedication; may this next year be your most accomplished yet.",
+    ],
+    playful: [
+      "Happy birthday, {name}! Cake for breakfast is not just allowed today, it is basically mandatory.",
+      "{name}, you are not older — you are a limited edition that keeps appreciating in value. Happy birthday!",
+      "Another year, another excellent excuse for cake. Well played, {name}. Happy birthday!",
+      "Warning: {name} is now one year more fabulous. Handle with confetti. Happy birthday!",
+      "Happy birthday, {name}! Blow out those candles quickly — at this rate it is becoming a fire hazard.",
+      "{name}, they say the more birthdays you have, the longer you live. Keep collecting them. Happy birthday!",
+    ],
+    milestone: [
+      "{name}, this is not just a birthday — it is a landmark. Look how far you have come, and how much road is still ahead.",
+      "Here is to a milestone worth celebrating properly, {name}. May this chapter be the finest one yet.",
+      "{name}, some birthdays deserve more than a candle. This one deserves a toast — to everything you have built.",
+      "A remarkable year for a remarkable person. Congratulations and happy birthday, {name} — this milestone suits you.",
+      "{name}, today marks a real milestone. Celebrate loudly, rest deeply, and take every ounce of the pride you earned.",
+      "To {name}, on a birthday that counts: may the years ahead be as full, as bold and as brilliant as those behind you.",
+    ],
+  };
+
+  // Old schema (v1) tone ids mapped onto the five supported emotions.
+  const LEGACY_EMOTION_MAP = {
+    warm: "heartfelt",
+    joyful: "playful",
+    elegant: "poetic",
+    playful: "playful",
+    romantic: "heartfelt",
+  };
+
+  function list() { return EMOTIONS; }
+
+  function isValid(id) { return Object.prototype.hasOwnProperty.call(POOLS, id); }
+
+  function normalizeEmotion(id) {
+    if (isValid(id)) return id;
+    return LEGACY_EMOTION_MAP[id] || EMOTIONS[0].id;
+  }
+
+  function fill(template, name) {
+    const who = String(name || "").trim() || "friend";
+    return template.split("{name}").join(who);
+  }
+
+  // Returns a draft for `emotion`, avoiding `previousText` when the pool
+  // offers an alternative, so repeated taps cycle through the pool.
+  function generate(emotion, name, previousText) {
+    const pool = POOLS[normalizeEmotion(emotion)];
+    const candidates = pool.map((t) => fill(t, name));
+    const fresh = candidates.filter((c) => c !== previousText);
+    const from = fresh.length ? fresh : candidates;
+    return from[Math.floor(Math.random() * from.length)];
+  }
+
+  // Deterministic first draft, used by the "auto-write greeting" toggle so
+  // the rendered card does not change text on every repaint.
+  function fallbackFor(emotion, name) {
+    return fill(POOLS[normalizeEmotion(emotion)][0], name);
+  }
+
+  return { list, generate, fallbackFor, normalizeEmotion, isValid };
+})();
 
 const StateStore = (() => {
   let project = null;
@@ -1186,11 +1297,34 @@ const Migrations = (() => {
     if (v > CURRENT_SCHEMA_VERSION) {
       throw new Error("This card was saved by a newer version of the studio and cannot be opened here.");
     }
-    // No migrations yet beyond v1 (initial schema). Future steps append here,
-    // each one bumping `record.version` and recorded in schema-migrations.
+    // v1 -> v2: the five-tone `content.emotion` vocabulary was replaced by
+    // the five generator emotions, and the layout-balance fields were added.
+    // Both are additive/remappable, so a v1 card upgrades losslessly.
+    if (v < 2) {
+      record.content = record.content || {};
+      record.content.emotion = GreetingGenerator.normalizeEmotion(record.content.emotion);
+      record.layout = Object.assign(
+        { photoScale: 1, textPosition: 0.62, textMaxWidth: 0.8 },
+        record.layout || {},
+        {
+          centerpieceSize: (record.layout && record.layout.centerpieceSize) || 620,
+          textShift: (record.layout && record.layout.textShift) || 0,
+          centerpieceId: (record.layout && record.layout.centerpieceId) || "auto",
+          photoShape: (record.layout && record.layout.photoShape) || "circle",
+        }
+      );
+      if (record.photo) {
+        if (record.photo.panX == null) record.photo.panX = 0;
+        if (record.photo.panY == null) record.photo.panY = 0;
+        if (record.photo.rotation == null) record.photo.rotation = 0;
+      }
+      v = 2;
+    }
+
     if (v < CURRENT_SCHEMA_VERSION) {
       record.version = CURRENT_SCHEMA_VERSION;
     }
+    record.version = CURRENT_SCHEMA_VERSION;
     return record;
   }
 
@@ -1294,7 +1428,65 @@ const LayoutEngine = (() => {
       best = { size: minSize, letterSpacing: sp, ...result };
       if (!result.overflow) return { ...best, overflow: false };
     }
-    return { ...best, overflow: true };
+
+    // Last resort: clamp. Downscaling alone could not make the copy fit, so
+    // drop the overflowing lines and ellipsize the final kept line. This is
+    // what guarantees text can never bleed past the card's borders — the
+    // renderer draws exactly the lines returned here.
+    return clampResult(ctx, best, {
+      fontFamily, weight, maxWidth, maxLines, letterSpacing: best.letterSpacing,
+    });
+  }
+
+  // Trim `line` (adding an ellipsis) until it measures within maxWidth.
+  function ellipsizeToWidth(ctx, line, maxWidth, letterSpacing) {
+    const ELLIPSIS = "…";
+    if (measureTextWidth(ctx, line, letterSpacing) <= maxWidth) return line;
+    let trimmed = line;
+    while (trimmed.length > 1) {
+      trimmed = trimmed.slice(0, -1);
+      const candidate = trimmed.replace(/[\s,;:.—-]+$/, "") + ELLIPSIS;
+      if (measureTextWidth(ctx, candidate, letterSpacing) <= maxWidth) return candidate;
+    }
+    return ELLIPSIS;
+  }
+
+  // Reduce `result.lines` to at most maxLines and force every kept line
+  // inside maxWidth. Reports `clamped` so the UI can tell the user their
+  // message was shortened rather than silently losing words.
+  function clampResult(ctx, result, opts) {
+    setFont(ctx, opts.fontFamily, opts.weight, result.size);
+    applyLetterSpacing(ctx, opts.letterSpacing);
+
+    let lines = result.lines.slice();
+    let clamped = false;
+
+    if (opts.maxLines != null && lines.length > opts.maxLines) {
+      const kept = lines.slice(0, Math.max(1, opts.maxLines));
+      const lastIndex = kept.length - 1;
+      kept[lastIndex] = ellipsizeToWidth(
+        ctx, kept[lastIndex].replace(/[\s.,;:]+$/, "") + "…", opts.maxWidth, opts.letterSpacing
+      );
+      lines = kept;
+      clamped = true;
+    }
+
+    lines = lines.map((line) => {
+      const fitted = ellipsizeToWidth(ctx, line, opts.maxWidth, opts.letterSpacing);
+      if (fitted !== line) clamped = true;
+      return fitted;
+    });
+
+    const lineWidths = lines.map((l) => measureTextWidth(ctx, l, opts.letterSpacing));
+    return {
+      size: result.size,
+      letterSpacing: opts.letterSpacing,
+      lines,
+      lineWidths,
+      maxLineWidth: lineWidths.length ? Math.max(...lineWidths) : 0,
+      overflow: false,
+      clamped,
+    };
   }
 
   // Draws pre-wrapped lines centered horizontally at cx, top-aligned at
@@ -1404,8 +1596,757 @@ const LayoutEngine = (() => {
   return {
     CANVAS_W, CANVAS_H, SAFE_MARGIN, NATIVE_LETTER_SPACING,
     measureTextWidth, wrapText, measureWrappedText, fitText, drawLines,
+    ellipsizeToWidth, clampResult,
     getSafeZone, boxesOverlap, detectCollisions, isOutsideSafeZone, autoArrange,
   };
+})();
+
+/* =========================================================================
+   SECTION: Centerpieces
+   Procedurally painted photorealistic centrepieces, used whenever a card
+   has no user photo. Everything is drawn with layered gradients, bezier
+   geometry, specular highlights and a seeded grain pass — there are no
+   bundled image assets, so each one renders identically at preview and
+   export resolution and needs no network. Painters are authored against a
+   reference radius of 300px and scaled by `u`, so they stay sharp at any
+   centrepiece size. The caller has already clipped the art region.
+   ========================================================================= */
+const Centerpieces = (() => {
+  const LIST = [
+    { id: "auto", label: "Auto", hint: "Matches the greeting emotion" },
+    { id: "belgian-gold-cake", label: "Belgian Gold Cake", hint: "Ganache, gold leaf, candlelight" },
+    { id: "velvet-roses", label: "Velvet Roses", hint: "Deep crimson bloom cluster" },
+    { id: "silk-gift-box", label: "Silk Gift Box", hint: "Satin ribbon and hand-tied bow" },
+    { id: "champagne-gala", label: "Champagne Gala", hint: "Flutes, bubbles and bokeh" },
+    { id: "theme-aura", label: "Theme Aura", hint: "Abstract monogram glow" },
+  ];
+
+  const EMOTION_MAP = {
+    heartfelt: "velvet-roses",
+    poetic: "velvet-roses",
+    professional: "silk-gift-box",
+    playful: "belgian-gold-cake",
+    milestone: "champagne-gala",
+  };
+
+  /* ---------------- small drawing helpers ---------------- */
+  function mulberry32(seed) {
+    return function () {
+      seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
+      let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  function lin(ctx, x0, y0, x1, y1, stops) {
+    const g = ctx.createLinearGradient(x0, y0, x1, y1);
+    stops.forEach((s) => g.addColorStop(s[0], s[1]));
+    return g;
+  }
+
+  function rad(ctx, x0, y0, r0, x1, y1, r1, stops) {
+    const g = ctx.createRadialGradient(x0, y0, r0, x1, y1, r1);
+    stops.forEach((s) => g.addColorStop(s[0], s[1]));
+    return g;
+  }
+
+  function withAlpha(hex, a) {
+    const h = String(hex || "#000").replace("#", "");
+    const n = h.length === 3 ? h.split("").map((c) => c + c).join("") : h;
+    const r = parseInt(n.slice(0, 2), 16) || 0;
+    const g = parseInt(n.slice(2, 4), 16) || 0;
+    const b = parseInt(n.slice(4, 6), 16) || 0;
+    return "rgba(" + r + "," + g + "," + b + "," + a + ")";
+  }
+
+  function quad(ctx, pts) {
+    ctx.beginPath();
+    ctx.moveTo(pts[0][0], pts[0][1]);
+    for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+    ctx.closePath();
+  }
+
+  const grainTiles = new Map();
+  function grainTile(size, seed) {
+    const key = size + ":" + seed;
+    if (grainTiles.has(key)) return grainTiles.get(key);
+    const c = document.createElement("canvas");
+    c.width = size; c.height = size;
+    const g = c.getContext("2d");
+    const rand = mulberry32(seed);
+    const d = g.createImageData(size, size);
+    for (let i = 0; i < d.data.length; i += 4) {
+      const v = 110 + Math.floor(rand() * 70);
+      d.data[i] = v; d.data[i + 1] = v; d.data[i + 2] = v; d.data[i + 3] = 255;
+    }
+    g.putImageData(d, 0, 0);
+    grainTiles.set(key, c);
+    return c;
+  }
+
+  // Film-grain pass: what stops these reading as flat vector art.
+  function grain(ctx, box, alpha, seed) {
+    try {
+      const tile = grainTile(96, seed || 7);
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.globalCompositeOperation = "overlay";
+      ctx.fillStyle = ctx.createPattern(tile, "repeat");
+      ctx.fillRect(box.cx - box.r, box.cy - box.r, box.r * 2, box.r * 2);
+      ctx.restore();
+    } catch (err) { /* pattern unsupported: skip the grain pass */ }
+  }
+
+  function backdrop(ctx, box, stops, focusY) {
+    const { cx, cy, r } = box;
+    ctx.fillStyle = rad(ctx, cx, cy + (focusY || 0), r * 0.05, cx, cy, r * 1.18, stops);
+    ctx.fillRect(cx - r, cy - r, r * 2, r * 2);
+  }
+
+  // Out-of-focus light orbs. Radial falloff rather than a blur filter so
+  // the result is identical on canvas implementations without ctx.filter.
+  function bokeh(ctx, box, colors, seed, count, spread) {
+    const rand = mulberry32(seed);
+    for (let i = 0; i < count; i++) {
+      const a = rand() * Math.PI * 2;
+      const d = (0.25 + rand() * 0.75) * box.r * (spread || 1);
+      const x = box.cx + Math.cos(a) * d;
+      const y = box.cy + Math.sin(a) * d * 0.92;
+      const rr = box.r * (0.05 + rand() * 0.15);
+      const c = colors[i % colors.length];
+      ctx.save();
+      ctx.globalAlpha = 0.08 + rand() * 0.2;
+      ctx.fillStyle = rad(ctx, x, y, 0, x, y, rr, [
+        [0, withAlpha(c, 0.95)], [0.55, withAlpha(c, 0.45)], [1, withAlpha(c, 0)],
+      ]);
+      ctx.beginPath();
+      ctx.arc(x, y, rr, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  function specular(ctx, x, y, rr, alpha, tint) {
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = rad(ctx, x, y, 0, x, y, rr, [
+      [0, tint || "rgba(255,255,255,0.95)"],
+      [0.4, "rgba(255,255,255,0.35)"],
+      [1, "rgba(255,255,255,0)"],
+    ]);
+    ctx.beginPath();
+    ctx.arc(x, y, rr, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function contactShadow(ctx, x, y, rx, ry, alpha) {
+    ctx.save();
+    ctx.globalAlpha = alpha == null ? 0.55 : alpha;
+    ctx.fillStyle = rad(ctx, x, y, 0, x, y, rx, [
+      [0, "rgba(0,0,0,0.85)"], [0.6, "rgba(0,0,0,0.35)"], [1, "rgba(0,0,0,0)"],
+    ]);
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(1, ry / rx);
+    ctx.beginPath();
+    ctx.arc(0, 0, rx, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+    ctx.restore();
+  }
+
+  /* ---------------- 1. Belgian gold cake ---------------- */
+  function paintCake(ctx, box) {
+    const { cx, cy, r } = box;
+    const u = r / 300;
+    const hw = 168 * u;
+    const glazeY = cy - 44 * u;
+    const botY = cy + 168 * u;
+
+    backdrop(ctx, box, [
+      [0, "#5a3a18"], [0.4, "#2d1a08"], [0.75, "#1a0e03"], [1, "#0d0601"],
+    ], -r * 0.22);
+    bokeh(ctx, box, ["#ffd489", "#ff9f4a", "#fff3d0"], 21, 16, 1);
+
+    // Marble cake stand
+    contactShadow(ctx, cx, botY + 42 * u, 250 * u, 40 * u, 0.6);
+    ctx.save();
+    ctx.beginPath();
+    ctx.ellipse(cx, botY + 26 * u, 244 * u, 42 * u, 0, 0, Math.PI * 2);
+    ctx.fillStyle = lin(ctx, cx - 244 * u, 0, cx + 244 * u, 0, [
+      [0, "#4e463c"], [0.22, "#b9ad9b"], [0.5, "#efe7d8"], [0.78, "#a99d8c"], [1, "#443d34"],
+    ]);
+    ctx.fill();
+    ctx.globalAlpha = 0.5;
+    ctx.strokeStyle = "rgba(255,255,255,0.45)";
+    ctx.lineWidth = 2 * u;
+    ctx.stroke();
+    ctx.restore();
+
+    // Cake body — chocolate ganache with a wrapped horizontal sheen
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(cx - hw, glazeY);
+    ctx.lineTo(cx - hw, botY);
+    ctx.ellipse(cx, botY, hw, 34 * u, 0, Math.PI, 0, true);
+    ctx.lineTo(cx + hw, glazeY);
+    ctx.closePath();
+    ctx.fillStyle = lin(ctx, cx - hw, 0, cx + hw, 0, [
+      [0, "#1c0e07"], [0.14, "#3d1f0e"], [0.36, "#6b3717"], [0.5, "#7d431d"],
+      [0.66, "#582b12"], [0.86, "#31170a"], [1, "#150a04"],
+    ]);
+    ctx.fill();
+
+    // Sponge seam + cream filling layers
+    [0.42, 0.7].forEach((t) => {
+      const y = glazeY + (botY - glazeY) * t;
+      ctx.beginPath();
+      ctx.moveTo(cx - hw, y);
+      ctx.quadraticCurveTo(cx, y + 9 * u, cx + hw, y);
+      ctx.lineWidth = 9 * u;
+      ctx.strokeStyle = lin(ctx, cx - hw, 0, cx + hw, 0, [
+        [0, "rgba(120,80,40,0.25)"], [0.45, "rgba(244,222,176,0.85)"], [1, "rgba(120,80,40,0.25)"],
+      ]);
+      ctx.stroke();
+    });
+    ctx.restore();
+
+    // Poured gold glaze: drip skirt + top disc in one path
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(cx - hw, glazeY);
+    const drips = 9;
+    const depths = [26, 58, 34, 74, 30, 66, 40, 52, 28];
+    for (let i = 0; i < drips; i++) {
+      const x0 = cx - hw + (i / drips) * hw * 2;
+      const x1 = cx - hw + ((i + 1) / drips) * hw * 2;
+      const depth = depths[i % depths.length] * u;
+      ctx.quadraticCurveTo((x0 + x1) / 2, glazeY + depth * 1.6, x1, glazeY + depth * 0.22);
+    }
+    ctx.lineTo(cx + hw, glazeY);
+    ctx.ellipse(cx, glazeY, hw, 42 * u, 0, 0, Math.PI, true);
+    ctx.closePath();
+    ctx.fillStyle = lin(ctx, cx - hw, glazeY - 42 * u, cx + hw, glazeY + 70 * u, [
+      [0, "#8a6410"], [0.16, "#e8c777"], [0.32, "#fff6d2"], [0.48, "#e0b757"],
+      [0.64, "#b8860b"], [0.82, "#f3dfa8"], [1, "#7a5509"],
+    ]);
+    ctx.fill();
+    ctx.restore();
+
+    // Glaze specular pools
+    specular(ctx, cx - 62 * u, glazeY - 16 * u, 72 * u, 0.5);
+    specular(ctx, cx + 78 * u, glazeY - 4 * u, 44 * u, 0.32);
+
+    // Hand-applied gold leaf flakes
+    const rand = mulberry32(404);
+    for (let i = 0; i < 16; i++) {
+      const a = rand() * Math.PI * 2;
+      const rr = (0.25 + rand() * 0.75) * hw;
+      const x = cx + Math.cos(a) * rr;
+      const y = glazeY - 18 * u + Math.sin(a) * 26 * u + rand() * 150 * u;
+      const s = (5 + rand() * 12) * u;
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(rand() * Math.PI);
+      ctx.globalAlpha = 0.55 + rand() * 0.45;
+      quad(ctx, [[-s, -s * 0.5], [s * 0.4, -s], [s, s * 0.55], [-s * 0.5, s * 0.8]]);
+      ctx.fillStyle = lin(ctx, -s, -s, s, s, [
+        [0, "#fff6d2"], [0.5, "#d4af37"], [1, "#8a6410"],
+      ]);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // Berries on the crown
+    [[-70, -14], [10, -26], [74, -8]].forEach((p, i) => {
+      const bx = cx + p[0] * u;
+      const by = glazeY + p[1] * u;
+      const br = (20 + i * 3) * u;
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(bx, by, br, 0, Math.PI * 2);
+      ctx.fillStyle = rad(ctx, bx - br * 0.35, by - br * 0.45, br * 0.1, bx, by, br, [
+        [0, "#a8202f"], [0.55, "#6d0f1c"], [1, "#2c0308"],
+      ]);
+      ctx.fill();
+      ctx.restore();
+      specular(ctx, bx - br * 0.3, by - br * 0.4, br * 0.5, 0.55);
+    });
+
+    // Candle + flame
+    const candleX = cx + 2 * u;
+    const candleTop = glazeY - 118 * u;
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(candleX - 9 * u, candleTop, 18 * u, 84 * u);
+    ctx.fillStyle = lin(ctx, candleX - 9 * u, 0, candleX + 9 * u, 0, [
+      [0, "#8d7a55"], [0.35, "#f6ecd2"], [0.7, "#e2d2ad"], [1, "#7d6a48"],
+    ]);
+    ctx.fill();
+    ctx.restore();
+
+    ctx.save();
+    ctx.globalAlpha = 0.85;
+    ctx.fillStyle = rad(ctx, candleX, candleTop - 22 * u, 0, candleX, candleTop - 22 * u, 90 * u, [
+      [0, "rgba(255,214,130,0.55)"], [0.45, "rgba(255,160,60,0.18)"], [1, "rgba(255,140,40,0)"],
+    ]);
+    ctx.beginPath();
+    ctx.arc(candleX, candleTop - 22 * u, 90 * u, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(candleX, candleTop - 52 * u);
+    ctx.bezierCurveTo(candleX + 16 * u, candleTop - 26 * u, candleX + 12 * u, candleTop - 2 * u, candleX, candleTop);
+    ctx.bezierCurveTo(candleX - 12 * u, candleTop - 2 * u, candleX - 16 * u, candleTop - 26 * u, candleX, candleTop - 52 * u);
+    ctx.closePath();
+    ctx.fillStyle = lin(ctx, candleX, candleTop - 52 * u, candleX, candleTop, [
+      [0, "#fffdf2"], [0.35, "#ffd86b"], [0.72, "#ff9a30"], [1, "rgba(255,110,20,0.55)"],
+    ]);
+    ctx.fill();
+    ctx.restore();
+
+    grain(ctx, box, 0.07, 404);
+  }
+
+  /* ---------------- 2. Velvet roses ---------------- */
+  function rosePetalRing(ctx, x, y, rr, rot, count, stops) {
+    for (let i = 0; i < count; i++) {
+      const a = rot + i * ((Math.PI * 2) / count);
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(a);
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.bezierCurveTo(rr * 0.72, -rr * 0.22, rr * 1.02, rr * 0.3, 0, rr * 0.98);
+      ctx.bezierCurveTo(-rr * 1.02, rr * 0.3, -rr * 0.72, -rr * 0.22, 0, 0);
+      ctx.closePath();
+      ctx.fillStyle = lin(ctx, 0, 0, 0, rr, stops);
+      ctx.fill();
+      ctx.globalAlpha = 0.35;
+      ctx.strokeStyle = "rgba(0,0,0,0.45)";
+      ctx.lineWidth = rr * 0.03;
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
+
+  function rose(ctx, x, y, rr, rot, shade) {
+    const deep = shade.deep, mid = shade.mid, light = shade.light;
+    contactShadow(ctx, x, y + rr * 0.45, rr * 1.15, rr * 0.5, 0.4);
+
+    rosePetalRing(ctx, x, y, rr, rot, 7, [
+      [0, deep], [0.45, mid], [1, light],
+    ]);
+    rosePetalRing(ctx, x, y, rr * 0.7, rot + 0.42, 6, [
+      [0, deep], [0.5, mid], [1, light],
+    ]);
+    rosePetalRing(ctx, x, y, rr * 0.46, rot + 0.86, 5, [
+      [0, deep], [0.55, deep], [1, mid],
+    ]);
+
+    // Furled heart
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(rot * 1.3);
+    for (let i = 0; i < 3; i++) {
+      ctx.beginPath();
+      const s = rr * (0.26 - i * 0.07);
+      ctx.ellipse(0, -s * 0.2, s, s * 0.78, i * 1.1, 0, Math.PI * 2);
+      ctx.fillStyle = lin(ctx, -s, -s, s, s, [[0, deep], [1, mid]]);
+      ctx.fill();
+    }
+    ctx.restore();
+
+    // Velvet rim light from the upper left + a dew highlight
+    ctx.save();
+    ctx.globalAlpha = 0.3;
+    ctx.beginPath();
+    ctx.arc(x - rr * 0.3, y - rr * 0.34, rr * 0.62, 0, Math.PI * 2);
+    ctx.fillStyle = rad(ctx, x - rr * 0.3, y - rr * 0.34, 0, x - rr * 0.3, y - rr * 0.34, rr * 0.62, [
+      [0, withAlpha(light, 0.8)], [1, withAlpha(light, 0)],
+    ]);
+    ctx.fill();
+    ctx.restore();
+    specular(ctx, x - rr * 0.34, y - rr * 0.4, rr * 0.16, 0.5);
+  }
+
+  function leaf(ctx, x, y, len, rot) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(rot);
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.bezierCurveTo(len * 0.42, -len * 0.3, len * 0.85, -len * 0.16, len, 0);
+    ctx.bezierCurveTo(len * 0.85, len * 0.18, len * 0.42, len * 0.32, 0, 0);
+    ctx.closePath();
+    ctx.fillStyle = lin(ctx, 0, -len * 0.3, len, len * 0.3, [
+      [0, "#16351f"], [0.45, "#2c5c33"], [0.75, "#1d4224"], [1, "#0c2013"],
+    ]);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(len * 0.04, 0);
+    ctx.quadraticCurveTo(len * 0.5, len * 0.04, len * 0.96, 0);
+    ctx.strokeStyle = "rgba(190,224,180,0.35)";
+    ctx.lineWidth = len * 0.022;
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function paintRoses(ctx, box) {
+    const { cx, cy, r } = box;
+
+    backdrop(ctx, box, [
+      [0, "#4a0f1c"], [0.38, "#2a0710"], [0.72, "#15030a"], [1, "#0a0105"],
+    ], -r * 0.15);
+    bokeh(ctx, box, ["#ff97ad", "#c2415c", "#ffd9a8"], 77, 14, 1);
+
+    // Foliage behind the bouquet
+    const leaves = [
+      [-0.72, 0.18, 0.62, 3.5], [0.72, 0.2, 0.6, -0.4], [-0.5, 0.6, 0.5, 2.5],
+      [0.52, 0.62, 0.52, 0.6], [0, 0.82, 0.46, 1.6], [-0.78, -0.22, 0.5, 3.9],
+      [0.76, -0.26, 0.48, -0.7],
+    ];
+    leaves.forEach((l) => leaf(ctx, cx + l[0] * r * 0.7, cy + l[1] * r * 0.6, l[2] * r * 0.7, l[3]));
+
+    const shades = [
+      { deep: "#3d0410", mid: "#8c1024", light: "#d4536b" },
+      { deep: "#320309", mid: "#73101f", light: "#bf4058" },
+      { deep: "#46060f", mid: "#9c1528", light: "#e0697e" },
+    ];
+    const blooms = [
+      [-0.42, -0.12, 0.30, 0.3, 1], [0.40, -0.16, 0.28, 1.1, 2],
+      [-0.10, 0.34, 0.27, 2.0, 0], [0.24, 0.42, 0.22, 0.7, 1],
+      [-0.46, 0.44, 0.20, 2.6, 2], [0.02, -0.40, 0.26, 1.7, 0],
+    ];
+    blooms.forEach((b) => {
+      rose(ctx, cx + b[0] * r, cy + b[1] * r, b[2] * r, b[3], shades[b[4]]);
+    });
+
+    // Velvet vignette so the bouquet sits in shadow at the edges
+    ctx.save();
+    ctx.fillStyle = rad(ctx, cx, cy, r * 0.5, cx, cy, r, [
+      [0, "rgba(0,0,0,0)"], [1, "rgba(0,0,0,0.6)"],
+    ]);
+    ctx.fillRect(cx - r, cy - r, r * 2, r * 2);
+    ctx.restore();
+
+    grain(ctx, box, 0.08, 77);
+  }
+
+  /* ---------------- 3. Silk gift box ---------------- */
+  function paintGiftBox(ctx, box) {
+    const { cx, cy, r } = box;
+    const u = r / 300;
+    const P = (x, y) => [cx + x * u, cy + y * u];
+
+    backdrop(ctx, box, [
+      [0, "#3a3550"], [0.4, "#1d1a2c"], [0.75, "#100e19"], [1, "#07060b"],
+    ], -r * 0.2);
+    bokeh(ctx, box, ["#cfd6ff", "#f3dfa8", "#ffffff"], 313, 15, 1);
+
+    contactShadow(ctx, cx, cy + 190 * u, 230 * u, 40 * u, 0.6);
+
+    const frontTL = P(-152, 12), frontTR = P(72, 12), frontBR = P(72, 182), frontBL = P(-152, 182);
+    const topBL = frontTL, topBR = frontTR, topFR = P(168, -46), topFL = P(-56, -46);
+    const sideTR = topFR, sideBR = P(168, 124);
+
+    // Right face (in shadow)
+    quad(ctx, [frontTR, sideTR, sideBR, frontBR]);
+    ctx.fillStyle = lin(ctx, frontTR[0], frontTR[1], sideBR[0], sideBR[1], [
+      [0, "#241f33"], [0.4, "#3a3350"], [0.7, "#2a2439"], [1, "#161320"],
+    ]);
+    ctx.fill();
+
+    // Front face — satin bands read as silk
+    quad(ctx, [frontTL, frontTR, frontBR, frontBL]);
+    ctx.fillStyle = lin(ctx, frontTL[0], frontTL[1], frontBR[0], frontBR[1], [
+      [0, "#2b2740"], [0.16, "#4b4468"], [0.3, "#6d6490"], [0.4, "#3c3554"],
+      [0.55, "#5d5580"], [0.68, "#8f86b5"], [0.78, "#443d5e"], [1, "#221e33"],
+    ]);
+    ctx.fill();
+
+    // Top face (catching the light)
+    quad(ctx, [topBL, topFL, topFR, topBR]);
+    ctx.fillStyle = lin(ctx, topFL[0], topFL[1], topBR[0], topBR[1], [
+      [0, "#6a6290"], [0.25, "#a79fc8"], [0.45, "#c9c2e2"], [0.6, "#8079a6"],
+      [0.82, "#b3abd2"], [1, "#5a5380"],
+    ]);
+    ctx.fill();
+
+    // Satin ribbon — front band, then across the lid both ways
+    function ribbon(pts, stops) {
+      quad(ctx, pts);
+      ctx.fillStyle = lin(ctx, pts[0][0], pts[0][1], pts[2][0], pts[2][1], stops);
+      ctx.fill();
+    }
+    const gold = [
+      [0, "#7a5509"], [0.18, "#e8c777"], [0.36, "#fff6d2"], [0.5, "#dcb45a"],
+      [0.72, "#b8860b"], [1, "#6d4a08"],
+    ];
+    ribbon([P(-52, 12), P(-10, 12), P(-10, 182), P(-52, 182)], gold);   // front band
+    ribbon([P(-52, 12), P(-10, 12), P(86, -46), P(44, -46)], gold);      // band over the lid
+    ribbon([P(-56, -34), P(168, -34), P(168, -8), P(-56, -8)], gold);    // band across the lid
+
+    // Hand-tied bow at the crossing on the lid
+    const bx = cx + 30 * u, by = cy - 40 * u;
+    function loop(dir) {
+      ctx.save();
+      ctx.translate(bx, by);
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.bezierCurveTo(56 * u * dir, -62 * u, 116 * u * dir, -18 * u, 40 * u * dir, 16 * u);
+      ctx.bezierCurveTo(24 * u * dir, 22 * u, 10 * u * dir, 10 * u, 0, 0);
+      ctx.closePath();
+      ctx.fillStyle = lin(ctx, 0, -60 * u, 60 * u * dir, 20 * u, [
+        [0, "#fff6d2"], [0.35, "#e8c777"], [0.7, "#b8860b"], [1, "#6d4a08"],
+      ]);
+      ctx.fill();
+      ctx.strokeStyle = "rgba(90,60,6,0.5)";
+      ctx.lineWidth = 1.6 * u;
+      ctx.stroke();
+      ctx.restore();
+    }
+    function tail(dir) {
+      ctx.save();
+      ctx.translate(bx, by);
+      ctx.beginPath();
+      ctx.moveTo(0, 6 * u);
+      ctx.bezierCurveTo(28 * u * dir, 44 * u, 40 * u * dir, 92 * u, 78 * u * dir, 108 * u);
+      ctx.lineTo(52 * u * dir, 116 * u);
+      ctx.bezierCurveTo(22 * u * dir, 88 * u, 8 * u * dir, 46 * u, 0, 18 * u);
+      ctx.closePath();
+      ctx.fillStyle = lin(ctx, 0, 0, 70 * u * dir, 110 * u, [
+        [0, "#e8c777"], [0.5, "#c69a2c"], [1, "#7a5509"],
+      ]);
+      ctx.fill();
+      ctx.restore();
+    }
+    tail(-1); tail(1);
+    loop(-1); loop(1);
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.ellipse(bx, by + 4 * u, 22 * u, 17 * u, 0, 0, Math.PI * 2);
+    ctx.fillStyle = rad(ctx, bx - 8 * u, by - 4 * u, 2 * u, bx, by + 4 * u, 24 * u, [
+      [0, "#fff9e0"], [0.5, "#dcb45a"], [1, "#7a5509"],
+    ]);
+    ctx.fill();
+    ctx.restore();
+
+    specular(ctx, cx - 60 * u, cy - 34 * u, 80 * u, 0.35);
+    specular(ctx, cx - 110 * u, cy + 70 * u, 46 * u, 0.22);
+
+    // Sparkles
+    const rand = mulberry32(313);
+    for (let i = 0; i < 12; i++) {
+      const a = rand() * Math.PI * 2;
+      const d = (0.5 + rand() * 0.5) * r;
+      const x = cx + Math.cos(a) * d, y = cy + Math.sin(a) * d * 0.9;
+      const s = (4 + rand() * 10) * u;
+      ctx.save();
+      ctx.globalAlpha = 0.4 + rand() * 0.5;
+      ctx.strokeStyle = "rgba(255,248,214,0.9)";
+      ctx.lineWidth = 1.4 * u;
+      ctx.beginPath();
+      ctx.moveTo(x - s, y); ctx.lineTo(x + s, y);
+      ctx.moveTo(x, y - s); ctx.lineTo(x, y + s);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    grain(ctx, box, 0.06, 313);
+  }
+
+  /* ---------------- 4. Champagne gala ---------------- */
+  function flute(ctx, x, baseY, h, tilt, seed) {
+    const u = h / 420;
+    ctx.save();
+    ctx.translate(x, baseY);
+    ctx.rotate(tilt);
+
+    // Foot + stem
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 66 * u, 16 * u, 0, 0, Math.PI * 2);
+    ctx.fillStyle = lin(ctx, -66 * u, 0, 66 * u, 0, [
+      [0, "rgba(255,255,255,0.1)"], [0.3, "rgba(255,255,255,0.55)"],
+      [0.5, "rgba(255,255,255,0.85)"], [0.7, "rgba(255,255,255,0.4)"], [1, "rgba(255,255,255,0.08)"],
+    ]);
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.rect(-7 * u, -150 * u, 14 * u, 150 * u);
+    ctx.fillStyle = lin(ctx, -7 * u, 0, 7 * u, 0, [
+      [0, "rgba(255,255,255,0.12)"], [0.45, "rgba(255,255,255,0.7)"],
+      [0.6, "rgba(255,255,255,0.3)"], [1, "rgba(255,255,255,0.1)"],
+    ]);
+    ctx.fill();
+
+    // Bowl
+    const bowlTop = -420 * u, bowlBot = -148 * u, bw = 76 * u;
+    ctx.beginPath();
+    ctx.moveTo(-bw, bowlTop);
+    ctx.bezierCurveTo(-bw * 0.96, bowlTop + 150 * u, -bw * 0.4, bowlBot - 16 * u, 0, bowlBot);
+    ctx.bezierCurveTo(bw * 0.4, bowlBot - 16 * u, bw * 0.96, bowlTop + 150 * u, bw, bowlTop);
+    ctx.closePath();
+
+    // Liquid first, clipped to the bowl
+    ctx.save();
+    ctx.clip();
+    const liquidTop = bowlTop + 96 * u;
+    ctx.beginPath();
+    ctx.rect(-bw, liquidTop, bw * 2, bowlBot - liquidTop + 20 * u);
+    ctx.fillStyle = lin(ctx, 0, liquidTop, 0, bowlBot, [
+      [0, "#ffe9a8"], [0.3, "#f0c25c"], [0.68, "#d99a25"], [1, "#a96a10"],
+    ]);
+    ctx.fill();
+
+    // Surface meniscus
+    ctx.beginPath();
+    ctx.ellipse(0, liquidTop, bw * 0.82, 13 * u, 0, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(255,248,214,0.75)";
+    ctx.fill();
+
+    // Rising bubbles
+    const rand = mulberry32(seed);
+    for (let i = 0; i < 26; i++) {
+      const bxx = (rand() - 0.5) * bw * 1.35;
+      const byy = liquidTop + rand() * (bowlBot - liquidTop);
+      const br = (1.6 + rand() * 4.4) * u;
+      ctx.beginPath();
+      ctx.arc(bxx, byy, br, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(255,252,232," + (0.35 + rand() * 0.5) + ")";
+      ctx.fill();
+    }
+    ctx.restore();
+
+    // Glass body highlights
+    ctx.beginPath();
+    ctx.moveTo(-bw, bowlTop);
+    ctx.bezierCurveTo(-bw * 0.96, bowlTop + 150 * u, -bw * 0.4, bowlBot - 16 * u, 0, bowlBot);
+    ctx.bezierCurveTo(bw * 0.4, bowlBot - 16 * u, bw * 0.96, bowlTop + 150 * u, bw, bowlTop);
+    ctx.closePath();
+    ctx.fillStyle = lin(ctx, -bw, 0, bw, 0, [
+      [0, "rgba(255,255,255,0.22)"], [0.18, "rgba(255,255,255,0.05)"],
+      [0.44, "rgba(255,255,255,0.3)"], [0.56, "rgba(255,255,255,0.06)"],
+      [0.84, "rgba(255,255,255,0.24)"], [1, "rgba(255,255,255,0.1)"],
+    ]);
+    ctx.fill();
+    ctx.lineWidth = 2.4 * u;
+    ctx.strokeStyle = "rgba(255,255,255,0.5)";
+    ctx.stroke();
+
+    // Rim
+    ctx.beginPath();
+    ctx.ellipse(0, bowlTop, bw, 15 * u, 0, 0, Math.PI * 2);
+    ctx.lineWidth = 3 * u;
+    ctx.strokeStyle = "rgba(255,255,255,0.8)";
+    ctx.stroke();
+
+    ctx.restore();
+  }
+
+  function paintChampagne(ctx, box) {
+    const { cx, cy, r } = box;
+    const u = r / 300;
+
+    backdrop(ctx, box, [
+      [0, "#4b3a12"], [0.36, "#241a07"], [0.72, "#130d03"], [1, "#080500"],
+    ], -r * 0.25);
+    bokeh(ctx, box, ["#ffd489", "#fff3d0", "#ffae4d"], 909, 22, 1.05);
+
+    contactShadow(ctx, cx, cy + 196 * u, 210 * u, 34 * u, 0.55);
+
+    flute(ctx, cx - 74 * u, cy + 186 * u, 400 * u, 0.13, 11);
+    flute(ctx, cx + 74 * u, cy + 186 * u, 400 * u, -0.13, 29);
+
+    // Celebration flare where the rims meet
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    const fx = cx, fy = cy - 118 * u;
+    ctx.fillStyle = rad(ctx, fx, fy, 0, fx, fy, 120 * u, [
+      [0, "rgba(255,244,205,0.6)"], [0.4, "rgba(255,196,96,0.22)"], [1, "rgba(255,170,60,0)"],
+    ]);
+    ctx.beginPath();
+    ctx.arc(fx, fy, 120 * u, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 0.5;
+    ctx.strokeStyle = "rgba(255,246,210,0.7)";
+    ctx.lineWidth = 2 * u;
+    ctx.beginPath();
+    ctx.moveTo(fx - 150 * u, fy); ctx.lineTo(fx + 150 * u, fy);
+    ctx.stroke();
+    ctx.restore();
+
+    // Escaping bubbles above the glasses
+    const rand = mulberry32(909);
+    for (let i = 0; i < 22; i++) {
+      const x = cx + (rand() - 0.5) * r * 1.3;
+      const y = cy - r * 0.2 - rand() * r * 0.7;
+      const br = (2 + rand() * 5) * u;
+      ctx.save();
+      ctx.globalAlpha = 0.25 + rand() * 0.5;
+      ctx.beginPath();
+      ctx.arc(x, y, br, 0, Math.PI * 2);
+      ctx.strokeStyle = "rgba(255,248,214,0.85)";
+      ctx.lineWidth = 1.2 * u;
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    grain(ctx, box, 0.07, 909);
+  }
+
+  /* ---------------- 5. Theme aura (abstract) ---------------- */
+  function paintAura(ctx, box, opts) {
+    const { cx, cy, r } = box;
+    const colors = (opts.theme.centerpiece && opts.theme.centerpiece.colors) || ["#333", "#111", "#000"];
+    ctx.fillStyle = rad(ctx, cx, cy - r * 0.1, r * 0.06, cx, cy, r, colors.map((c, i) => [i / Math.max(1, colors.length - 1), c]));
+    ctx.fillRect(cx - r, cy - r, r * 2, r * 2);
+    bokeh(ctx, box, [opts.theme.palette.primary, opts.theme.palette.secondary], 55, 16, 1);
+
+    if (opts.monogram) {
+      ctx.save();
+      ctx.globalAlpha = 0.24;
+      ctx.fillStyle = opts.theme.palette.primary;
+      ctx.font = "500 " + Math.round(r * 0.72) + "px 'Cormorant Garamond', Georgia, serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(String(opts.monogram).toUpperCase(), cx, cy);
+      ctx.restore();
+    }
+    grain(ctx, box, 0.05, 55);
+  }
+
+  /* ---------------- public API ---------------- */
+  const PAINTERS = {
+    "belgian-gold-cake": paintCake,
+    "velvet-roses": paintRoses,
+    "silk-gift-box": paintGiftBox,
+    "champagne-gala": paintChampagne,
+    "theme-aura": paintAura,
+  };
+
+  function list() { return LIST; }
+
+  // "auto" resolves against the greeting emotion so the centrepiece always
+  // agrees with the tone of the message the user generated.
+  function resolveId(id, emotion) {
+    if (id && id !== "auto" && PAINTERS[id]) return id;
+    return EMOTION_MAP[GreetingGenerator.normalizeEmotion(emotion)] || "velvet-roses";
+  }
+
+  function paint(ctx, box, opts) {
+    const painter = PAINTERS[resolveId(opts.id, opts.emotion)] || paintRoses;
+    ctx.save();
+    painter(ctx, box, opts);
+    ctx.restore();
+  }
+
+  return { list, paint, resolveId };
 })();
 
 /* =========================================================================
@@ -1421,8 +2362,6 @@ const LayoutEngine = (() => {
 const Renderer = (() => {
   const W = LayoutEngine.CANVAS_W;
   const H = LayoutEngine.CANVAS_H;
-
-  const PHOTO_BOX = { x: 150, y: 128, width: 900, height: 760 };
 
   function createWorkCanvas(w, h) {
     if (typeof OffscreenCanvas !== "undefined") {
@@ -1596,94 +2535,122 @@ const Renderer = (() => {
     ctx.closePath();
   }
 
-  function renderCenterpieceFallback(ctx, theme, monogram) {
-    const { x, y, width, height } = PHOTO_BOX;
-    ctx.save();
-    roundRectPath(ctx, x, y, width, height, 18);
-    ctx.clip();
-    const grad = ctx.createRadialGradient(
-      x + width * 0.5, y + height * 0.4, 20,
-      x + width * 0.5, y + height * 0.5, width * 0.75
-    );
-    theme.centerpiece.colors.forEach((c, i) => grad.addColorStop(i / (theme.centerpiece.colors.length - 1), c));
-    ctx.fillStyle = grad;
-    ctx.fillRect(x, y, width, height);
-    // Soft bokeh dots
-    const rand = mulberry32(theme.id.length * 13 + 3);
-    for (let i = 0; i < 14; i++) {
+  // Art region geometry, driven by the layout-balance controls. The circle
+  // is the default mask (the "portrait medallion"); `rect` keeps the older
+  // framed-rectangle look. Both are centred horizontally and anchored near
+  // the top of the safe zone so the text block below can grow downward.
+  const ART_TOP = 148;
+  function getArtGeometry(project) {
+    const layout = (project && project.layout) || {};
+    const shape = layout.photoShape === "rect" ? "rect" : "circle";
+    const size = Utils.clamp(layout.centerpieceSize || 620, 320, 760);
+    const cx = W / 2;
+    if (shape === "rect") {
+      const width = Math.min(W - 300, size * 1.32);
+      const height = size * 0.92;
+      return {
+        shape, cx, cy: ART_TOP + height / 2, r: Math.min(width, height) / 2,
+        x: cx - width / 2, y: ART_TOP, width, height, bottom: ART_TOP + height,
+      };
+    }
+    const r = size / 2;
+    return {
+      shape, cx, cy: ART_TOP + r, r,
+      x: cx - r, y: ART_TOP, width: size, height: size, bottom: ART_TOP + size,
+    };
+  }
+
+  function artPath(ctx, geo, inset) {
+    const i = inset || 0;
+    if (geo.shape === "rect") {
+      roundRectPath(ctx, geo.x + i, geo.y + i, geo.width - i * 2, geo.height - i * 2, 18);
+    } else {
       ctx.beginPath();
-      const bx = x + rand() * width, by = y + rand() * height, br = 14 + rand() * 46;
-      ctx.globalAlpha = 0.05 + rand() * 0.08;
-      ctx.fillStyle = theme.palette.primary;
-      ctx.arc(bx, by, br, 0, Math.PI * 2);
-      ctx.fill();
+      ctx.arc(geo.cx, geo.cy, geo.r - i, 0, Math.PI * 2);
+      ctx.closePath();
     }
-    ctx.globalAlpha = 1;
-    if (monogram) {
-      ctx.font = "500 " + Math.round(width * 0.32) + "px 'Cormorant Garamond', serif";
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.globalAlpha = 0.22;
-      ctx.fillStyle = theme.palette.primary;
-      ctx.fillText(monogram.toUpperCase(), x + width / 2, y + height / 2);
-      ctx.globalAlpha = 1;
-    }
-    ctx.restore();
+  }
+
+  function renderCenterpieceFallback(ctx, project, theme, geo, monogram) {
+    Centerpieces.paint(ctx, { cx: geo.cx, cy: geo.cy, r: Math.max(geo.width, geo.height) / 2 }, {
+      id: (project.layout && project.layout.centerpieceId) || "auto",
+      emotion: project.content.emotion,
+      theme,
+      monogram,
+    });
   }
 
   async function renderPhoto(ctx, project, theme, photoImage, monogram) {
-    const { x, y, width, height } = PHOTO_BOX;
+    const geo = getArtGeometry(project);
+
+    // Cast shadow behind the medallion
     ctx.save();
-    // Cast shadow behind the frame
-    ctx.save();
-    ctx.shadowColor = "rgba(0,0,0,0.5)";
-    ctx.shadowBlur = 40;
-    ctx.shadowOffsetY = 18;
-    roundRectPath(ctx, x, y, width, height, 18);
+    ctx.shadowColor = "rgba(0,0,0,0.55)";
+    ctx.shadowBlur = 46;
+    ctx.shadowOffsetY = 20;
+    artPath(ctx, geo);
     ctx.fillStyle = "rgba(0,0,0,0.001)";
     ctx.fill();
     ctx.restore();
 
-    roundRectPath(ctx, x, y, width, height, 18);
+    // Masked content
     ctx.save();
+    artPath(ctx, geo);
     ctx.clip();
 
     if (photoImage) {
-      const p = project.photo || { zoom: 1, panX: 0, panY: 0, rotation: 0 };
-      ctx.translate(x + width / 2, y + height / 2);
-      ctx.rotate(((p.rotation || 0) * Math.PI) / 180);
-      const coverScale = Math.max(width / photoImage.width, height / photoImage.height);
-      const zoom = Utils.clamp(p.zoom || 1, 1, 3) * (project.layout.photoScale || 1);
-      const scale = coverScale * zoom;
+      const p = project.photo || {};
+      const rotation = ((p.rotation || 0) * Math.PI) / 180;
+      ctx.save();
+      ctx.translate(geo.cx, geo.cy);
+      ctx.rotate(rotation);
+
+      // Cover the mask, then expand by |cos|+|sin| so a rotated photo can
+      // never expose an empty corner inside the mask.
+      const cover = Math.max(geo.width / photoImage.width, geo.height / photoImage.height);
+      const rotationSafe = Math.abs(Math.cos(rotation)) + Math.abs(Math.sin(rotation));
+      const zoom = Utils.clamp(p.zoom || 1, 1, 3) * Utils.clamp(project.layout.photoScale || 1, 0.5, 2);
+      const scale = cover * rotationSafe * zoom;
       const drawW = photoImage.width * scale;
       const drawH = photoImage.height * scale;
-      const panX = (p.panX || 0) * width * 0.5;
-      const panY = (p.panY || 0) * height * 0.5;
+
+      // Pan is expressed as -1..1 of the mask's half-size, then limited to
+      // the slack the current zoom actually provides so panning cannot drag
+      // the image edge into view.
+      const slackX = Math.max(0, (drawW - geo.width) / 2);
+      const slackY = Math.max(0, (drawH - geo.height) / 2);
+      const panX = Utils.clamp(p.panX || 0, -1, 1) * slackX;
+      const panY = Utils.clamp(p.panY || 0, -1, 1) * slackY;
+
       ctx.drawImage(photoImage, -drawW / 2 + panX, -drawH / 2 + panY, drawW, drawH);
-    } else {
       ctx.restore();
-      renderCenterpieceFallback(ctx, theme, monogram);
-      ctx.save();
-      roundRectPath(ctx, x, y, width, height, 18);
-      ctx.clip();
+    } else {
+      renderCenterpieceFallback(ctx, project, theme, geo, monogram);
     }
     ctx.restore();
 
-    // Frame: bevel highlight (top-left) + shadow (bottom-right) + gold hairline
-    roundRectPath(ctx, x, y, width, height, 18);
-    ctx.lineWidth = 6;
-    const frameGrad = ctx.createLinearGradient(x, y, x + width, y + height);
-    frameGrad.addColorStop(0, "rgba(255,255,255,0.55)");
-    frameGrad.addColorStop(0.5, theme.palette.secondary);
-    frameGrad.addColorStop(1, "rgba(0,0,0,0.4)");
+    // Embossed metallic ring: bevel highlight top-left, shadow bottom-right,
+    // plus an inner gold hairline.
+    ctx.save();
+    artPath(ctx, geo, 3);
+    ctx.lineWidth = 7;
+    const frameGrad = ctx.createLinearGradient(geo.x, geo.y, geo.x + geo.width, geo.y + geo.height);
+    frameGrad.addColorStop(0, "rgba(255,255,255,0.6)");
+    frameGrad.addColorStop(0.35, theme.palette.secondary);
+    frameGrad.addColorStop(0.62, "rgba(255,246,210,0.85)");
+    frameGrad.addColorStop(1, "rgba(0,0,0,0.45)");
     ctx.strokeStyle = frameGrad;
     ctx.stroke();
 
-    roundRectPath(ctx, x + 3, y + 3, width - 6, height - 6, 15);
-    ctx.lineWidth = 1.5;
+    artPath(ctx, geo, 10);
+    ctx.lineWidth = 1.6;
     ctx.strokeStyle = "rgba(232,199,119,0.55)";
     ctx.stroke();
 
+    artPath(ctx, geo, -6);
+    ctx.lineWidth = 1.2;
+    ctx.strokeStyle = "rgba(0,0,0,0.35)";
+    ctx.stroke();
     ctx.restore();
   }
 
@@ -1817,7 +2784,19 @@ const Renderer = (() => {
     const margin = LayoutEngine.SAFE_MARGIN.x;
     const maxWidth = (W - margin * 2) * (project.layout.textMaxWidth || pairing.maxTextWidthRatio || 0.8);
     const cx = W / 2;
-    const blockTop = 960 + (project.layout.textPosition - 0.62) * 400;
+
+    // The text block starts below the centrepiece, never above its baseline
+    // position, and is then nudged by the layout-balance shift. Clamped so
+    // it can never collide with the medallion or run past the signature.
+    const geo = getArtGeometry(project);
+    const signatureTop = H - 150;
+    const anchored = 960 + (project.layout.textPosition - 0.62) * 400;
+    const shift = Utils.clamp(project.layout.textShift || 0, -90, 90);
+    const blockTop = Utils.clamp(
+      Math.max(geo.bottom + 56, anchored) + shift,
+      geo.bottom + 24,
+      signatureTop - 170
+    );
 
     const measureCtx = document.createElement("canvas").getContext("2d");
 
@@ -1837,6 +2816,7 @@ const Renderer = (() => {
       letterSpacingStart: project.typography.letterSpacing,
     });
     if (recipientFit.overflow) diagnostics.textOverflow = true;
+    if (recipientFit.clamped) diagnostics.textClamped = true;
 
     const recipientMask = createWorkCanvas(W, H);
     const rmCtx = recipientMask.getContext("2d");
@@ -1858,21 +2838,43 @@ const Renderer = (() => {
 
     // Greeting
     const greetingSource = project.content.autoGreetingEnabled
-      ? (AUTO_GREETINGS[project.content.emotion] || AUTO_GREETINGS.warm)
+      ? GreetingGenerator.fallbackFor(project.content.emotion, project.recipient.name)
       : project.content.greeting;
-    const greetingText = Utils.sanitizeText(greetingSource || "", 220);
+    const greetingText = Utils.sanitizeText(greetingSource || "", GREETING_MAX_CHARS);
     if (greetingText) {
-      const greetingFit = LayoutEngine.fitText(measureCtx, {
+      const GREETING_LINE_RATIO = 1.5;
+      const greetingMinSize = 15;
+      // Vertical room between here and the signature, converted to a line
+      // budget. Using the smallest permitted size gives the most generous
+      // budget; the height check below tightens it for whatever size wins.
+      const availableHeight = Math.max(GREETING_LINE_RATIO * greetingMinSize, signatureTop - 46 - cursorY);
+      const linesThatFit = (size) => Math.max(1, Math.floor(availableHeight / (size * GREETING_LINE_RATIO)));
+
+      let greetingFit = LayoutEngine.fitText(measureCtx, {
         text: greetingText,
         fontFamily: pairing.greetingFont,
         weight: pairing.greetingWeight,
         maxSize: project.typography.greetingSize,
-        minSize: 15,
+        minSize: greetingMinSize,
         maxWidth: maxWidth * 0.92,
-        maxLines: 4,
+        maxLines: linesThatFit(greetingMinSize),
         letterSpacingStart: 0,
       });
+
+      // Second pass: the chosen size may allow fewer lines than the budget
+      // computed at minimum size, so clamp to the real limit.
+      const heightLimit = linesThatFit(greetingFit.size);
+      if (greetingFit.lines.length > heightLimit) {
+        greetingFit = LayoutEngine.clampResult(measureCtx, greetingFit, {
+          fontFamily: pairing.greetingFont,
+          weight: pairing.greetingWeight,
+          maxWidth: maxWidth * 0.92,
+          maxLines: heightLimit,
+          letterSpacing: 0,
+        });
+      }
       if (greetingFit.overflow) diagnostics.textOverflow = true;
+      if (greetingFit.clamped) diagnostics.textClamped = true;
       ctx.save();
       ctx.fillStyle = theme.palette.text;
       const greetingLineHeight = greetingFit.size * 1.5;
@@ -1916,6 +2918,7 @@ const Renderer = (() => {
         letterSpacingStart: 0.4,
       });
       if (senderFit.overflow) diagnostics.textOverflow = true;
+      if (senderFit.clamped) diagnostics.textClamped = true;
       const senderMask = createWorkCanvas(W, H);
       const smCtx = senderMask.getContext("2d");
       smCtx.fillStyle = "#fff";
@@ -1997,7 +3000,7 @@ const Renderer = (() => {
     const theme = ThemeRegistry.getTheme(project.theme.id);
     const pairing = FontPairings.getPairing(project.typography.pairingId);
 
-    const diagnostics = { textOverflow: false, collisions: [], missingAssets: [], safeZoneViolations: [] };
+    const diagnostics = { textOverflow: false, textClamped: false, collisions: [], missingAssets: [], safeZoneViolations: [] };
 
     ctx.clearRect(0, 0, W, H);
     renderBackground(ctx, theme, quality);
@@ -2032,7 +3035,7 @@ const Renderer = (() => {
   }
 
   return {
-    W, H, PHOTO_BOX, renderCard, compositeFoil, createWorkCanvas,
+    W, H, renderCard, compositeFoil, createWorkCanvas, getArtGeometry, artPath,
     getInitials, stampToLayoutBox, supportsBlendModes,
   };
 })();
@@ -2294,6 +3297,7 @@ const ProjectVault = (() => {
     const backup = {
       format: BACKUP_FORMAT_ID,
       formatVersion: BACKUP_FORMAT_VERSION,
+      appVersion: APP_VERSION,
       exportedAt: Date.now(),
       project: Utils.clone(project),
       assets: [],
@@ -2318,7 +3322,7 @@ const ProjectVault = (() => {
 
   function validateBackup(backup) {
     if (!backup || typeof backup !== "object") throw new Error("This file is not a valid backup.");
-    if (backup.format !== BACKUP_FORMAT_ID) throw new Error("This file was not created by Atul Birthday Card Studio.");
+    if (backup.format !== BACKUP_FORMAT_ID) throw new Error("This file was not created by Atul Card Studio.");
     if (typeof backup.formatVersion !== "number" || backup.formatVersion > BACKUP_FORMAT_VERSION) {
       throw new Error("This backup was created by a newer version of the studio and cannot be imported here.");
     }
@@ -2412,7 +3416,7 @@ const ExportModule = (() => {
   function buildFilename(project, theme) {
     const recipient = Utils.sanitizeFilenamePart(project.recipient.name || "card");
     const themeSlug = theme.id;
-    return "atul-birthday-card-" + recipient + "-" + themeSlug + ".png";
+    return "atul-card-" + recipient + "-" + themeSlug + ".png";
   }
 
   async function renderExportCanvas(project) {
@@ -2669,6 +3673,64 @@ const App = (() => {
   }
 
   /* ---------------- Populate registries into DOM ---------------- */
+  function populateEmotionRow() {
+    const row = dom.emotionRow;
+    row.innerHTML = "";
+    GreetingGenerator.list().forEach((emotion) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "emotion-btn";
+      btn.dataset.emotion = emotion.id;
+      btn.dataset.label = emotion.label;
+      btn.setAttribute("aria-pressed", "false");
+      const strong = document.createElement("strong");
+      strong.textContent = emotion.label;
+      const hint = document.createElement("span");
+      hint.textContent = emotion.hint;
+      btn.appendChild(strong);
+      btn.appendChild(hint);
+      row.appendChild(btn);
+    });
+  }
+
+  function markEmotionSelection(emotionId) {
+    dom.emotionRow.querySelectorAll("[data-emotion]").forEach((el) => {
+      el.setAttribute("aria-pressed", String(el.dataset.emotion === emotionId));
+    });
+  }
+
+  function populateCenterpieceList() {
+    const list = dom.centerpieceList;
+    list.innerHTML = "";
+    Centerpieces.list().forEach((cp) => {
+      const item = document.createElement("button");
+      item.type = "button";
+      item.className = "option-item";
+      item.setAttribute("role", "radio");
+      item.setAttribute("aria-checked", "false");
+      item.dataset.centerpieceId = cp.id;
+      const strong = document.createElement("strong");
+      strong.textContent = cp.label;
+      const span = document.createElement("span");
+      span.textContent = cp.hint;
+      item.appendChild(strong);
+      item.appendChild(span);
+      list.appendChild(item);
+    });
+  }
+
+  function markCenterpieceSelection(id) {
+    dom.centerpieceList.querySelectorAll("[data-centerpiece-id]").forEach((el) => {
+      el.setAttribute("aria-checked", String(el.dataset.centerpieceId === id));
+    });
+  }
+
+  function markShapeSelection(shape) {
+    dom.photoShapeGroup.querySelectorAll("[data-shape]").forEach((el) => {
+      el.setAttribute("aria-checked", String(el.dataset.shape === shape));
+    });
+  }
+
   function populateThemeGrid() {
     const grid = dom.themeGrid;
     grid.innerHTML = "";
@@ -2819,6 +3881,7 @@ const App = (() => {
   function updateDiagnosticsBanner(diagnostics) {
     const messages = [];
     if (diagnostics.textOverflow) messages.push("Some text may be tight for its space — consider shortening it.");
+    if (diagnostics.textClamped) messages.push("Your message was shortened to stay inside the card borders.");
     if (diagnostics.collisions.length) messages.push(diagnostics.collisions.length + " element(s) are overlapping.");
     if (diagnostics.safeZoneViolations.length) messages.push("Some stamps sit outside the safe zone.");
     if (diagnostics.missingAssets.length) messages.push("A referenced photo could not be loaded.");
@@ -2837,7 +3900,7 @@ const App = (() => {
     if (panel.hidden) return;
     const theme = ThemeRegistry.getTheme(project.theme.id);
     const greeting = project.content.autoGreetingEnabled
-      ? (AUTO_GREETINGS[project.content.emotion] || AUTO_GREETINGS.warm)
+      ? GreetingGenerator.fallbackFor(project.content.emotion, project.recipient.name)
       : project.content.greeting;
     panel.innerHTML = "";
     const dl = document.createElement("dl");
@@ -2874,12 +3937,29 @@ const App = (() => {
     dom.autoGreetingToggle.addEventListener("change", (e) => {
       StateStore.update((p) => { p.content.autoGreetingEnabled = e.target.checked; }, { reason: "auto-greeting" });
     });
-    dom.emotionSelect.addEventListener("change", (e) => {
-      StateStore.update((p) => { p.content.emotion = e.target.value; }, { reason: "emotion" });
+    // Emotion generator: one tap writes a draft straight into the greeting
+    // field so it stays fully editable, and records the emotion so "auto-
+    // write" and the Auto centrepiece keep agreeing with the chosen tone.
+    dom.emotionRow.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-emotion]");
+      if (!btn) return;
+      const emotion = btn.dataset.emotion;
+      const project = StateStore.getProject();
+      const draft = GreetingGenerator.generate(emotion, project.recipient.name, project.content.greeting);
+      StateStore.update((p) => {
+        p.content.emotion = emotion;
+        p.content.greeting = draft;
+        p.content.autoGreetingEnabled = false;
+      }, { reason: "greeting-generated" });
+      dom.greetingText.value = draft;
+      dom.greetingCount.textContent = draft.length + " / " + GREETING_MAX_CHARS;
+      dom.autoGreetingToggle.checked = false;
+      markEmotionSelection(emotion);
+      toast(btn.dataset.label + " greeting written.");
     });
     dom.greetingText.addEventListener("input", (e) => {
-      const val = Utils.sanitizeText(e.target.value, 220);
-      dom.greetingCount.textContent = val.length + " / 220";
+      const val = Utils.sanitizeText(e.target.value, GREETING_MAX_CHARS);
+      dom.greetingCount.textContent = val.length + " / " + GREETING_MAX_CHARS;
       StateStore.update((p) => { p.content.greeting = val; }, { skipHistory: true });
     });
   }
@@ -2956,17 +4036,45 @@ const App = (() => {
       e.target.value = "";
     });
 
-    dom.photoZoom.addEventListener("input", (e) => {
-      const v = parseFloat(e.target.value);
-      dom.photoZoomOut.textContent = v.toFixed(2);
-      StateStore.update((p) => { if (p.photo) p.photo.zoom = v; }, { skipHistory: true });
+    // Transform engine. Pan is stored normalised (-1..1) so it survives a
+    // change of centrepiece size; the renderer converts it to pixels using
+    // whatever slack the current zoom leaves.
+    const transformSliders = [
+      [dom.photoZoom, dom.photoZoomOut, (p, v) => { p.photo.zoom = v; }, (v) => v.toFixed(2)],
+      [dom.photoPanX, dom.photoPanXOut, (p, v) => { p.photo.panX = v / 100; }, (v) => Math.round(v)],
+      [dom.photoPanY, dom.photoPanYOut, (p, v) => { p.photo.panY = v / 100; }, (v) => Math.round(v)],
+      [dom.photoRotation, dom.photoRotationOut, (p, v) => { p.photo.rotation = v; }, (v) => Math.round(v)],
+    ];
+    transformSliders.forEach(([el, out, apply, format]) => {
+      el.addEventListener("input", () => {
+        const v = parseFloat(el.value);
+        out.textContent = format(v);
+        StateStore.update((p) => { if (p.photo) apply(p, v); }, { skipHistory: true });
+      });
+      // Commit one history entry when the drag ends, not per frame.
+      el.addEventListener("change", () => StateStore.update(() => {}));
     });
-    dom.photoZoom.addEventListener("change", () => StateStore.update(() => {}));
 
-    dom.photoRotation.addEventListener("input", (e) => {
-      const v = parseFloat(e.target.value);
-      dom.photoRotationOut.textContent = v;
-      StateStore.update((p) => { if (p.photo) p.photo.rotation = v; }, { reason: "photo-rotate" });
+    dom.resetTransformBtn.addEventListener("click", () => {
+      StateStore.update((p) => {
+        if (p.photo) { p.photo.zoom = 1; p.photo.panX = 0; p.photo.panY = 0; p.photo.rotation = 0; }
+      }, { reason: "photo-reset" });
+      syncPhotoControls(StateStore.getProject());
+      toast("Transform reset.");
+    });
+
+    dom.photoShapeGroup.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-shape]");
+      if (!btn) return;
+      StateStore.update((p) => { p.layout.photoShape = btn.dataset.shape; }, { reason: "photo-shape" });
+      markShapeSelection(btn.dataset.shape);
+    });
+
+    dom.centerpieceList.addEventListener("click", (e) => {
+      const item = e.target.closest("[data-centerpiece-id]");
+      if (!item) return;
+      StateStore.update((p) => { p.layout.centerpieceId = item.dataset.centerpieceId; }, { reason: "centerpiece" });
+      markCenterpieceSelection(item.dataset.centerpieceId);
     });
 
     dom.removePhotoBtn.addEventListener("click", async () => {
@@ -2977,6 +4085,33 @@ const App = (() => {
       AssetResolver.invalidate(assetId);
       await AssetRepository.deleteAsset(assetId).catch(() => {});
       toast("Photo removed.");
+    });
+  }
+
+  /* ---------------- Field binding: Layout balance tab ---------------- */
+  function bindLayoutTab() {
+    const bindings = [
+      [dom.layoutPhotoSize, dom.layoutPhotoSizeOut, (p, v) => { p.layout.centerpieceSize = v; }, (v) => Math.round(v)],
+      [dom.layoutTextShift, dom.layoutTextShiftOut, (p, v) => { p.layout.textShift = v; }, (v) => Math.round(v)],
+      [dom.layoutTextWidth, dom.layoutTextWidthOut, (p, v) => { p.layout.textMaxWidth = v / 100; }, (v) => Math.round(v)],
+    ];
+    bindings.forEach(([el, out, apply, format]) => {
+      el.addEventListener("input", () => {
+        const v = parseFloat(el.value);
+        out.textContent = format(v);
+        StateStore.update((p) => apply(p, v), { skipHistory: true });
+      });
+      el.addEventListener("change", () => StateStore.update(() => {}));
+    });
+
+    dom.resetLayoutBtn.addEventListener("click", () => {
+      StateStore.update((p) => {
+        p.layout.centerpieceSize = 620;
+        p.layout.textShift = 0;
+        p.layout.textMaxWidth = 0.8;
+      }, { reason: "layout-reset" });
+      syncLayoutControls(StateStore.getProject());
+      toast("Layout balance reset.");
     });
   }
 
@@ -3244,9 +4379,18 @@ const App = (() => {
         const dyFrac = (e.clientY - dragStart.clientY) / rect.height;
         StateStore.update((p) => {
           if (!p.photo) return;
-          p.photo.panX = Utils.clamp(dragStart.panX + dxFrac * 2.2, -1.5, 1.5);
-          p.photo.panY = Utils.clamp(dragStart.panY + dyFrac * 2.2, -1.5, 1.5);
+          // Same -1..1 normalised range the pan sliders use, so dragging on
+          // the card and dragging the sliders stay in agreement.
+          p.photo.panX = Utils.clamp(dragStart.panX + dxFrac * 2.2, -1, 1);
+          p.photo.panY = Utils.clamp(dragStart.panY + dyFrac * 2.2, -1, 1);
         }, { skipHistory: true });
+        const dragged = StateStore.getProject().photo;
+        if (dragged) {
+          dom.photoPanX.value = Math.round(dragged.panX * 100);
+          dom.photoPanXOut.textContent = Math.round(dragged.panX * 100);
+          dom.photoPanY.value = Math.round(dragged.panY * 100);
+          dom.photoPanYOut.textContent = Math.round(dragged.panY * 100);
+        }
       }
     });
 
@@ -3464,14 +4608,48 @@ const App = (() => {
   }
 
   /* ---------------- Sync controls from state (on load / undo / theme change) ---------------- */
+  // Mirrors photo/centrepiece state onto its controls, and disables the
+  // transform engine outright when there is no photo to transform.
+  function syncPhotoControls(project) {
+    const photo = project.photo;
+    dom.photoTransformFieldset.disabled = !photo;
+    const zoom = photo ? photo.zoom : 1;
+    const panX = photo ? (photo.panX || 0) : 0;
+    const panY = photo ? (photo.panY || 0) : 0;
+    const rotation = photo ? (photo.rotation || 0) : 0;
+    dom.photoZoom.value = zoom;
+    dom.photoZoomOut.textContent = Number(zoom).toFixed(2);
+    dom.photoPanX.value = Math.round(panX * 100);
+    dom.photoPanXOut.textContent = Math.round(panX * 100);
+    dom.photoPanY.value = Math.round(panY * 100);
+    dom.photoPanYOut.textContent = Math.round(panY * 100);
+    dom.photoRotation.value = rotation;
+    dom.photoRotationOut.textContent = Math.round(rotation);
+    dom.removePhotoBtn.disabled = !photo;
+    markShapeSelection(project.layout.photoShape || "circle");
+    markCenterpieceSelection(project.layout.centerpieceId || "auto");
+  }
+
+  function syncLayoutControls(project) {
+    const size = project.layout.centerpieceSize || 620;
+    const shift = project.layout.textShift || 0;
+    const width = Math.round((project.layout.textMaxWidth || 0.8) * 100);
+    dom.layoutPhotoSize.value = size;
+    dom.layoutPhotoSizeOut.textContent = Math.round(size);
+    dom.layoutTextShift.value = shift;
+    dom.layoutTextShiftOut.textContent = Math.round(shift);
+    dom.layoutTextWidth.value = width;
+    dom.layoutTextWidthOut.textContent = width;
+  }
+
   function syncControlsFromState(project) {
     dom.recipientName.value = project.recipient.name || "";
     dom.recipientRelationship.value = project.recipient.relationship || "";
     dom.senderName.value = project.sender.name || "";
     dom.autoGreetingToggle.checked = !!project.content.autoGreetingEnabled;
-    dom.emotionSelect.value = project.content.emotion;
     dom.greetingText.value = project.content.greeting || "";
-    dom.greetingCount.textContent = (project.content.greeting || "").length + " / 220";
+    dom.greetingCount.textContent = (project.content.greeting || "").length + " / " + GREETING_MAX_CHARS;
+    markEmotionSelection(project.content.emotion);
 
     document.querySelectorAll("#theme-grid .swatch").forEach((el) => {
       el.setAttribute("aria-checked", String(el.dataset.themeId === project.theme.id));
@@ -3499,13 +4677,8 @@ const App = (() => {
     dom.foilHighlight.value = project.foil.highlight; dom.foilHighlightOut.textContent = Math.round(project.foil.highlight);
     dom.foilShadow.value = project.foil.shadow; dom.foilShadowOut.textContent = Math.round(project.foil.shadow);
 
-    if (project.photo) {
-      dom.photoZoom.value = project.photo.zoom; dom.photoZoomOut.textContent = project.photo.zoom.toFixed(2);
-      dom.photoRotation.value = project.photo.rotation; dom.photoRotationOut.textContent = project.photo.rotation;
-    } else {
-      dom.photoZoom.value = 1; dom.photoZoomOut.textContent = "1.00";
-      dom.photoRotation.value = 0; dom.photoRotationOut.textContent = "0";
-    }
+    syncPhotoControls(project);
+    syncLayoutControls(project);
 
     dom.monogramToggle.checked = project.stamps.some((s) => s.assetId === "monogram");
     selectedStampId = null;
@@ -3617,7 +4790,7 @@ const App = (() => {
       contrastToggleBtn: $("#contrast-toggle-btn"),
       undoBtn: $("#undo-btn"), redoBtn: $("#redo-btn"),
       openVaultBtn: $("#open-vault-btn"), openExportBtn: $("#open-export-btn"),
-      projectTitle: $("#project-title"),
+      projectTitle: $("#project-title"), appVersion: $("#app-version"),
 
       canvas: $("#card-canvas"), canvasFrame: $("#canvas-frame"),
       diagnosticsBanner: $("#diagnostics-banner"),
@@ -3626,7 +4799,7 @@ const App = (() => {
 
       recipientName: $("#recipient-name"), recipientRelationship: $("#recipient-relationship"),
       senderName: $("#sender-name"), autoGreetingToggle: $("#auto-greeting-toggle"),
-      emotionSelect: $("#emotion-select"), greetingText: $("#greeting-text"), greetingCount: $("#greeting-count"),
+      emotionRow: $("#emotion-row"), greetingText: $("#greeting-text"), greetingCount: $("#greeting-count"),
 
       themeGrid: $("#theme-grid"),
 
@@ -3643,7 +4816,17 @@ const App = (() => {
       foilShadow: $("#foil-shadow"), foilShadowOut: $("#foil-shadow-out"),
 
       photoInput: $("#photo-input"), photoZoom: $("#photo-zoom"), photoZoomOut: $("#photo-zoom-out"),
-      photoRotation: $("#photo-rotation"), photoRotationOut: $("#photo-rotation-out"), removePhotoBtn: $("#remove-photo-btn"),
+      photoPanX: $("#photo-pan-x"), photoPanXOut: $("#photo-pan-x-out"),
+      photoPanY: $("#photo-pan-y"), photoPanYOut: $("#photo-pan-y-out"),
+      photoRotation: $("#photo-rotation"), photoRotationOut: $("#photo-rotation-out"),
+      photoTransformFieldset: $("#photo-transform-fieldset"), resetTransformBtn: $("#reset-transform-btn"),
+      photoShapeGroup: $("#photo-shape-group"), centerpieceList: $("#centerpiece-list"),
+      removePhotoBtn: $("#remove-photo-btn"),
+
+      layoutPhotoSize: $("#layout-photo-size"), layoutPhotoSizeOut: $("#layout-photo-size-out"),
+      layoutTextShift: $("#layout-text-shift"), layoutTextShiftOut: $("#layout-text-shift-out"),
+      layoutTextWidth: $("#layout-text-width"), layoutTextWidthOut: $("#layout-text-width-out"),
+      resetLayoutBtn: $("#reset-layout-btn"),
 
       stampGallery: $("#stamp-gallery"), autoArrangeBtn: $("#auto-arrange-btn"),
       clearStampsBtn: $("#clear-stamps-btn"), monogramToggle: $("#monogram-toggle"),
@@ -3663,10 +4846,13 @@ const App = (() => {
 
   async function init() {
     cacheDom();
+    dom.appVersion.textContent = "v" + APP_VERSION;
     initTabs();
     populateThemeGrid();
     populateFoilGrid();
     populatePairingList();
+    populateEmotionRow();
+    populateCenterpieceList();
     // populateStampGallery() is intentionally NOT called here: it reads
     // StateStore.getProject() (for the current theme's foil preset and the
     // recipient's monogram initials), but no project exists yet this early
@@ -3678,6 +4864,7 @@ const App = (() => {
     bindTypographyTab();
     bindFoilTab();
     bindPhotoTab();
+    bindLayoutTab();
     bindStampsTab();
     bindAudioTab();
     bindVault();
@@ -3693,6 +4880,9 @@ const App = (() => {
     StateStore.subscribe((project, reason) => {
       if (reason !== "silent") scheduleRender(reason === "photo-rotate" || reason === "theme-change" ? "preview" : "preview");
       populateStampGalleryThumbsIfThemeChanged(reason);
+      if (reason === "photo-set" || reason === "photo-remove" || reason === "photo-reset") {
+        syncPhotoControls(project);
+      }
       if (reason === "theme-change" || reason === "init" || reason === "undo" || reason === "redo") {
         syncControlsFromState(project);
       }
