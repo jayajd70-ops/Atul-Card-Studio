@@ -1,0 +1,63 @@
+{
+  "id": "/",
+  "name": "Atul Birthday Card Studio",
+  "short_name": "Atul Studio",
+  "description": "A private digital atelier for crafting luxury, foiled birthday cards with cinematic typography, hand-placed seals, and an optional voice greeting.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone"],
+  "orientation": "portrait-primary",
+  "background_color": "#0a090e",
+  "theme_color": "#0a090e",
+  "categories": ["lifestyle", "photo", "productivity"],
+  "lang": "en",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "icons/favicon-32.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-192-maskable.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "icons/icon-512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "New Card",
+      "short_name": "New Card",
+      "description": "Start a new luxury birthday card",
+      "url": "./index.html?action=new",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Vault",
+      "short_name": "Vault",
+      "description": "Open your saved card projects",
+      "url": "./index.html?action=vault",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    }
+  ]
+}
