@@ -10,12 +10,12 @@
 // Kept in step with APP_VERSION in js/app.js: bumping either one must
 // bump the other, since the cache name is what forces clients onto a
 // freshly released shell.
-const SW_VERSION = "v1.2.0";
+const SW_VERSION = "v1.3.1";
 const SHELL_CACHE = "atul-shell-" + SW_VERSION;
 
-// Everything needed to open and use the editor while offline. Decorative
-// stamp/foil/texture assets are generated procedurally in js/app.js rather
-// than fetched, so there are no binary decorative assets to list here.
+// Everything needed to open and use the editor while offline. User photos
+// remain private in IndexedDB; these bundled photographic centrepieces are
+// public application assets and are safe to precache.
 const SHELL_ASSETS = [
   "./",
   "./index.html",
@@ -30,6 +30,10 @@ const SHELL_ASSETS = [
   "./icons/apple-touch-icon.png",
   "./icons/favicon-32.png",
   "./icons/favicon-16.png",
+  "./assets/centerpieces/belgian-gold-cake.png",
+  "./assets/centerpieces/velvet-roses.png",
+  "./assets/centerpieces/silk-gift-box.png",
+  "./assets/centerpieces/champagne-gala.png",
 
   // Self-hosted web fonts. These are precached rather than runtime-cached so
   // the very first load works with no network at all: the canvas renderer

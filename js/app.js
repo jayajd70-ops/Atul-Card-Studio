@@ -77,6 +77,28 @@ const Utils = (() => {
       .toLowerCase() || "card";
   }
 
+  // Character-cap truncation for prose that gets rendered as sentences (the
+  // greeting), as opposed to sanitizeText's hard slice used for short
+  // single-line fields (names, titles) where the browser's own maxlength
+  // already prevents overflow. A plain slice can land mid-word with no
+  // indication anything was cut — harmless for a name, but on a sentence it
+  // reads as a rendering bug. This backs up to the last word boundary
+  // within a short lookback window and appends an ellipsis instead. Exists
+  // as a safety net for content that bypasses the textarea's own maxlength
+  // (an imported backup from a different app version, for instance) — the
+  // canvas renderer's own LayoutEngine.fitText/clampResult still owns
+  // truncation for text that is short enough but doesn't fit vertically.
+  function truncateProse(input, maxLen) {
+    const s = sanitizeText(input, 100000); // strip control chars, no length cap yet
+    if (s.length <= maxLen) return s;
+    const ELLIPSIS = "…";
+    const hardCut = s.slice(0, Math.max(0, maxLen - 1));
+    const lookback = hardCut.slice(-24);
+    const lastSpace = lookback.lastIndexOf(" ");
+    const wordSafe = lastSpace === -1 ? hardCut : hardCut.slice(0, hardCut.length - (lookback.length - lastSpace));
+    return wordSafe.replace(/[\s,;:.—-]+$/, "") + ELLIPSIS;
+  }
+
   function formatBytes(bytes) {
     if (!Number.isFinite(bytes)) return "unknown";
     if (bytes < 1024) return bytes + " B";
@@ -137,7 +159,7 @@ const Utils = (() => {
   }
 
   return {
-    uuid, clamp, debounce, clone, sanitizeText, sanitizeFilenamePart,
+    uuid, clamp, debounce, clone, sanitizeText, sanitizeFilenamePart, truncateProse,
     formatBytes, formatTime, timeAgo, blobToDataUrl, dataUrlToBlob, loadImage,
   };
 })();
@@ -978,11 +1000,14 @@ const ThemeRegistry = (() => {
     {
       id: "pearl-marble",
       name: "Pearl Marble",
-      background: { top: "#f4efe4", bottom: "#e3dac6", texture: "marble", textureTint: "#ffffff", vignette: 0.28, light: true },
-      palette: { primary: "#8f6c2c", secondary: "#5b4a30", text: "#2c2416", mutedText: "#6b5f4c", foil: "champagne" },
-      centerpiece: { style: "gradient-frame", colors: ["#fffaf0", "#e9ddc2", "#cbb98f"] },
+      background: {
+        top: "#fbf7ed", bottom: "#dfd0b4", texture: "marble", textureTint: "#f2e8d6",
+        veinColor: "#9f7a42", veinAlpha: 0.2, vignette: 0.14, light: true,
+      },
+      palette: { primary: "#6c431d", secondary: "#9a6b26", text: "#21170f", mutedText: "#5c422c", foil: "gold" },
+      centerpiece: { style: "gradient-frame", colors: ["#fffaf0", "#e5d3af", "#b78a49"] },
       typographyDefaults: { pairingId: "cormorant-inter", mood: "classic", recipientSize: 76, greetingSize: 28 },
-      foilPresetId: "champagne",
+      foilPresetId: "gold",
     },
     {
       id: "velvet-sapphire",
@@ -1020,7 +1045,7 @@ const ThemeRegistry = (() => {
 // Application version. Shown in the header, stamped onto exported
 // backups, and kept in step with SW_VERSION in sw.js so a released
 // shell and the code inside it always report the same number.
-const APP_VERSION = "1.2.0";
+const APP_VERSION = "1.3.1";
 
 const CURRENT_SCHEMA_VERSION = 2;
 
@@ -1053,7 +1078,7 @@ function createDefaultProject(overrides) {
       mood: "regal",
       recipientSize: 78,
       greetingSize: 28,
-      senderSize: 22,
+      senderSize: 36,
       letterSpacing: 1.4,
       lineHeight: 1.3,
     },
@@ -1325,6 +1350,20 @@ const Migrations = (() => {
       record.version = CURRENT_SCHEMA_VERSION;
     }
     record.version = CURRENT_SCHEMA_VERSION;
+    record.typography = record.typography || {};
+    // Older cards used a fixed 22px signature — there was no slider to set
+    // it any other way, so any stored value below the new slider's floor
+    // (24) is unmistakably that legacy footnote-sized default, never a
+    // deliberate user choice. Those get lifted all the way to the new
+    // sensible default (36px) rather than merely clamped to 24, which
+    // would barely be perceptible and would defeat the point of the fix.
+    // A value already inside the new 24-64 range came from the new slider
+    // and is a deliberate user choice, so it is left alone (clamp is a
+    // no-op there, kept only as a safety net against a corrupt value).
+    const storedSenderSize = Number(record.typography.senderSize);
+    record.typography.senderSize = (Number.isFinite(storedSenderSize) && storedSenderSize >= 24)
+      ? Utils.clamp(storedSenderSize, 24, 64)
+      : 36;
     return record;
   }
 
@@ -1602,14 +1641,57 @@ const LayoutEngine = (() => {
 })();
 
 /* =========================================================================
+   SECTION: CenterpieceAssetResolver
+   Optional photographic centrepieces. If a transparent PNG/WebP exists at
+   assets/centerpieces/<id>.{webp,png} for one of the four named
+   centrepieces, Centerpieces.paint() draws it instead of the procedural
+   painter below. Ships safely with zero files present: every probe
+   failure (404, decode error) is cached as "no asset" so the procedural
+   fallback in Centerpieces takes over exactly as before. No remote URLs
+   are ever requested — this only ever looks at the local /assets folder.
+   ========================================================================= */
+const CenterpieceAssetResolver = (() => {
+  const BASE = "assets/centerpieces/";
+  // PNG is the shipped format, so probe it first and avoid a noisy 404 for
+  // every card render. WebP remains supported for future replacements.
+  const EXTENSIONS = ["png", "webp"];
+  const SUPPORTED_IDS = ["belgian-gold-cake", "velvet-roses", "silk-gift-box", "champagne-gala"];
+  const cache = new Map(); // id -> Promise<HTMLImageElement|null>
+
+  async function probeOne(id) {
+    for (const ext of EXTENSIONS) {
+      try {
+        return await Utils.loadImage(BASE + id + "." + ext);
+      } catch (err) {
+        // Try the next extension; if none exist this resolves to null below
+        // and the caller falls back to the procedural painter.
+      }
+    }
+    return null;
+  }
+
+  function resolve(id) {
+    if (!SUPPORTED_IDS.includes(id)) return Promise.resolve(null);
+    if (!cache.has(id)) cache.set(id, probeOne(id));
+    return cache.get(id);
+  }
+
+  function isSupported(id) { return SUPPORTED_IDS.includes(id); }
+
+  return { resolve, isSupported, SUPPORTED_IDS };
+})();
+
+/* =========================================================================
    SECTION: Centerpieces
-   Procedurally painted photorealistic centrepieces, used whenever a card
-   has no user photo. Everything is drawn with layered gradients, bezier
-   geometry, specular highlights and a seeded grain pass — there are no
-   bundled image assets, so each one renders identically at preview and
-   export resolution and needs no network. Painters are authored against a
-   reference radius of 300px and scaled by `u`, so they stay sharp at any
-   centrepiece size. The caller has already clipped the art region.
+   Centrepiece painters, used whenever a card has no user photo. Each named
+   centrepiece first tries a real photographic asset via
+   CenterpieceAssetResolver; when none is bundled it falls back to the
+   procedural painters below — layered gradients, bezier geometry, specular
+   highlights and a seeded grain pass, drawn on an offscreen canvas so each
+   one renders identically at preview and export resolution with no
+   network request. Painters are authored against a reference radius of
+   300px and scaled by `u`, so they stay sharp at any centrepiece size. The
+   caller has already clipped the art region.
    ========================================================================= */
 const Centerpieces = (() => {
   const LIST = [
@@ -1617,7 +1699,9 @@ const Centerpieces = (() => {
     { id: "belgian-gold-cake", label: "Belgian Gold Cake", hint: "Ganache, gold leaf, candlelight" },
     { id: "velvet-roses", label: "Velvet Roses", hint: "Deep crimson bloom cluster" },
     { id: "silk-gift-box", label: "Silk Gift Box", hint: "Satin ribbon and hand-tied bow" },
-    { id: "champagne-gala", label: "Champagne Gala", hint: "Flutes, bubbles and bokeh" },
+    // Keep the historic id so existing backups automatically receive the
+    // replacement artwork instead of becoming incompatible.
+    { id: "champagne-gala", label: "Luxury Balloons", hint: "Pearl, emerald and gold celebration balloons" },
     { id: "theme-aura", label: "Theme Aura", hint: "Abstract monogram glow" },
   ];
 
@@ -2300,6 +2384,45 @@ const Centerpieces = (() => {
     grain(ctx, box, 0.07, 909);
   }
 
+  // Offline fallback for the legacy `champagne-gala` id. The bundled
+  // photographic asset is preferred; this painter ensures a missing or
+  // corrupt asset still shows balloons rather than restoring champagne.
+  function paintBalloons(ctx, box) {
+    const { cx, cy, r } = box;
+    const u = r / 300;
+    backdrop(ctx, box, [
+      [0, "#173c2d"], [0.46, "#0b2219"], [0.78, "#111006"], [1, "#050705"],
+    ], -r * 0.2);
+    bokeh(ctx, box, ["#e8c777", "#fff4d2", "#2a7655"], 719, 16, 1);
+
+    const balloons = [
+      [-112, -42, 62, 82, "#d4a83c"], [0, -112, 68, 92, "#0f6a49"],
+      [108, -38, 62, 84, "#f1e4c9"], [-52, 52, 66, 88, "#f6efe0"],
+      [62, 58, 68, 90, "#c99524"], [-142, 80, 52, 70, "#176146"],
+      [142, 88, 50, 68, "#176146"],
+    ];
+    balloons.forEach(([ox, oy, rx, ry, color], index) => {
+      const x = cx + ox * u, y = cy + oy * u;
+      const g = rad(ctx, x - rx * 0.28 * u, y - ry * 0.32 * u, 2, x, y, ry * u, [
+        [0, "rgba(255,255,255,0.92)"], [0.16, color], [0.72, color], [1, "rgba(0,0,0,0.52)"],
+      ]);
+      ctx.beginPath();
+      ctx.ellipse(x, y, rx * u, ry * u, (index % 3 - 1) * 0.08, 0, Math.PI * 2);
+      ctx.fillStyle = g;
+      ctx.fill();
+      ctx.strokeStyle = "rgba(255,246,215,0.28)";
+      ctx.lineWidth = 1.4 * u;
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(x, y + ry * u);
+      ctx.quadraticCurveTo(cx + ox * 0.45 * u, cy + 190 * u, cx, cy + 244 * u);
+      ctx.strokeStyle = "rgba(232,199,119,0.78)";
+      ctx.lineWidth = 1.3 * u;
+      ctx.stroke();
+    });
+    grain(ctx, box, 0.045, 719);
+  }
+
   /* ---------------- 5. Theme aura (abstract) ---------------- */
   function paintAura(ctx, box, opts) {
     const { cx, cy, r } = box;
@@ -2321,12 +2444,50 @@ const Centerpieces = (() => {
     grain(ctx, box, 0.05, 55);
   }
 
+  /* ---------------- realistic asset presentation ---------------- */
+  // Draws a bundled photographic centrepiece supplied under
+  // assets/centerpieces/). Cover-fits the image into the same box the
+  // procedural painters fill, applies a soft theme-colour wash so a stock
+  // asset still reads as belonging to the selected theme, and honours the
+  // optional monogram the procedural painters also support.
+  function paintRealisticAsset(ctx, box, img, opts) {
+    const { cx, cy, r } = box;
+    const size = r * 2;
+    // Transparent product cutouts should remain fully visible. A contain
+    // fit avoids clipping rose leaves, ribbons, candle flames or balloon
+    // strings at the circular medallion edge.
+    const contain = Math.min(size / img.width, size / img.height) * 0.92;
+    const dw = img.width * contain;
+    const dh = img.height * contain;
+    const backing = rad(ctx, cx, cy - r * 0.12, r * 0.08, cx, cy, r, [
+      [0, withAlpha(opts.theme.palette.secondary, 0.22)],
+      [0.58, withAlpha(opts.theme.background.top, 0.7)],
+      [1, withAlpha(opts.theme.background.bottom, 0.94)],
+    ]);
+    ctx.fillStyle = backing;
+    ctx.fillRect(cx - r, cy - r, size, size);
+    ctx.drawImage(img, cx - dw / 2, cy - dh / 2, dw, dh);
+
+    // Gentle theme tint. If this runtime doesn't honour "overlay" the
+    // composite operation is simply ignored per spec (no throw), so this
+    // degrades to a faint flat wash rather than failing.
+    ctx.save();
+    ctx.globalAlpha = 0.14;
+    ctx.globalCompositeOperation = "overlay";
+    ctx.fillStyle = opts.theme.palette.secondary;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+  }
+
   /* ---------------- public API ---------------- */
   const PAINTERS = {
     "belgian-gold-cake": paintCake,
     "velvet-roses": paintRoses,
     "silk-gift-box": paintGiftBox,
-    "champagne-gala": paintChampagne,
+    "champagne-gala": paintBalloons,
     "theme-aura": paintAura,
   };
 
@@ -2339,11 +2500,27 @@ const Centerpieces = (() => {
     return EMOTION_MAP[GreetingGenerator.normalizeEmotion(emotion)] || "velvet-roses";
   }
 
-  function paint(ctx, box, opts) {
-    const painter = PAINTERS[resolveId(opts.id, opts.emotion)] || paintRoses;
+  // Tries a real photographic asset first (see CenterpieceAssetResolver);
+  // falls back to the matching procedural painter when none is bundled or
+  // it fails to load/decode. Always resolves — never rejects — so a
+  // missing or corrupt asset file can never break a render.
+  async function paint(ctx, box, opts) {
+    const resolvedId = resolveId(opts.id, opts.emotion);
+    let asset = null;
+    try {
+      asset = await CenterpieceAssetResolver.resolve(resolvedId);
+    } catch (err) {
+      asset = null;
+    }
     ctx.save();
-    painter(ctx, box, opts);
+    if (asset) {
+      paintRealisticAsset(ctx, box, asset, opts);
+    } else {
+      const painter = PAINTERS[resolvedId] || paintRoses;
+      painter(ctx, box, opts);
+    }
     ctx.restore();
+    return { usedRealisticAsset: !!asset, resolvedId };
   }
 
   return { list, paint, resolveId };
@@ -2425,14 +2602,14 @@ const Renderer = (() => {
     ctx.putImageData(imgData, 0, 0);
   }
 
-  function generateMarbleTile(ctx, size, tint) {
+  function generateMarbleTile(ctx, size, tint, veinColor, veinAlpha) {
     ctx.fillStyle = tint;
     ctx.fillRect(0, 0, size, size);
     const rand = mulberry32(7);
     for (let i = 0; i < 6; i++) {
       ctx.save();
-      ctx.globalAlpha = 0.08 + rand() * 0.08;
-      ctx.strokeStyle = "#ffffff";
+      ctx.globalAlpha = (veinAlpha || 0.08) + rand() * (veinAlpha || 0.08);
+      ctx.strokeStyle = veinColor || "#ffffff";
       ctx.lineWidth = 1 + rand() * 2;
       ctx.beginPath();
       let x = rand() * size, y = 0;
@@ -2483,7 +2660,9 @@ const Renderer = (() => {
     const size = quality === "preview" ? 160 : 256;
     let tile;
     if (theme.background.texture === "marble") {
-      tile = getCachedTile("marble-" + theme.id, size, (c) => generateMarbleTile(c, size, theme.background.textureTint));
+      tile = getCachedTile("marble-" + theme.id, size, (c) => generateMarbleTile(
+        c, size, theme.background.textureTint, theme.background.veinColor, theme.background.veinAlpha
+      ));
     } else if (theme.background.texture === "velvet") {
       tile = getCachedTile("velvet-" + theme.id, size, (c) => generateVelvetTile(c, size, theme.background.textureTint));
     } else if (theme.background.texture === "paper") {
@@ -2505,6 +2684,68 @@ const Renderer = (() => {
     ctx.restore();
   }
 
+  // Full-card ivory stone surface for Pearl Marble. Drawing this at card
+  // scale avoids the visibly repeating wallpaper pattern produced by a
+  // small texture tile while retaining deterministic preview/export output.
+  function drawPearlMarbleSurface(ctx) {
+    const rand = mulberry32(1701);
+    ctx.save();
+
+    // Broad pearlescent clouds beneath the mineral veins.
+    for (let i = 0; i < 6; i++) {
+      const x = rand() * W;
+      const y = rand() * H;
+      const radius = 240 + rand() * 380;
+      const cloud = ctx.createRadialGradient(x, y, 0, x, y, radius);
+      cloud.addColorStop(0, i % 2 ? "rgba(255,255,255,0.22)" : "rgba(195,159,103,0.08)");
+      cloud.addColorStop(1, "rgba(255,255,255,0)");
+      ctx.fillStyle = cloud;
+      ctx.fillRect(0, 0, W, H);
+    }
+
+    // Long, irregular mineral seams with a soft umber body and a fine
+    // champagne highlight. Each seam crosses the whole card only once.
+    for (let i = 0; i < 7; i++) {
+      const points = [];
+      let x = -120;
+      let y = 120 + i * 245 + (rand() - 0.5) * 160;
+      points.push([x, y]);
+      for (let s = 1; s <= 8; s++) {
+        x = -120 + s * (W + 240) / 8;
+        y += (rand() - 0.52) * 115;
+        points.push([x, y]);
+      }
+
+      const trace = () => {
+        ctx.beginPath();
+        ctx.moveTo(points[0][0], points[0][1]);
+        for (let p = 1; p < points.length; p++) {
+          const prev = points[p - 1];
+          const cur = points[p];
+          const mx = (prev[0] + cur[0]) / 2;
+          const my = (prev[1] + cur[1]) / 2;
+          ctx.quadraticCurveTo(prev[0], prev[1], mx, my);
+        }
+      };
+
+      trace();
+      ctx.strokeStyle = "rgba(92,61,28,0.09)";
+      ctx.lineWidth = 4 + rand() * 5;
+      ctx.stroke();
+      trace();
+      ctx.strokeStyle = "rgba(176,128,55,0.18)";
+      ctx.lineWidth = 1 + rand() * 1.2;
+      ctx.stroke();
+      trace();
+      ctx.strokeStyle = "rgba(255,255,255,0.32)";
+      ctx.lineWidth = 0.7;
+      ctx.translate(0, -1.5);
+      ctx.stroke();
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+    }
+    ctx.restore();
+  }
+
   /* ---------------- 1-4: Background, texture, vignette ---------------- */
   function renderBackground(ctx, theme, quality) {
     const grad = ctx.createLinearGradient(0, 0, 0, H);
@@ -2513,7 +2754,8 @@ const Renderer = (() => {
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, W, H);
 
-    drawTexture(ctx, theme, quality);
+    if (theme.id === "pearl-marble") drawPearlMarbleSurface(ctx);
+    else drawTexture(ctx, theme, quality);
 
     // Vignette / edge shading
     const vg = ctx.createRadialGradient(W / 2, H * 0.42, H * 0.25, W / 2, H * 0.5, H * 0.75);
@@ -2522,6 +2764,232 @@ const Renderer = (() => {
     vg.addColorStop(1, "rgba(" + vigColor + "," + theme.background.vignette + ")");
     ctx.fillStyle = vg;
     ctx.fillRect(0, 0, W, H);
+  }
+
+  /* ---------------- Luxury border & corner ornaments ----------------
+     Anchored to the existing safe margin (LayoutEngine.SAFE_MARGIN) so the
+     frame never encroaches on print bleed and always leaves the same
+     clearance the text/photo layout already relies on — recipient name,
+     greeting and the centrepiece never compete with it. Composited through
+     the same mask-based foil pipeline as the recipient name and sender
+     signature (compositeFoil, defined below), so every theme gets a real
+     metallic sheen driven by that theme's own foil preset rather than a
+     flat CSS-style outline. This is a fixed, polished theme default —
+     there is no user-facing control for it, matching the app's existing
+     pattern of "quiet" chrome the six themes already carry enough of. */
+  const BORDER_MARGIN = LayoutEngine.SAFE_MARGIN;
+  const BORDER_LINES = [
+    { inset: 0, width: 3.2 },
+    { inset: 10, width: 1.4 },
+    { inset: 18, width: 1 },
+  ];
+  const BORDER_CORNER_SIZE = 96;
+
+  function drawBorderLines(mctx) {
+    mctx.save();
+    mctx.fillStyle = "#fff";
+    mctx.strokeStyle = "#fff";
+    BORDER_LINES.forEach((line) => {
+      const x = BORDER_MARGIN.x + line.inset;
+      const y = BORDER_MARGIN.top + line.inset;
+      const w = W - x - (BORDER_MARGIN.x + line.inset);
+      const h = H - y - (BORDER_MARGIN.bottom + line.inset);
+      mctx.lineWidth = line.width;
+      mctx.strokeRect(x, y, w, h);
+    });
+    mctx.restore();
+  }
+
+  // A restrained botanical flourish authored for the top-left corner at a
+  // reference size of 96px, mirrored into the other three corners by
+  // scaling the context so all four stay perfectly symmetric.
+  function drawCornerFlourish(mctx, size) {
+    const u = size / 96;
+    mctx.save();
+    mctx.fillStyle = "#fff";
+    mctx.strokeStyle = "#fff";
+    mctx.lineCap = "round";
+
+    mctx.lineWidth = 2.6 * u;
+    mctx.beginPath();
+    mctx.moveTo(6 * u, 40 * u);
+    mctx.quadraticCurveTo(6 * u, 6 * u, 40 * u, 6 * u);
+    mctx.stroke();
+
+    mctx.lineWidth = 1.1 * u;
+    mctx.beginPath();
+    mctx.moveTo(14 * u, 54 * u);
+    mctx.quadraticCurveTo(14 * u, 14 * u, 54 * u, 14 * u);
+    mctx.stroke();
+
+    function leaf(x, y, len, rot) {
+      mctx.save();
+      mctx.translate(x, y);
+      mctx.rotate(rot);
+      mctx.beginPath();
+      mctx.moveTo(0, 0);
+      mctx.bezierCurveTo(len * 0.4, -len * 0.3, len * 0.86, -len * 0.16, len, 0);
+      mctx.bezierCurveTo(len * 0.86, len * 0.2, len * 0.4, len * 0.32, 0, 0);
+      mctx.closePath();
+      mctx.fill();
+      mctx.restore();
+    }
+    leaf(24 * u, 24 * u, 30 * u, -0.78);
+    leaf(44 * u, 9 * u, 20 * u, -0.1);
+    leaf(9 * u, 44 * u, 20 * u, -1.48);
+
+    mctx.beginPath();
+    mctx.arc(24 * u, 24 * u, 3.4 * u, 0, Math.PI * 2);
+    mctx.fill();
+    mctx.restore();
+  }
+
+  function drawCorners(mctx) {
+    const size = BORDER_CORNER_SIZE;
+    const left = BORDER_MARGIN.x;
+    const right = W - BORDER_MARGIN.x;
+    const top = BORDER_MARGIN.top;
+    const bottom = H - BORDER_MARGIN.bottom;
+    const placements = [
+      { x: left, y: top, sx: 1, sy: 1 },
+      { x: right, y: top, sx: -1, sy: 1 },
+      { x: left, y: bottom, sx: 1, sy: -1 },
+      { x: right, y: bottom, sx: -1, sy: -1 },
+    ];
+    placements.forEach((p) => {
+      mctx.save();
+      mctx.translate(p.x, p.y);
+      mctx.scale(p.sx, p.sy);
+      drawCornerFlourish(mctx, size);
+      mctx.restore();
+    });
+  }
+
+  // Theme-aware luxury frame: a triple-line border plus four corner
+  // flourishes. `compositeFoil` is defined further below in this module;
+  // as a hoisted function declaration it is callable here regardless of
+  // textual order.
+  function renderLuxuryBorder(ctx, theme, quality) {
+    compositeFoil(ctx, W, H, (mctx) => {
+      drawBorderLines(mctx);
+      drawCorners(mctx);
+    }, {
+      presetId: theme.foilPresetId,
+      mode: "foil",
+      intensity: 82,
+      grain: 28,
+      highlight: 58,
+      shadow: 52,
+      quality,
+    });
+  }
+
+  /* ---------------- Photographic celebration frame ----------------
+     The reference cards place realistic celebration objects around the
+     perimeter while preserving a calm centre for the portrait and copy.
+     These decorations reuse the bundled transparent centrepiece assets,
+     remain fully offline, and are clipped out of the live photo/text zones.
+     Layout sliders therefore remain authoritative: changing portrait size,
+     shape, text position, or text width also changes the exclusion mask. */
+  const THEME_BORDER_DECOR = {
+    "midnight-obsidian": [
+      { id: "champagne-gala", x: 80, y: 230, size: 330, rot: -0.13, alpha: 0.82 },
+      { id: "champagne-gala", x: 1120, y: 250, size: 315, rot: 0.12, alpha: 0.78, flip: true },
+      { id: "silk-gift-box", x: 100, y: 1480, size: 300, rot: -0.08, alpha: 0.86 },
+      { id: "velvet-roses", x: 1110, y: 1450, size: 300, rot: 0.12, alpha: 0.78, flip: true },
+    ],
+    "imperial-emerald": [
+      { id: "velvet-roses", x: 75, y: 245, size: 320, rot: -0.18, alpha: 0.82 },
+      { id: "velvet-roses", x: 1125, y: 305, size: 300, rot: 0.2, alpha: 0.72, flip: true },
+      { id: "silk-gift-box", x: 90, y: 1480, size: 300, rot: -0.08, alpha: 0.9 },
+      { id: "belgian-gold-cake", x: 1115, y: 1470, size: 330, rot: 0.05, alpha: 0.82 },
+    ],
+    "royal-burgundy": [
+      { id: "velvet-roses", x: 70, y: 280, size: 350, rot: -0.2, alpha: 0.92 },
+      { id: "velvet-roses", x: 1130, y: 370, size: 310, rot: 0.22, alpha: 0.82, flip: true },
+      { id: "belgian-gold-cake", x: 90, y: 1480, size: 330, rot: -0.04, alpha: 0.82 },
+      { id: "silk-gift-box", x: 1120, y: 1490, size: 290, rot: 0.08, alpha: 0.82, flip: true },
+    ],
+    "pearl-marble": [
+      { id: "velvet-roses", x: 70, y: 265, size: 315, rot: -0.18, alpha: 0.72 },
+      { id: "champagne-gala", x: 1130, y: 245, size: 300, rot: 0.13, alpha: 0.72, flip: true },
+      { id: "velvet-roses", x: 85, y: 1485, size: 320, rot: -0.08, alpha: 0.7 },
+      { id: "belgian-gold-cake", x: 1110, y: 1470, size: 345, rot: 0.04, alpha: 0.8 },
+    ],
+    "velvet-sapphire": [
+      { id: "champagne-gala", x: 70, y: 250, size: 345, rot: -0.14, alpha: 0.9 },
+      { id: "champagne-gala", x: 1130, y: 300, size: 325, rot: 0.14, alpha: 0.86, flip: true },
+      { id: "silk-gift-box", x: 90, y: 1485, size: 315, rot: -0.08, alpha: 0.92 },
+      { id: "belgian-gold-cake", x: 1115, y: 1475, size: 340, rot: 0.04, alpha: 0.86 },
+    ],
+    "amber-tuscan": [
+      { id: "champagne-gala", x: 70, y: 255, size: 325, rot: -0.13, alpha: 0.76 },
+      { id: "velvet-roses", x: 1130, y: 310, size: 315, rot: 0.2, alpha: 0.75, flip: true },
+      { id: "belgian-gold-cake", x: 85, y: 1480, size: 345, rot: -0.04, alpha: 0.86 },
+      { id: "silk-gift-box", x: 1120, y: 1490, size: 300, rot: 0.08, alpha: 0.84, flip: true },
+    ],
+  };
+
+  function getTextProtectionGeometry(project) {
+    const pairing = FontPairings.getPairing(project.typography.pairingId);
+    const margin = LayoutEngine.SAFE_MARGIN.x;
+    const maxWidth = (W - margin * 2) * (project.layout.textMaxWidth || pairing.maxTextWidthRatio || 0.8);
+    const geo = getArtGeometry(project);
+    const anchored = 960 + (project.layout.textPosition - 0.62) * 400;
+    const shift = Utils.clamp(project.layout.textShift || 0, -90, 90);
+    const top = Utils.clamp(Math.max(geo.bottom + 56, anchored) + shift, geo.bottom + 24, H - 320);
+    return {
+      x: W / 2 - maxWidth / 2 - 30,
+      y: top - 26,
+      width: maxWidth + 60,
+      height: H - top - 44,
+    };
+  }
+
+  function drawBorderAsset(dctx, image, spec) {
+    const size = spec.size;
+    dctx.save();
+    dctx.translate(spec.x, spec.y);
+    dctx.rotate(spec.rot || 0);
+    dctx.scale(spec.flip ? -1 : 1, 1);
+    dctx.globalAlpha = spec.alpha == null ? 1 : spec.alpha;
+    dctx.shadowColor = "rgba(0,0,0,0.24)";
+    dctx.shadowBlur = 18;
+    dctx.shadowOffsetY = 10;
+    dctx.drawImage(image, -size / 2, -size / 2, size, size);
+    dctx.restore();
+  }
+
+  async function renderThemeBorderDecorations(ctx, project, theme) {
+    const specs = THEME_BORDER_DECOR[theme.id] || THEME_BORDER_DECOR["pearl-marble"];
+    const uniqueIds = Array.from(new Set(specs.map((spec) => spec.id)));
+    const loaded = await Promise.all(uniqueIds.map(async (id) => [id, await CenterpieceAssetResolver.resolve(id)]));
+    const images = new Map(loaded);
+    if (!loaded.some((entry) => entry[1])) return;
+
+    const layer = createWorkCanvas(W, H);
+    const dctx = layer.getContext("2d");
+    specs.forEach((spec) => {
+      const image = images.get(spec.id);
+      if (image) drawBorderAsset(dctx, image, spec);
+    });
+
+    // Hard-clear the portrait/centrepiece plus a generous halo around its
+    // frame. The text lane follows the same layout controls as renderTextLayers.
+    dctx.save();
+    dctx.globalCompositeOperation = "destination-out";
+    dctx.fillStyle = "#fff";
+    const art = getArtGeometry(project);
+    artPath(dctx, art, -42);
+    dctx.fill();
+    const text = getTextProtectionGeometry(project);
+    roundRectPath(dctx, text.x, text.y, text.width, text.height, 34);
+    dctx.fill();
+    dctx.restore();
+
+    ctx.save();
+    ctx.drawImage(layer, 0, 0);
+    ctx.restore();
   }
 
   /* ---------------- 5-6: Centerpiece / photo + frame ---------------- */
@@ -2571,8 +3039,8 @@ const Renderer = (() => {
     }
   }
 
-  function renderCenterpieceFallback(ctx, project, theme, geo, monogram) {
-    Centerpieces.paint(ctx, { cx: geo.cx, cy: geo.cy, r: Math.max(geo.width, geo.height) / 2 }, {
+  async function renderCenterpieceFallback(ctx, project, theme, geo, monogram) {
+    await Centerpieces.paint(ctx, { cx: geo.cx, cy: geo.cy, r: Math.max(geo.width, geo.height) / 2 }, {
       id: (project.layout && project.layout.centerpieceId) || "auto",
       emotion: project.content.emotion,
       theme,
@@ -2580,8 +3048,79 @@ const Renderer = (() => {
     });
   }
 
-  async function renderPhoto(ctx, project, theme, photoImage, monogram) {
+  function withAlphaHex(hex, a) {
+    const h = String(hex || "#000").replace("#", "");
+    const n = h.length === 3 ? h.split("").map((c) => c + c).join("") : h;
+    const r = parseInt(n.slice(0, 2), 16) || 0;
+    const g = parseInt(n.slice(2, 4), 16) || 0;
+    const b = parseInt(n.slice(4, 6), 16) || 0;
+    return "rgba(" + r + "," + g + "," + b + "," + a + ")";
+  }
+
+  // Soft radial glow fully behind the medallion — this is what stops the
+  // card reading as "a photo floating over an empty background". Drawn
+  // before the medallion's own shadow/clip/content, so it is invisible
+  // wherever the opaque photo or centrepiece artwork actually covers it;
+  // it only shows in the surrounding dead space.
+  function drawMedallionHalo(ctx, theme, geo) {
+    const maxR = Math.max(geo.width, geo.height) / 2;
+    const g = ctx.createRadialGradient(geo.cx, geo.cy, maxR * 0.55, geo.cx, geo.cy, maxR * 1.55);
+    g.addColorStop(0, withAlphaHex(theme.palette.secondary, 0.22));
+    g.addColorStop(0.55, withAlphaHex(theme.palette.secondary, 0.08));
+    g.addColorStop(1, withAlphaHex(theme.palette.secondary, 0));
+    ctx.save();
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(geo.cx, geo.cy, maxR * 1.55, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawSparkle(ctx, x, y, r) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.beginPath();
+    ctx.moveTo(0, -r);
+    ctx.quadraticCurveTo(r * 0.18, -r * 0.18, r, 0);
+    ctx.quadraticCurveTo(r * 0.18, r * 0.18, 0, r);
+    ctx.quadraticCurveTo(-r * 0.18, r * 0.18, -r, 0);
+    ctx.quadraticCurveTo(-r * 0.18, -r * 0.18, 0, -r);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // A fourth, further-out ring plus a handful of deterministic foil-fleck
+  // sparkles just outside the frame, so the medallion reads as a composed
+  // editorial centrepiece rather than a circle pasted onto empty space.
+  // Seeded so preview and export always match. Everything here is drawn
+  // OUTSIDE the mask the photo/centrepiece is clipped to, so it can only
+  // ever surround the photo, never obscure it.
+  function drawMedallionAccents(mctx, geo) {
+    mctx.save();
+    mctx.fillStyle = "#fff";
+    mctx.strokeStyle = "#fff";
+    mctx.lineWidth = 1.6;
+    artPath(mctx, geo, -16);
+    mctx.stroke();
+
+    const rand = mulberry32(9001);
+    const baseR = Math.max(geo.width, geo.height) / 2 + 26;
+    const count = 9;
+    for (let i = 0; i < count; i++) {
+      const a = (i / count) * Math.PI * 2 + rand() * 0.4;
+      const rr = baseR + rand() * 20;
+      const x = geo.cx + Math.cos(a) * rr;
+      const y = geo.cy + Math.sin(a) * rr * (geo.shape === "rect" ? 1.12 : 1);
+      drawSparkle(mctx, x, y, 4 + rand() * 5);
+    }
+    mctx.restore();
+  }
+
+  async function renderPhoto(ctx, project, theme, photoImage, monogram, quality) {
     const geo = getArtGeometry(project);
+
+    drawMedallionHalo(ctx, theme, geo);
 
     // Cast shadow behind the medallion
     ctx.save();
@@ -2592,6 +3131,21 @@ const Renderer = (() => {
     ctx.fillStyle = "rgba(0,0,0,0.001)";
     ctx.fill();
     ctx.restore();
+
+    // A tailored dark mat gives pale card stock enough separation from
+    // bright photographs and prevents the image from overpowering the
+    // metallic frame on Pearl Marble.
+    if (theme.background.light) {
+      ctx.save();
+      artPath(ctx, geo, -9);
+      ctx.lineWidth = 20;
+      ctx.strokeStyle = "rgba(63,39,19,0.84)";
+      ctx.shadowColor = "rgba(45,27,12,0.28)";
+      ctx.shadowBlur = 20;
+      ctx.shadowOffsetY = 8;
+      ctx.stroke();
+      ctx.restore();
+    }
 
     // Masked content
     ctx.save();
@@ -2625,7 +3179,7 @@ const Renderer = (() => {
       ctx.drawImage(photoImage, -drawW / 2 + panX, -drawH / 2 + panY, drawW, drawH);
       ctx.restore();
     } else {
-      renderCenterpieceFallback(ctx, project, theme, geo, monogram);
+      await renderCenterpieceFallback(ctx, project, theme, geo, monogram);
     }
     ctx.restore();
 
@@ -2652,6 +3206,13 @@ const Renderer = (() => {
     ctx.strokeStyle = "rgba(0,0,0,0.35)";
     ctx.stroke();
     ctx.restore();
+
+    // Layered gold ring + sparkle flecks, composited through the same
+    // metallic foil pipeline as the rest of the card's chrome.
+    compositeFoil(ctx, W, H, (mctx) => drawMedallionAccents(mctx, geo), {
+      presetId: theme.foilPresetId, mode: "foil", intensity: 70,
+      grain: 20, highlight: 55, shadow: 40, quality,
+    });
   }
 
   /* ---------------- Foil / Emboss / Deboss compositor ---------------- */
@@ -2840,7 +3401,12 @@ const Renderer = (() => {
     const greetingSource = project.content.autoGreetingEnabled
       ? GreetingGenerator.fallbackFor(project.content.emotion, project.recipient.name)
       : project.content.greeting;
-    const greetingText = Utils.sanitizeText(greetingSource || "", GREETING_MAX_CHARS);
+    // truncateProse (not the plain sanitizeText slice used elsewhere) so
+    // content that arrives already over GREETING_MAX_CHARS — an imported
+    // backup from a different app version, for instance — backs up to a
+    // word boundary and gets an ellipsis instead of stopping mid-word with
+    // no indication anything was cut.
+    const greetingText = Utils.truncateProse(greetingSource || "", GREETING_MAX_CHARS);
     if (greetingText) {
       const GREETING_LINE_RATIO = 1.5;
       const greetingMinSize = 15;
@@ -3004,6 +3570,8 @@ const Renderer = (() => {
 
     ctx.clearRect(0, 0, W, H);
     renderBackground(ctx, theme, quality);
+    await renderThemeBorderDecorations(ctx, project, theme);
+    renderLuxuryBorder(ctx, theme, quality);
 
     renderStampsForLayer(ctx, project, theme, "background", getInitials(project));
 
@@ -3015,7 +3583,7 @@ const Renderer = (() => {
         diagnostics.missingAssets.push(project.photo.assetId);
       }
     }
-    await renderPhoto(ctx, project, theme, photoImage, getInitials(project));
+    await renderPhoto(ctx, project, theme, photoImage, getInitials(project), quality);
 
     const textBoxes = await renderTextLayers(ctx, project, theme, pairing, diagnostics, quality);
 
@@ -3451,6 +4019,36 @@ const ExportModule = (() => {
     setTimeout(() => URL.revokeObjectURL(url), 4000);
   }
 
+  // Chromium may block a second anchor-triggered download because the
+  // expensive canvas render completes after the original click activation
+  // expires. Opening the native Save dialog immediately from the click
+  // keeps every export user-authorized and reliable after theme changes.
+  function canUseSavePicker() {
+    return window.isSecureContext && typeof window.showSaveFilePicker === "function";
+  }
+
+  async function choosePngDestination(filename) {
+    if (!canUseSavePicker()) return null;
+    return window.showSaveFilePicker({
+      suggestedName: filename,
+      types: [{ description: "PNG image", accept: { "image/png": [".png"] } }],
+    });
+  }
+
+  async function savePng(blob, filename, handle) {
+    if (!handle) {
+      downloadBlob(blob, filename);
+      return "downloaded";
+    }
+    const writable = await handle.createWritable();
+    try {
+      await writable.write(blob);
+    } finally {
+      await writable.close();
+    }
+    return "saved";
+  }
+
   function canShareFiles(file) {
     return !!(navigator.canShare && navigator.share && navigator.canShare({ files: [file] }));
   }
@@ -3469,7 +4067,10 @@ const ExportModule = (() => {
     return { blob, filename };
   }
 
-  return { exportPng, exportDigitalCardPackage, downloadBlob, canShareFiles, sharePng, renderExportCanvas, buildFilename };
+  return {
+    exportPng, exportDigitalCardPackage, downloadBlob, canShareFiles, sharePng,
+    renderExportCanvas, buildFilename, canUseSavePicker, choosePngDestination, savePng,
+  };
 })();
 
 /* =========================================================================
@@ -3958,7 +4559,11 @@ const App = (() => {
       toast(btn.dataset.label + " greeting written.");
     });
     dom.greetingText.addEventListener("input", (e) => {
-      const val = Utils.sanitizeText(e.target.value, GREETING_MAX_CHARS);
+      // truncateProse is a no-op here in normal typing (the textarea's own
+      // maxlength already keeps this at or under the cap); it only changes
+      // behavior in the defensive case where something bypasses that,
+      // where it backs up to a word boundary instead of cutting mid-word.
+      const val = Utils.truncateProse(e.target.value, GREETING_MAX_CHARS);
       dom.greetingCount.textContent = val.length + " / " + GREETING_MAX_CHARS;
       StateStore.update((p) => { p.content.greeting = val; }, { skipHistory: true });
     });
@@ -3980,6 +4585,7 @@ const App = (() => {
     const sliderBindings = [
       [dom.recipientSize, "recipient-size-out", (p, v) => { p.typography.recipientSize = v; }],
       [dom.greetingSize, "greeting-size-out", (p, v) => { p.typography.greetingSize = v; }],
+      [dom.senderSize, "sender-size-out", (p, v) => { p.typography.senderSize = v; }],
       [dom.letterSpacing, "letter-spacing-out", (p, v) => { p.typography.letterSpacing = v; }],
       [dom.lineHeight, "line-height-out", (p, v) => { p.typography.lineHeight = v; }],
     ];
@@ -4556,28 +5162,55 @@ const App = (() => {
 
   /* ---------------- Export dialog ---------------- */
   function bindExport() {
+    let lastPngBlob = null, lastPngFilename = null;
+
     dom.openExportBtn.addEventListener("click", () => {
       dom.exportStatus.textContent = "";
+      // Never offer a previously rendered theme through Share after the
+      // user has changed the card and reopened this dialog.
+      lastPngBlob = null;
+      lastPngFilename = null;
       dom.sharePngBtn.hidden = !ExportModule.canShareFiles(new File([""], "x.png", { type: "image/png" }));
       openDialog(dom.exportDialog);
     });
 
-    let lastPngBlob = null, lastPngFilename = null;
-
     dom.exportPngBtn.addEventListener("click", async () => {
+      const project = StateStore.getProject();
+      const theme = ThemeRegistry.getTheme(project.theme.id);
+      const expectedFilename = ExportModule.buildFilename(project, theme);
+      let saveHandle = null;
+      if (ExportModule.canUseSavePicker()) {
+        try {
+          // Must be invoked before any rendering await so the browser keeps
+          // the user's click activation for this second or later export.
+          saveHandle = await ExportModule.choosePngDestination(expectedFilename);
+        } catch (err) {
+          if (err && err.name === "AbortError") {
+            dom.exportStatus.textContent = "Download cancelled.";
+            return;
+          }
+          dom.exportStatus.textContent = "Could not open the Save dialog.";
+          toast("PNG export could not start.", true);
+          return;
+        }
+      }
+
       dom.exportStatus.textContent = "Rendering high-resolution PNG…";
+      dom.exportPngBtn.disabled = true;
       try {
         StateStore.flushAutosave();
-        const { blob, filename, diagnostics } = await ExportModule.exportPng(StateStore.getProject());
+        const { blob, filename, diagnostics } = await ExportModule.exportPng(project);
         lastPngBlob = blob; lastPngFilename = filename;
-        ExportModule.downloadBlob(blob, filename);
+        const result = await ExportModule.savePng(blob, filename, saveHandle);
         dom.exportStatus.textContent = diagnostics.textOverflow
-          ? "Downloaded. Note: some text was tight for its space in this export."
-          : "Downloaded " + filename;
+          ? "PNG " + result + ". Note: some text was tight for its space in this export."
+          : (result === "saved" ? "Saved " : "Downloaded ") + filename;
         dom.sharePngBtn.hidden = !ExportModule.canShareFiles(new File([blob], filename, { type: "image/png" }));
       } catch (err) {
         dom.exportStatus.textContent = "Export failed: " + (err.message || "unknown error.");
         toast("PNG export failed.", true);
+      } finally {
+        dom.exportPngBtn.disabled = false;
       }
     });
 
@@ -4666,6 +5299,8 @@ const App = (() => {
     dom.recipientSizeOut.textContent = project.typography.recipientSize;
     dom.greetingSize.value = project.typography.greetingSize;
     dom.greetingSizeOut.textContent = project.typography.greetingSize;
+    dom.senderSize.value = project.typography.senderSize;
+    dom.senderSizeOut.textContent = project.typography.senderSize;
     dom.letterSpacing.value = project.typography.letterSpacing;
     dom.letterSpacingOut.textContent = project.typography.letterSpacing;
     dom.lineHeight.value = project.typography.lineHeight;
@@ -4806,6 +5441,7 @@ const App = (() => {
       moodSelect: $("#mood-select"), pairingList: $("#pairing-list"),
       recipientSize: $("#recipient-size"), recipientSizeOut: $("#recipient-size-out"),
       greetingSize: $("#greeting-size"), greetingSizeOut: $("#greeting-size-out"),
+      senderSize: $("#sender-size"), senderSizeOut: $("#sender-size-out"),
       letterSpacing: $("#letter-spacing"), letterSpacingOut: $("#letter-spacing-out"),
       lineHeight: $("#line-height"), lineHeightOut: $("#line-height-out"),
 
