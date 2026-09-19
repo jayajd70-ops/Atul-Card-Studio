@@ -3616,19 +3616,30 @@ const Renderer = (() => {
       });
       if (senderFit.overflow) diagnostics.textOverflow = true;
       if (senderFit.clamped) diagnostics.textClamped = true;
-      const senderMask = createWorkCanvas(W, H);
-      const smCtx = senderMask.getContext("2d");
-      smCtx.fillStyle = "#fff";
-      LayoutEngine.drawLines(smCtx, senderFit.lines, {
-        fontFamily: pairing.signatureFont, weight: "500",
-        size: senderFit.size, letterSpacing: senderFit.letterSpacing, lineHeight: 1.3,
-        cx, startY: signY,
-      });
       boxes.push(textBoxToLayoutBox("sender-signature", cx, signY - senderFit.size, senderFit.maxLineWidth, senderFit.size * 1.3, 95));
-      compositeFoil(ctx, W, H, (mctx) => mctx.drawImage(senderMask, 0, 0), {
-        presetId: project.foil.presetId, mode: project.foil.mode, intensity: project.foil.intensity * 0.85,
-        grain: project.foil.grain, highlight: project.foil.highlight, shadow: project.foil.shadow, quality,
-      });
+      if (theme.background && theme.background.light) {
+        ctx.save();
+        ctx.fillStyle = theme.palette.mutedText;
+        LayoutEngine.drawLines(ctx, senderFit.lines, {
+          fontFamily: pairing.signatureFont, weight: "500",
+          size: senderFit.size, letterSpacing: senderFit.letterSpacing, lineHeight: 1.3,
+          cx, startY: signY,
+        });
+        ctx.restore();
+      } else {
+        const senderMask = createWorkCanvas(W, H);
+        const smCtx = senderMask.getContext("2d");
+        smCtx.fillStyle = "#fff";
+        LayoutEngine.drawLines(smCtx, senderFit.lines, {
+          fontFamily: pairing.signatureFont, weight: "500",
+          size: senderFit.size, letterSpacing: senderFit.letterSpacing, lineHeight: 1.3,
+          cx, startY: signY,
+        });
+        compositeFoil(ctx, W, H, (mctx) => mctx.drawImage(senderMask, 0, 0), {
+          presetId: project.foil.presetId, mode: project.foil.mode, intensity: project.foil.intensity * 0.85,
+          grain: project.foil.grain, highlight: project.foil.highlight, shadow: project.foil.shadow, quality,
+        });
+      }
     }
 
     return boxes;

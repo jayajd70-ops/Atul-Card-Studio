@@ -461,6 +461,13 @@ select {
   color: var(--paper-100);
   font-size: 14px;
 }
+select {
+  color-scheme: dark;
+}
+select option {
+  background-color: var(--ink-700);
+  color: var(--paper-100);
+}
 textarea { min-height: 88px; resize: vertical; }
 input[type="text"]:focus, textarea:focus, select:focus { border-color: var(--border-glass-strong); }
 
