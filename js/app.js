@@ -1067,9 +1067,10 @@ function createDefaultProject(overrides) {
       textPosition: 0.62,
       textMaxWidth: 0.8,
       // Layout-balance controls: centrepiece diameter in canvas px and a
-      // vertical nudge (px) applied to the whole text block.
+      // vertical and horizontal nudge (px) applied to the whole text block.
       centerpieceSize: 620,
       textShift: 0,
+      textShiftX: 0,
       centerpieceId: "auto",
       photoShape: "circle",
     },
@@ -1334,6 +1335,7 @@ const Migrations = (() => {
         {
           centerpieceSize: (record.layout && record.layout.centerpieceSize) || 620,
           textShift: (record.layout && record.layout.textShift) || 0,
+          textShiftX: (record.layout && record.layout.textShiftX) || 0,
           centerpieceId: (record.layout && record.layout.centerpieceId) || "auto",
           photoShape: (record.layout && record.layout.photoShape) || "circle",
         }
@@ -1344,6 +1346,10 @@ const Migrations = (() => {
         if (record.photo.rotation == null) record.photo.rotation = 0;
       }
       v = 2;
+    }
+
+    if (record.layout && record.layout.textShiftX == null) {
+      record.layout.textShiftX = 0;
     }
 
     if (v < CURRENT_SCHEMA_VERSION) {
@@ -1632,10 +1638,18 @@ const LayoutEngine = (() => {
     return { resolved, violations };
   }
 
+  function getMaxTextShiftX(textMaxWidth) {
+    const ratio = Utils.clamp(Number(textMaxWidth) || 0.8, 0.55, 0.95);
+    const safeWidth = CANVAS_W - SAFE_MARGIN.x * 2;
+    const textWidth = safeWidth * ratio;
+    const availableSlack = Math.max(0, (safeWidth - textWidth) / 2);
+    return Math.min(120, Math.floor(availableSlack));
+  }
+
   return {
     CANVAS_W, CANVAS_H, SAFE_MARGIN, NATIVE_LETTER_SPACING,
     measureTextWidth, wrapText, measureWrappedText, fitText, drawLines,
-    ellipsizeToWidth, clampResult,
+    ellipsizeToWidth, clampResult, getMaxTextShiftX,
     getSafeZone, boxesOverlap, detectCollisions, isOutsideSafeZone, autoArrange,
   };
 })();
@@ -2895,38 +2909,38 @@ const Renderer = (() => {
     "midnight-obsidian": [
       { id: "champagne-gala", x: 80, y: 230, size: 330, rot: -0.13, alpha: 0.82 },
       { id: "champagne-gala", x: 1120, y: 250, size: 315, rot: 0.12, alpha: 0.78, flip: true },
-      { id: "silk-gift-box", x: 100, y: 1480, size: 300, rot: -0.08, alpha: 0.86 },
-      { id: "velvet-roses", x: 1110, y: 1450, size: 300, rot: 0.12, alpha: 0.78, flip: true },
+      { id: "silk-gift-box", x: 145, y: 1495, size: 260, rot: -0.08, alpha: 0.86 },
+      { id: "velvet-roses", x: 1055, y: 1485, size: 260, rot: 0.12, alpha: 0.78, flip: true },
     ],
     "imperial-emerald": [
       { id: "velvet-roses", x: 75, y: 245, size: 320, rot: -0.18, alpha: 0.82 },
       { id: "velvet-roses", x: 1125, y: 305, size: 300, rot: 0.2, alpha: 0.72, flip: true },
-      { id: "silk-gift-box", x: 90, y: 1480, size: 300, rot: -0.08, alpha: 0.9 },
-      { id: "belgian-gold-cake", x: 1115, y: 1470, size: 330, rot: 0.05, alpha: 0.82 },
+      { id: "silk-gift-box", x: 140, y: 1495, size: 260, rot: -0.08, alpha: 0.9 },
+      { id: "belgian-gold-cake", x: 1055, y: 1485, size: 270, rot: 0.05, alpha: 0.82 },
     ],
     "royal-burgundy": [
       { id: "velvet-roses", x: 70, y: 280, size: 350, rot: -0.2, alpha: 0.92 },
       { id: "velvet-roses", x: 1130, y: 370, size: 310, rot: 0.22, alpha: 0.82, flip: true },
-      { id: "belgian-gold-cake", x: 90, y: 1480, size: 330, rot: -0.04, alpha: 0.82 },
-      { id: "silk-gift-box", x: 1120, y: 1490, size: 290, rot: 0.08, alpha: 0.82, flip: true },
+      { id: "belgian-gold-cake", x: 145, y: 1490, size: 270, rot: -0.04, alpha: 0.82 },
+      { id: "silk-gift-box", x: 1055, y: 1495, size: 255, rot: 0.08, alpha: 0.82, flip: true },
     ],
     "pearl-marble": [
       { id: "velvet-roses", x: 70, y: 265, size: 315, rot: -0.18, alpha: 0.72 },
       { id: "champagne-gala", x: 1130, y: 245, size: 300, rot: 0.13, alpha: 0.72, flip: true },
-      { id: "velvet-roses", x: 85, y: 1485, size: 320, rot: -0.08, alpha: 0.7 },
-      { id: "belgian-gold-cake", x: 1110, y: 1470, size: 345, rot: 0.04, alpha: 0.8 },
+      { id: "velvet-roses", x: 140, y: 1495, size: 265, rot: -0.08, alpha: 0.7 },
+      { id: "belgian-gold-cake", x: 1055, y: 1485, size: 275, rot: 0.04, alpha: 0.8 },
     ],
     "velvet-sapphire": [
       { id: "champagne-gala", x: 70, y: 250, size: 345, rot: -0.14, alpha: 0.9 },
       { id: "champagne-gala", x: 1130, y: 300, size: 325, rot: 0.14, alpha: 0.86, flip: true },
-      { id: "silk-gift-box", x: 90, y: 1485, size: 315, rot: -0.08, alpha: 0.92 },
-      { id: "belgian-gold-cake", x: 1115, y: 1475, size: 340, rot: 0.04, alpha: 0.86 },
+      { id: "silk-gift-box", x: 140, y: 1495, size: 265, rot: -0.08, alpha: 0.92 },
+      { id: "belgian-gold-cake", x: 1055, y: 1490, size: 275, rot: 0.04, alpha: 0.86 },
     ],
     "amber-tuscan": [
       { id: "champagne-gala", x: 70, y: 255, size: 325, rot: -0.13, alpha: 0.76 },
       { id: "velvet-roses", x: 1130, y: 310, size: 315, rot: 0.2, alpha: 0.75, flip: true },
-      { id: "belgian-gold-cake", x: 85, y: 1480, size: 345, rot: -0.04, alpha: 0.86 },
-      { id: "silk-gift-box", x: 1120, y: 1490, size: 300, rot: 0.08, alpha: 0.84, flip: true },
+      { id: "belgian-gold-cake", x: 140, y: 1490, size: 275, rot: -0.04, alpha: 0.86 },
+      { id: "silk-gift-box", x: 1055, y: 1495, size: 260, rot: 0.08, alpha: 0.84, flip: true },
     ],
   };
 
@@ -2934,15 +2948,60 @@ const Renderer = (() => {
     const pairing = FontPairings.getPairing(project.typography.pairingId);
     const margin = LayoutEngine.SAFE_MARGIN.x;
     const maxWidth = (W - margin * 2) * (project.layout.textMaxWidth || pairing.maxTextWidthRatio || 0.8);
+    const maxShiftX = LayoutEngine.getMaxTextShiftX(project.layout.textMaxWidth);
+    const shiftX = Utils.clamp(project.layout.textShiftX || 0, -maxShiftX, maxShiftX);
     const geo = getArtGeometry(project);
     const anchored = 960 + (project.layout.textPosition - 0.62) * 400;
     const shift = Utils.clamp(project.layout.textShift || 0, -90, 90);
-    const top = Utils.clamp(Math.max(geo.bottom + 56, anchored) + shift, geo.bottom + 24, H - 320);
+    const blockTop = Utils.clamp(Math.max(geo.bottom + 56, anchored) + shift, geo.bottom + 24, H - 320);
+
+    const measureCtx = document.createElement("canvas").getContext("2d");
+    let textHeight = 0;
+
+    const recipientText = Utils.sanitizeText(project.recipient.name || "Dear Friend", 40);
+    const recipientFit = LayoutEngine.fitText(measureCtx, {
+      text: recipientText,
+      fontFamily: pairing.recipientFont,
+      weight: pairing.recipientWeight,
+      maxSize: project.typography.recipientSize,
+      minSize: 28,
+      maxWidth,
+      maxLines: 2,
+      letterSpacingStart: project.typography.letterSpacing,
+    });
+    const recipientLineHeight = recipientFit.size * (project.typography.lineHeight || pairing.lineHeight);
+    textHeight += recipientFit.lines.length * recipientLineHeight + 26;
+
+    const greetingSource = project.content.autoGreetingEnabled
+      ? GreetingGenerator.fallbackFor(project.content.emotion, project.recipient.name)
+      : project.content.greeting;
+    const greetingText = Utils.truncateProse(greetingSource || "", GREETING_MAX_CHARS);
+    if (greetingText) {
+      const signatureTop = H - 150;
+      const availableHeight = Math.max(1.5 * 15, signatureTop - 46 - (blockTop + textHeight));
+      const linesThatFit = (size) => Math.max(1, Math.floor(availableHeight / (size * 1.5)));
+      let greetingFit = LayoutEngine.fitText(measureCtx, {
+        text: greetingText,
+        fontFamily: pairing.greetingFont,
+        weight: pairing.greetingWeight,
+        maxSize: project.typography.greetingSize,
+        minSize: 15,
+        maxWidth: maxWidth * 0.92,
+        maxLines: linesThatFit(15),
+        letterSpacingStart: 0,
+      });
+      textHeight += greetingFit.lines.length * (greetingFit.size * 1.5) + 20;
+    }
+
+    if (project.recipient.relationship) {
+      textHeight += 46;
+    }
+
     return {
-      x: W / 2 - maxWidth / 2 - 30,
-      y: top - 26,
-      width: maxWidth + 60,
-      height: H - top - 44,
+      x: W / 2 + shiftX - maxWidth / 2 - 20,
+      y: blockTop - 20,
+      width: maxWidth + 40,
+      height: Math.max(80, textHeight + 36),
     };
   }
 
@@ -3168,11 +3227,14 @@ const Renderer = (() => {
       const drawW = photoImage.width * scale;
       const drawH = photoImage.height * scale;
 
-      // Pan is expressed as -1..1 of the mask's half-size, then limited to
-      // the slack the current zoom actually provides so panning cannot drag
-      // the image edge into view.
-      const slackX = Math.max(0, (drawW - geo.width) / 2);
-      const slackY = Math.max(0, (drawH - geo.height) / 2);
+      // In rotated local coordinates, calculate the enclosing box of the mask:
+      const maskRotW = geo.width * Math.abs(Math.cos(rotation)) + geo.height * Math.abs(Math.sin(rotation));
+      const maskRotH = geo.width * Math.abs(Math.sin(rotation)) + geo.height * Math.abs(Math.cos(rotation));
+
+      // Pan is expressed as -1..1 of the available travel slack, guaranteeing
+      // zero exposure of empty mask areas at any zoom level or rotation angle.
+      const slackX = Math.max(0, (drawW - maskRotW) / 2);
+      const slackY = Math.max(0, (drawH - maskRotH) / 2);
       const panX = Utils.clamp(p.panX || 0, -1, 1) * slackX;
       const panY = Utils.clamp(p.panY || 0, -1, 1) * slackY;
 
@@ -3344,7 +3406,8 @@ const Renderer = (() => {
   async function renderTextLayers(ctx, project, theme, pairing, diagnostics, quality) {
     const margin = LayoutEngine.SAFE_MARGIN.x;
     const maxWidth = (W - margin * 2) * (project.layout.textMaxWidth || pairing.maxTextWidthRatio || 0.8);
-    const cx = W / 2;
+    const maxShiftX = LayoutEngine.getMaxTextShiftX(project.layout.textMaxWidth);
+    const cx = W / 2 + Utils.clamp(project.layout.textShiftX || 0, -maxShiftX, maxShiftX);
 
     // The text block starts below the centrepiece, never above its baseline
     // position, and is then nudged by the layout-balance shift. Clamped so
@@ -4699,13 +4762,26 @@ const App = (() => {
     const bindings = [
       [dom.layoutPhotoSize, dom.layoutPhotoSizeOut, (p, v) => { p.layout.centerpieceSize = v; }, (v) => Math.round(v)],
       [dom.layoutTextShift, dom.layoutTextShiftOut, (p, v) => { p.layout.textShift = v; }, (v) => Math.round(v)],
+      [dom.layoutTextShiftX, dom.layoutTextShiftXOut, (p, v) => { p.layout.textShiftX = v; }, (v) => Math.round(v)],
       [dom.layoutTextWidth, dom.layoutTextWidthOut, (p, v) => { p.layout.textMaxWidth = v / 100; }, (v) => Math.round(v)],
     ];
     bindings.forEach(([el, out, apply, format]) => {
       el.addEventListener("input", () => {
         const v = parseFloat(el.value);
         out.textContent = format(v);
-        StateStore.update((p) => apply(p, v), { skipHistory: true });
+        StateStore.update((p) => {
+          apply(p, v);
+          if (el === dom.layoutTextWidth) {
+            const maxShiftX = LayoutEngine.getMaxTextShiftX(p.layout.textMaxWidth);
+            p.layout.textShiftX = Utils.clamp(p.layout.textShiftX || 0, -maxShiftX, maxShiftX);
+            if (dom.layoutTextShiftX) {
+              dom.layoutTextShiftX.min = -maxShiftX;
+              dom.layoutTextShiftX.max = maxShiftX;
+              dom.layoutTextShiftX.value = p.layout.textShiftX;
+              dom.layoutTextShiftXOut.textContent = Math.round(p.layout.textShiftX);
+            }
+          }
+        }, { skipHistory: true });
       });
       el.addEventListener("change", () => StateStore.update(() => {}));
     });
@@ -4714,6 +4790,7 @@ const App = (() => {
       StateStore.update((p) => {
         p.layout.centerpieceSize = 620;
         p.layout.textShift = 0;
+        p.layout.textShiftX = 0;
         p.layout.textMaxWidth = 0.8;
       }, { reason: "layout-reset" });
       syncLayoutControls(StateStore.getProject());
@@ -5266,13 +5343,24 @@ const App = (() => {
   function syncLayoutControls(project) {
     const size = project.layout.centerpieceSize || 620;
     const shift = project.layout.textShift || 0;
-    const width = Math.round((project.layout.textMaxWidth || 0.8) * 100);
+    const widthRatio = project.layout.textMaxWidth || 0.8;
+    const widthPercent = Math.round(widthRatio * 100);
+    const maxShiftX = LayoutEngine.getMaxTextShiftX(widthRatio);
+    const shiftX = Utils.clamp(project.layout.textShiftX || 0, -maxShiftX, maxShiftX);
+    project.layout.textShiftX = shiftX;
+
     dom.layoutPhotoSize.value = size;
     dom.layoutPhotoSizeOut.textContent = Math.round(size);
     dom.layoutTextShift.value = shift;
     dom.layoutTextShiftOut.textContent = Math.round(shift);
-    dom.layoutTextWidth.value = width;
-    dom.layoutTextWidthOut.textContent = width;
+    if (dom.layoutTextShiftX) {
+      dom.layoutTextShiftX.min = -maxShiftX;
+      dom.layoutTextShiftX.max = maxShiftX;
+      dom.layoutTextShiftX.value = shiftX;
+      dom.layoutTextShiftXOut.textContent = Math.round(shiftX);
+    }
+    dom.layoutTextWidth.value = widthPercent;
+    dom.layoutTextWidthOut.textContent = widthPercent;
   }
 
   function syncControlsFromState(project) {
@@ -5461,6 +5549,7 @@ const App = (() => {
 
       layoutPhotoSize: $("#layout-photo-size"), layoutPhotoSizeOut: $("#layout-photo-size-out"),
       layoutTextShift: $("#layout-text-shift"), layoutTextShiftOut: $("#layout-text-shift-out"),
+      layoutTextShiftX: $("#layout-text-shift-x"), layoutTextShiftXOut: $("#layout-text-shift-x-out"),
       layoutTextWidth: $("#layout-text-width"), layoutTextWidthOut: $("#layout-text-width-out"),
       resetLayoutBtn: $("#reset-layout-btn"),
 

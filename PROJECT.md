@@ -1,0 +1,511 @@
+# Atul Card Studio PWA — Master Project Specification
+
+## 1. Project Identity & Baseline
+
+**Project:** Atul Card Studio PWA  
+**Working product name:** Atul Card Studio  
+**Status:** Existing application under controlled improvement  
+**Version:** 1.3.1  
+**Branch:** `main`  
+**Baseline commit:** `06f7183`  
+**Final branding:** To be decided
+
+Atul Card Studio PWA already exists and was developed with ChatGPT. Improve this application incrementally; do not rebuild it from scratch or replace it with a reference project.
+
+Do not use **WishCraft** as this project's product name. That name is already used elsewhere. Do not rename the application or repository unless a naming change is explicitly approved. Branding decisions are separate from architecture decisions.
+
+The product is a mobile-first, offline-capable greeting-card studio for personalized cards covering personal occasions and festivals. The same PWA should provide an expanded desktop workspace for detailed editing and advance preparation.
+
+The baseline is Atul Card Studio v1.3.1 on `main` at `06f7183`. Before relying on this baseline for implementation, verify the actual repository, branch, commit, working tree, and running application. Later changes may have moved the repository beyond this documented checkpoint.
+
+### Authority and scope
+
+This document records product direction and protected behavior. **It is not blanket authorization to implement any requirement.** An agent may inspect the repository and report gaps, but may modify code only for a specific approved Current Task and only after its impact analysis and smallest safe plan have been approved.
+
+Status meanings:
+
+- **KEEP / MUST PRESERVE:** Protect verified working behavior.
+- **IMPROVE:** Inspect first; change only an approved, evidenced gap.
+- **ADD:** Desired capability, not permission to build it now.
+- **PENDING / OPTIONAL:** Retain in the specification; do not implement without later approval.
+
+## 2. Existing Working Features — DO NOT BREAK
+
+Inspect and verify the current implementation before changing it. Do not assume a feature is missing because a requirement also mentions it. Preserve working behavior unless the Current Task explicitly authorizes a change.
+
+### Card creation and output
+
+- Recipient/receiver information
+- Relationship information
+- Sender/from information
+- Greeting/message creation and manual editing
+- Existing greeting styles or tones
+- Existing themes and designs
+- Card preview
+- Export
+
+### Typography and appearance
+
+- Existing font, font-size, letter-spacing, and line-height controls
+- Existing text and theme colour controls
+- Existing font pairing and typography behavior
+- Existing foil palettes and effects, including finish, intensity, texture, and highlight controls where present
+- Existing backgrounds, borders, frames, and decorations
+
+Borders and decorations work in v1.3.1. Improve identified gaps without replacing useful behavior unnecessarily.
+
+### Photo workflow
+
+Preserve, where currently supported:
+
+- Photo upload
+- Zoom
+- Horizontal pan/position
+- Vertical pan/position
+- Rotation
+- Masks and shapes
+- Framing and placement controls
+
+Automatic person framing must complement, not replace, manual adjustment.
+
+### No-photo cards
+
+When no photo is selected, preserve the useful decorative-circle or decorative-layout behavior. A no-photo card must look intentionally designed, not like a card with a missing image.
+
+### Editing and state
+
+- Undo and Redo
+- Existing editing controls
+- Existing card state and user-entered content
+- Back navigation that returns to editing without discarding the card, where present
+
+Changing a design should change presentation, not erase the user's work.
+
+### Storage, offline operation, and saved work
+
+- PWA and offline capability
+- Service-worker behavior and existing cache strategy
+- Locally available and self-hosted assets where present
+- Saved-card/Vault behavior
+- Reopening saved work where present
+
+Do not change `sw.js`, asset paths, cache versions, or offline behavior for an unrelated visual or editing task.
+
+### Mobile and desktop
+
+The PWA must continue to work on both mobile and desktop. Mobile is the primary routine-use environment; desktop supports detailed editing and advance preparation. An improvement for one layout must not regress the other.
+
+### Protected state during visual changes
+
+Where applicable, preserve:
+
+- Recipient details
+- Relationship
+- Sender details
+- Generated or edited message
+- Uploaded/captured photo
+- Selected person or focus information
+- Manual photo position, zoom, and rotation
+- Date
+- User adjustments
+
+## 3. Product Requirements
+
+### R1. Expandable Design Library — IMPROVE
+
+Replace the limitation of approximately five or six fixed designs with an expandable greeting-card design library while retaining useful built-in designs.
+
+Required behavior:
+
+- Browse and preview available card designs.
+- Add approved designs over time.
+- Support visual families appropriate to different occasions.
+- Allow preferred designs to be retained and reused.
+- Make retained designs available offline where practical.
+- Do not automatically download a large design collection without an approved acquisition, storage, and cache strategy.
+
+“New” or “daily” designs means fresh greeting-card designs, not daily inspirational content. Whether new designs are created manually, by AI, or acquired online remains undecided.
+
+### R2. Templates, Backgrounds, Borders, and Decorations — IMPROVE
+
+Improve the visual quality and variety of backgrounds, borders, side decorations, frames, and no-photo layouts.
+
+Required behavior:
+
+- Support photo and no-photo design modes.
+- Preserve working border and decoration functions.
+- Preserve and improve the existing decorative-circle behavior when no image is selected.
+- Make no-photo cards look intentionally composed rather than incomplete.
+- Allow occasion-appropriate arrangements and visual styles.
+- Avoid replacing working visual functionality without an evidenced reason.
+
+### R3. Coordinated Theme and Typography — IMPROVE
+
+A template should provide coordinated defaults for background, border, side decorations, font family/style, font size, font colour, decorative colours, and effects. Defaults must maintain readable contrast while allowing manual fine-tuning.
+
+Provide independent font-size controls for:
+
+- Recipient/receiver name
+- Main greeting/message
+- Sender/from name
+
+Changing the recipient font size must not change the sender font size, and changing either must not unintentionally change the message size.
+
+### R4. Expanded Decorations and Emoji Library — IMPROVE
+
+Expand the limited decoration collection without cluttering the routine editor.
+
+Required behavior:
+
+- Retain useful existing decorations.
+- Add occasion-appropriate emojis, symbols, and decorative elements.
+- Group choices into categories such as Birthday, Anniversary/Love, Festivals, Flowers/Nature, Celebration, and General.
+- Allow users to add and remove decorations.
+- Allow size and position adjustment where practical.
+- Keep advanced choices in an optional or collapsible decoration area.
+- Ensure decorations supplement good artwork rather than substitute for it.
+- Do not reset recipient, photo, message, or other content when decorations change.
+
+### R5. Occasion-Aware Message Generator — IMPROVE, HIGH PRIORITY
+
+Message generation must follow this context order:
+
+`Occasion → Sub-occasion/Festival → Relationship → Tone/Mood → Generate → Context validation`
+
+Required behavior:
+
+- Match the selected occasion or festival.
+- Use relationship-aware wording where appropriate.
+- Apply tone inside the selected occasion rather than allowing tone to override context.
+- Support regeneration without resetting unrelated card content.
+- Keep generated text editable and allow a fully manual message.
+- Apply stricter guards to sensitive occasions such as condolence and sympathy.
+- Prevent celebratory, congratulatory, birthday, or “happy to hear” wording on condolence/sympathy cards.
+- Prevent cross-occasion errors such as anniversary text on a Get Well card or Christmas text on a Diwali card.
+
+Semantic correctness is more important than the number of variations.
+
+### R6. Manual Photo Adjustment and Crop — KEEP + IMPROVE
+
+Preserve the existing manual photo editor and integrate it cleanly with R15 Smart Person Focus.
+
+Retain, where supported:
+
+- Upload
+- Zoom
+- Horizontal positioning
+- Vertical positioning
+- Rotation
+- Crop/framing
+- Masks/shapes
+- Reset adjustment
+
+Keep the original image and store framing parameters non-destructively where practical. Manual adjustment must remain available after automatic framing.
+
+Brightness, contrast, saturation, filters, sharpening, beauty effects, and a general photo-enhancement suite are not required. This product composes greeting cards; it is not a full photo editor.
+
+### R7. Persistent Card State — MUST PRESERVE
+
+Changing a design, template, theme, or decoration must not destroy the user's work.
+
+Preserve, where applicable:
+
+- Recipient details
+- Relationship
+- Sender details
+- Message
+- Photo
+- Selected person from a group photo
+- Manual photo adjustments
+- Date
+- Other user-entered card content
+
+A new template may change the background, border, coordinated decorations, theme colours, and template-specific typography defaults or layout. The governing principle is: **change the design, not the user's work.**
+
+### R8. Fine-Tune Card Composition — KEEP + IMPROVE
+
+Provide final composition controls while showing an accurate card preview.
+
+Photo/image controls:
+
+- Size/zoom
+- Independent horizontal position (left/right)
+- Independent vertical position (up/down)
+
+Message-box controls:
+
+- Independent horizontal position (left/right), where the layout permits
+- Independent vertical position (up/down)
+- Message font size
+- Line spacing where appropriate
+- Message-box width/size where technically useful
+
+Name controls:
+
+- Independent recipient-name font size
+- Independent sender-name font size
+
+Moving the image must not unintentionally move the message box. Moving the message box must not reposition the image. Apply sensible bounds so important elements cannot become permanently inaccessible outside the card. Preview and export must match.
+
+### R9. Mobile Navigation and Safe Scrolling — IMPROVE, HIGH PRIORITY
+
+Required behavior:
+
+- Provide clear Back/Previous navigation where appropriate.
+- Provide a convenient return-to-top control on long editing screens.
+- Treat Back/Previous as navigation, not Undo.
+- Preserve current card state when moving backward through the workflow.
+- Warn before leaving if navigation would discard unsaved work.
+- Make sliders and other controls respond to deliberate interaction.
+- Ensure ordinary vertical swipes scroll the page without changing photo position, message position, font size, selected design, decorations, colours, or other settings.
+
+### R10. Personal Occasions and Festivals — ADD/EXPAND
+
+Preferred architecture: one modular Atul Card Studio PWA with a shared Card Studio.
+
+Personal greeting categories may include Birthday, Anniversary, Congratulations, New Baby, New Home, Graduation, Retirement, Get Well, Condolence/Sympathy, and Friendship/Thanks.
+
+Festival categories may include Diwali, Holi, Navratri, Raksha Bandhan, Janmashtami, Ganesh Chaturthi, Christmas, Eid, and other approved festivals.
+
+Use this flow:
+
+`Occasion/Festival → Appropriate templates and message rules → Shared Card Studio → Preview → Save/Export/Share`
+
+Do not duplicate the editor for each occasion. Splitting Personal Greetings and Festivals into two applications is a fallback only if repository inspection and testing demonstrate that the unified architecture creates unacceptable complexity or reliability problems.
+
+### R11. Photo Input and Placement — IMPROVE
+
+Provide two photo sources where supported:
+
+- **Upload Photo:** choose an existing image from a phone or computer.
+- **Take Photo / Camera:** capture a new image directly on a compatible device/browser.
+
+Camera access is optional and device-dependent. If unavailable or denied, upload must continue to work and the application must remain usable.
+
+Both sources must enter the same photo-processing workflow and retain size/zoom, horizontal position, vertical position, and applicable framing controls. This supports taking a photo when meeting someone and preparing a saved card in advance.
+
+### R12. Remove, Replace, and No-Photo Modes — MUST HAVE
+
+- **Remove Photo:** remove only the current photograph and retain all other card data.
+- **Replace Photo:** upload or capture another photograph while retaining recipient, message, theme, date, and other work.
+- **No Photo:** deliberately switch to a designed no-photo presentation rather than leaving an empty placeholder.
+
+Photo operations must not reset the rest of the card. Replacing a photo must clear stale detection or framing data that belongs only to the previous image.
+
+### R13. Undo, Redo, and Previous Screen — KEEP + IMPROVE
+
+Undo and Redo operate on card edits; Back/Previous operates on navigation.
+
+Where practical, Undo/Redo should cover text changes, photo size/position, decorations, theme/template changes, and automatic person framing. A compound automatic action such as Auto-Center should behave as one undoable transaction. Back from Preview should return to Edit with the card unchanged.
+
+### R14. Responsive Mobile and Desktop Workspace — IMPROVE, HIGH PRIORITY
+
+Use one responsive PWA and one card-data model, not separate mobile and desktop applications.
+
+- **Mobile-first:** fast, touch-safe routine card creation, potentially staged as Occasion → Recipient → Design → Message → Photo → Fine Tune → Preview → Save/Share.
+- **Desktop-enhanced:** larger workspace for comparing templates, adjusting decorations, fine-tuning layouts, and preparing cards in advance.
+
+Both layouts must expose the same essential card data and capabilities, with controls reorganized for available space.
+
+### R15. Smart Person Focus — ADD, ON DEMAND
+
+Smart Person Focus is optional during normal use and should not interrupt a routine single-person photo workflow.
+
+When an individual photo is unavailable:
+
+1. User activates Select Person or Focus Person.
+2. The application detects people/faces in a couple or group photo locally where practical.
+3. It presents clear, enlarged, recognizable choices in deterministic order.
+4. The user selects the intended person; the application must not guess the recipient.
+5. Auto-Fit/Auto-Center calculates non-destructive zoom and position suitable for the selected frame shape/layout.
+6. Manual zoom, horizontal pan, and vertical pan remain available.
+
+The user may skip detection and frame the photo manually. The feature should preserve the original image, participate in Undo/Redo, persist through save/reopen where appropriate, clear stale detections after replacement, and render consistently in editor, preview, and export. The Birthday Card Maker Premium implementation is a behavioral reference, not code to copy blindly.
+
+### R16. Self-Hosted Fonts and Offline Assets — KEEP; OPTIONAL ENHANCEMENT
+
+Preserve existing self-hosted fonts, local assets, and offline behavior. Do not replace working local fonts with a runtime Google Fonts/CDN dependency.
+
+Further enhancement is optional and must not delay active work. If a later task introduces required fonts, models, or other runtime assets, prefer local packaging where practical and assess service-worker/cache impact explicitly.
+
+### R17. Automatic and Editable Date — IMPROVE
+
+- Calculate the actual current date at runtime for a new card; never use a permanently hard-coded default.
+- Allow the user to choose another date for advance preparation.
+- Provide a simple Show Date/Hide Date choice.
+- Use an appropriate display format.
+- Preserve the chosen date when changing designs and when saving/reopening the card.
+
+### R18. Optional Creator Footer — PENDING
+
+Retain the concept of an optional footer such as **“Developed and created by [Name]”**, but do not implement it without later explicit approval.
+
+If approved later:
+
+- Creator name must be configurable, not hard-coded.
+- Blank or hidden means no creator attribution in preview/export.
+- A Show/Hide option should be available.
+- The preferred creator name may be stored locally if approved.
+- Creator attribution must remain separate from the card's Sender/From field.
+
+## 4. AI Development Rules
+
+For every proposed implementation task, follow this sequence:
+
+1. **Inspect:** Confirm the exact repository, branch, commit, working-tree state, relevant files, running behavior, and tests. Read this document and the Current Task.
+2. **Report existing:** State what already exists, what was verified working, what is partial, and what is missing. Distinguish evidence from assumptions.
+3. **Impact check:** Identify affected state, rendering, preview/export, mobile/desktop UI, saved data, offline/cache behavior, and related requirements. Note regression and migration risks.
+4. **Smallest safe plan:** Propose the narrowest change that satisfies the approved task while preserving the baseline. Do not perform unrelated cleanup, redesign, dependency replacement, repository restructuring, or branding changes.
+5. **User approval:** Wait for approval of the specific plan before modifying code. Approval of one task does not authorize other requirements.
+6. **Implement:** Make only approved changes. Preserve user data, existing functionality, and established project identity. Do not rebuild from scratch.
+7. **Test:** Test the changed behavior with normal, boundary, error, and unsupported-device/fallback cases relevant to the task.
+8. **Regression test:** Re-test protected related behavior, state preservation, mobile and desktop behavior, preview/export consistency, save/reopen, and offline operation where affected.
+9. **Report:** Provide changed files, behavior before/after, tests and exact results, unresolved risks, and anything not tested. Never call untested behavior successful.
+10. **Suggested Git commit message:** Propose a concise commit message, but do not commit, push, merge, deploy, or alter Git history unless the Current Task explicitly authorizes it.
+
+When requirements conflict or inspection contradicts this document, stop after reporting the evidence and request a decision. Never silently reinterpret the specification.
+
+## 5. Testing & Regression Rules
+
+An approved change is complete only when its feature tests and relevant regression tests pass.
+
+### Required checks for every change
+
+- Verify the requested behavior against explicit acceptance criteria.
+- Re-test previously working features that share state, controls, rendering, storage, or navigation with the change.
+- Verify user-entered content is preserved through affected actions.
+- Test representative mobile and desktop layouts.
+- Confirm preview and exported output match for affected visual behavior.
+- Record PASS, FAIL, or NOT TESTED with evidence; do not infer a result from build success alone.
+
+### Core regression scenarios
+
+1. Create a card with recipient, relationship, sender, edited message, date, photo, and manual adjustments; switch designs repeatedly; verify the content remains intact.
+2. Move image X/Y and message-box X/Y independently; verify one does not move the other and neither becomes irretrievable.
+3. Change recipient, message, and sender font sizes independently; verify no unintended coupling.
+4. Scroll repeatedly on a touch device through the editor; verify no setting changes without deliberate control interaction.
+5. Navigate Edit → Preview → Back; verify the complete card state is preserved. Verify Undo/Redo changes edits, not screens.
+6. Remove, replace, and restore a photo; verify other content persists, no-photo mode looks intentional, and stale person detections are cleared.
+7. For a group photo, select different people; verify distinct, bounded framing; then verify manual adjustment, Undo/Redo, save/reopen, and replacement behavior.
+8. Test message contexts including Condolence, Get Well, Birthday, Anniversary, Diwali, and Christmas; reject cross-occasion or celebratory wording in sensitive contexts.
+9. Verify current-date initialization, date editing, Show/Hide, design switching, and save/reopen.
+10. Test online and offline startup when an approved change affects assets, service worker, caching, saved data, fonts, or local models.
+
+### Visual and device coverage
+
+- Test narrow mobile, wider mobile/tablet where available, and desktop viewport behavior.
+- Check touch targets, scrolling, clipping, overflow, readable contrast, and safe control boundaries.
+- Compare editor, preview, reopened card, and export for affected layouts.
+- Verify unsupported camera access and denied permission fall back cleanly to upload.
+
+### Release boundary
+
+A clean build or source review is not release proof. If deployment is later authorized, verify the actual deployment result, public application version/assets, production subpath behavior, and PWA cache refresh before reporting release success.
+
+## 6. Reference Projects and What to Learn From Each
+
+Reference projects provide behavioral evidence only. Inspect licenses, architecture, compatibility, and current code before reusing any implementation.
+
+### `birthday-card-maker`
+
+Use as a reference for the straightforward Birthday-card workflow, template behavior, direct photo sizing/placement, and useful card-composition patterns. Do not replace Atul Card Studio's more capable editor or copy an older interface wholesale.
+
+### `birthday-card-maker-premium`
+
+Use as the primary behavioral reference for Smart Person Focus: local MediaPipe/BlazeFace face detection, enlarged selectable people, deterministic ordering, non-destructive framing calculations, multiple frame shapes/layouts, manual correction, Undo/Redo as one transaction, save/reopen, photo-replacement cleanup, offline assets, and editor/preview/export consistency.
+
+### `Personal-Greeting`
+
+Use as a related greeting-card implementation for comparing occasion, template, message, personalization, and workflow ideas. It is not the primary application and does not authorize use of the WishCraft name for this project.
+
+### Explicit exclusion: India Inspiration Studio
+
+India Inspiration Studio is a separate 365-day inspirational-message and related-image publishing product. It is not part of Atul Card Studio, must not be merged into it, and must not be used to reinterpret “new designs” as daily inspirational content.
+
+## 7. Pending / Parked Ideas
+
+Parked ideas remain outside implementation scope until explicitly reviewed and promoted into an approved Current Task:
+
+- **R18 Creator Footer:** pending; retain the specification but do not implement.
+- **R16 further font/offline-asset enhancement:** optional; preserve current behavior, with no proactive expansion required.
+- Birthday/anniversary calendar and reminders.
+- People & Events database.
+- Automatic online design acquisition or daily downloads.
+- AI generation strategy for new designs.
+- Daily Inspiration integration; current decision is to keep that product concept separate.
+- Separate Personal Greetings and Festivals apps; fallback only under the evidence threshold in R10.
+- Person/background extraction beyond non-destructive Smart Person Focus.
+- AI upscaling or photo enhancement.
+- Final product branding and any repository/application rename.
+
+Use the decision flow: `Idea → Park → Review → Approve as a specific task → Build`.
+
+## 8. Current Task
+
+**No implementation task is currently authorized.**
+
+The project is at the specification and gap-analysis stage. An AI agent may inspect the exact Atul Card Studio repository and report the current implementation against this document. It must not modify files, install or replace dependencies, change Git state, commit, push, deploy, rename, merge repositories, or implement any requirement until the user approves a specific task and its smallest safe plan.
+
+The next controlled activity is to review this document for accuracy, then perform a read-only repository gap analysis if requested.
+
+## 9. Change / Handover Report Format
+
+Use this format after every investigation or approved change:
+
+```markdown
+# Atul Card Studio — Change / Handover Report
+
+## Task
+- Approved Current Task:
+- Authorization received:
+- Baseline branch and commit:
+- Working-tree state before work:
+
+## Existing Implementation
+- Verified working:
+- Partial behavior:
+- Confirmed gap:
+- Evidence inspected:
+
+## Impact Check
+- State/data affected:
+- UI/layout affected:
+- Preview/export affected:
+- Save/reopen affected:
+- Mobile/desktop affected:
+- Offline/service worker/assets affected:
+- Regression risks:
+
+## Approved Plan
+- Approved scope:
+- Explicitly out of scope:
+
+## Changes Made
+- Files changed:
+- Behavior before:
+- Behavior after:
+- Data or compatibility notes:
+
+## Verification
+- Feature tests and results:
+- Regression tests and results:
+- Mobile result:
+- Desktop result:
+- Preview/export result:
+- Save/reopen result:
+- Offline/PWA result:
+- Not tested:
+
+## Remaining Issues
+- Known limitations:
+- Follow-up decisions required:
+
+## Git / Release
+- Working-tree state after work:
+- Commit/push/deploy performed: No, unless separately authorized
+- Suggested Git commit message:
+```
+
+Handover instruction:
+
+> Read `PROJECT.md`, verify the repository and baseline, and work only on the approved Current Task. First report the existing implementation, impact, and smallest safe plan. Wait for approval before making changes.
