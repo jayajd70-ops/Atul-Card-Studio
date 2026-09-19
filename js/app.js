@@ -2944,20 +2944,24 @@ const Renderer = (() => {
     ],
   };
 
-  function getTextProtectionGeometry(project) {
+  function getTextProtectionRegions(project) {
     const pairing = FontPairings.getPairing(project.typography.pairingId);
     const margin = LayoutEngine.SAFE_MARGIN.x;
     const maxWidth = (W - margin * 2) * (project.layout.textMaxWidth || pairing.maxTextWidthRatio || 0.8);
     const maxShiftX = LayoutEngine.getMaxTextShiftX(project.layout.textMaxWidth);
     const shiftX = Utils.clamp(project.layout.textShiftX || 0, -maxShiftX, maxShiftX);
+    const cx = W / 2 + shiftX;
     const geo = getArtGeometry(project);
+    const signatureTop = H - 150;
     const anchored = 960 + (project.layout.textPosition - 0.62) * 400;
     const shift = Utils.clamp(project.layout.textShift || 0, -90, 90);
-    const blockTop = Utils.clamp(Math.max(geo.bottom + 56, anchored) + shift, geo.bottom + 24, H - 320);
+    const blockTop = Utils.clamp(Math.max(geo.bottom + 56, anchored) + shift, geo.bottom + 24, signatureTop - 170);
 
     const measureCtx = document.createElement("canvas").getContext("2d");
-    let textHeight = 0;
+    const regions = [];
+    let cursorY = blockTop;
 
+    // 1. Recipient Name region (tight actual rendered bounds)
     const recipientText = Utils.sanitizeText(project.recipient.name || "Dear Friend", 40);
     const recipientFit = LayoutEngine.fitText(measureCtx, {
       text: recipientText,
@@ -2970,15 +2974,28 @@ const Renderer = (() => {
       letterSpacingStart: project.typography.letterSpacing,
     });
     const recipientLineHeight = recipientFit.size * (project.typography.lineHeight || pairing.lineHeight);
-    textHeight += recipientFit.lines.length * recipientLineHeight + 26;
+    const recipientHeight = recipientFit.lines.length * recipientLineHeight;
+    const recipientWidth = Math.max(160, recipientFit.maxLineWidth + 32);
+    regions.push({
+      x: cx - recipientWidth / 2,
+      y: cursorY - 12,
+      width: recipientWidth,
+      height: recipientHeight + 24,
+      radius: 18,
+    });
+    cursorY += recipientHeight + 26;
 
+    // 2. Greeting + optional relationship copy region
     const greetingSource = project.content.autoGreetingEnabled
       ? GreetingGenerator.fallbackFor(project.content.emotion, project.recipient.name)
       : project.content.greeting;
     const greetingText = Utils.truncateProse(greetingSource || "", GREETING_MAX_CHARS);
+    let greetingWidth = 0;
+    let greetingHeight = 0;
+    const greetingTop = cursorY;
+
     if (greetingText) {
-      const signatureTop = H - 150;
-      const availableHeight = Math.max(1.5 * 15, signatureTop - 46 - (blockTop + textHeight));
+      const availableHeight = Math.max(1.5 * 15, signatureTop - 46 - cursorY);
       const linesThatFit = (size) => Math.max(1, Math.floor(availableHeight / (size * 1.5)));
       let greetingFit = LayoutEngine.fitText(measureCtx, {
         text: greetingText,
@@ -2990,19 +3007,68 @@ const Renderer = (() => {
         maxLines: linesThatFit(15),
         letterSpacingStart: 0,
       });
-      textHeight += greetingFit.lines.length * (greetingFit.size * 1.5) + 20;
+      const heightLimit = linesThatFit(greetingFit.size);
+      if (greetingFit.lines.length > heightLimit) {
+        greetingFit = LayoutEngine.clampResult(measureCtx, greetingFit, {
+          fontFamily: pairing.greetingFont,
+          weight: pairing.greetingWeight,
+          maxWidth: maxWidth * 0.92,
+          maxLines: heightLimit,
+          letterSpacing: 0,
+        });
+      }
+      const greetingLineHeight = greetingFit.size * 1.5;
+      greetingHeight = greetingFit.lines.length * greetingLineHeight;
+      greetingWidth = greetingFit.maxLineWidth + 32;
+      cursorY += greetingHeight + 20;
     }
 
-    if (project.recipient.relationship) {
-      textHeight += 46;
+    const relationship = Utils.sanitizeText(project.recipient.relationship || "", 40);
+    let relationshipWidth = 0;
+    if (relationship) {
+      measureCtx.font = "500 20px " + pairing.supportFont;
+      relationshipWidth = measureCtx.measureText(relationship.toUpperCase()).width + 36;
+      cursorY += 46;
     }
 
-    return {
-      x: W / 2 + shiftX - maxWidth / 2 - 20,
-      y: blockTop - 20,
-      width: maxWidth + 40,
-      height: Math.max(80, textHeight + 36),
-    };
+    if (greetingHeight > 0 || relationship) {
+      const blockWidth = Math.max(180, Math.max(greetingWidth, relationshipWidth));
+      const totalBlockHeight = (greetingHeight > 0 ? greetingHeight : 0) + (relationship ? 46 : 0) + (greetingHeight > 0 ? 16 : 24);
+      regions.push({
+        x: cx - blockWidth / 2,
+        y: greetingTop - 10,
+        width: blockWidth,
+        height: totalBlockHeight,
+        radius: 22,
+      });
+    }
+
+    // 3. Sender signature region (if present)
+    const senderText = Utils.sanitizeText(project.sender.name || "", 40);
+    if (senderText) {
+      const signY = Math.max(cursorY + 30, signatureTop);
+      const senderFit = LayoutEngine.fitText(measureCtx, {
+        text: "— " + senderText,
+        fontFamily: pairing.signatureFont,
+        weight: "500",
+        maxSize: project.typography.senderSize,
+        minSize: 14,
+        maxWidth: maxWidth * 0.7,
+        maxLines: 1,
+        letterSpacingStart: 0.4,
+      });
+      const senderWidth = Math.max(140, senderFit.maxLineWidth + 28);
+      const senderHeight = senderFit.size * 1.4 + 16;
+      regions.push({
+        x: cx - senderWidth / 2,
+        y: signY - senderFit.size - 8,
+        width: senderWidth,
+        height: senderHeight,
+        radius: 16,
+      });
+    }
+
+    return regions;
   }
 
   function drawBorderAsset(dctx, image, spec) {
@@ -3034,16 +3100,18 @@ const Renderer = (() => {
     });
 
     // Hard-clear the portrait/centrepiece plus a generous halo around its
-    // frame. The text lane follows the same layout controls as renderTextLayers.
+    // frame. The text lane clears only the actual tight bounds of each text group.
     dctx.save();
     dctx.globalCompositeOperation = "destination-out";
     dctx.fillStyle = "#fff";
     const art = getArtGeometry(project);
     artPath(dctx, art, -42);
     dctx.fill();
-    const text = getTextProtectionGeometry(project);
-    roundRectPath(dctx, text.x, text.y, text.width, text.height, 34);
-    dctx.fill();
+    const regions = getTextProtectionRegions(project);
+    regions.forEach((r) => {
+      roundRectPath(dctx, r.x, r.y, r.width, r.height, r.radius || 20);
+      dctx.fill();
+    });
     dctx.restore();
 
     ctx.save();
