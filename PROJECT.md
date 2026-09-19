@@ -350,6 +350,25 @@ If approved later:
 
 ## 4. AI Development Rules
 
+### 4.1 Permission Levels & Authorization Gates
+
+Every AI assistant interaction operates under one of four explicit permission levels:
+
+1. **READ-ONLY:** Inspection, diagnosis, gap analysis, impact analysis, smallest safe plan formulation, test reporting, and verification. **No modifying application files, dependencies, or git state.** Planning and impact analysis belong under this level.
+2. **IMPLEMENT:** Modifying code or documentation strictly to execute an approved smallest safe plan, followed by local verification (running syntax/regression checks and testing on the local dev server). **No staging, commits, pushes, or deployments.**
+3. **COMMIT:** Staging only the specific authorized files and creating a local git commit with an approved commit message. **No pushing or deploying.**
+4. **PUSH / DEPLOY:** Pushing verified local commits to `origin/main` and monitoring/verifying production deployment (e.g., GitHub Pages release).
+
+### 4.2 Mandatory Stop-and-Report Conditions
+
+An AI assistant must immediately **STOP** and report to the user without making changes, committing, or proceeding if any of the following occur:
+- **Scope expansion:** The requested task or implementation reveals additional work beyond the approved plan.
+- **Unexpected modified files:** Git status shows unexpected modified, untracked, or deleted files outside the authorized scope.
+- **Failed checks or tests:** Any syntax check, test suite, regression check, build, or deployment step fails.
+- **New product or design decision:** Ambiguity, trade-offs, or contradictory requirements arise that require a product/design decision.
+
+### 4.3 Task Execution Sequence
+
 For every proposed implementation task, follow this sequence:
 
 1. **Inspect:** Confirm the exact repository, branch, commit, working-tree state, relevant files, running behavior, and tests. Read this document and the Current Task.
@@ -442,7 +461,8 @@ Use the decision flow: `Idea → Park → Review → Approve as a specific task 
 
 ## 8. Current Task
 
-**No implementation task is currently authorized.**
+- **Active Permission Level:** None (Specification & Gap Analysis)
+- **Status:** No implementation task is currently authorized.
 
 The project is at the specification and gap-analysis stage. An AI agent may inspect the exact Atul Card Studio repository and report the current implementation against this document. It must not modify files, install or replace dependencies, change Git state, commit, push, deploy, rename, merge repositories, or implement any requirement until the user approves a specific task and its smallest safe plan.
 
