@@ -469,12 +469,29 @@ Parked ideas remain outside implementation scope until explicitly reviewed and p
 
 Use the decision flow: `Idea → Park → Review → Approve as a specific task → Build`.
 
-## 8. Current Task
+## 8. Task 002A Completion Record
 
-- **Approved Current Task:** Task 002A — Condolence / Sympathy occasion correction and completion
-- **Active Permission Level:** IMPLEMENT
-- **Status:** Implementation authorized; not complete
-- **Authorization boundary:** Local working-tree edits and local verification for Task 002A only. COMMIT, PUSH, DEPLOY, branch changes, reset, restore, clean, and disposal of existing unfinished work are not authorized.
+- **Completed Task:** Task 002A — Condolence / Sympathy occasion correction and completion
+- **Baseline:** `main` at historical commit `06f7183`
+- **Completed commit:** `580a87e` — `fix: isolate condolence state and preserve birthday card data`
+- **Release:** Application, manifest, service worker, and cache version `1.4.0`; schema v3
+- **Published site:** https://jayajd70-ops.github.io/Atul-Card-Studio/
+- **Working-tree result:** Clean after commit
+- **Verification:** Local syntax/static checks passed; local browser acceptance checks passed; public HTTPS browser acceptance checks passed; no page or console errors; service worker installed, controlled the app, and supported offline startup.
+- **Acceptance result:** Birthday state round-trip, Condolence isolation and safety blocking, deterministic designs, relationship matrix, Vault/reload persistence, release metadata, and offline/PWA behavior all passed.
+
+Task 002A is complete. Its implementation, commit, push, deployment, and available regression verification were reported and authorized.
+
+## 9. Current Task
+
+- **Approved Current Task:** None
+- **Active Permission Level:** REPORT-ONLY
+- **Status:** Specification and gap-analysis stage
+- **Authorization boundary:** An agent may inspect the repository, verify behavior, and report findings. No code, asset, configuration, documentation, commit, push, deployment, branch, reset, restore, clean, or disposal change is authorized until a specific new Current Task and smallest safe plan are approved.
+
+No implementation task is currently authorized. The R1–R18 requirements remain product direction, not blanket implementation permission.
+
+### Historical Task 002A Acceptance Criteria
 
 Task 002A acceptance criteria:
 
@@ -488,9 +505,9 @@ Task 002A acceptance criteria:
 - All five approved Condolence PNG assets are included in rendering and offline precaching without optimization or recompression in this task.
 - Existing Birthday behavior remains unchanged except for occasion-neutral output metadata required to support Condolence.
 
-Do not mark Task 002A complete until implementation and available verification have been reported and the owner separately authorizes any later Git or release action.
+These criteria were satisfied and verified before Task 002A was closed.
 
-## 9. Change / Handover Report Format
+## 10. Change / Handover Report Format
 
 Use this format after every investigation or approved change:
 
