@@ -577,10 +577,34 @@ const FoilPresets = (() => {
       ],
       shadow: "#180307", highlight: "#ffe9ec",
     },
+    {
+      id: "condolence-sage", name: "Condolence Sage", internal: true,
+      stops: [
+        { t: 0, c: "#edf3ec" }, { t: 0.24, c: "#b6c7b5" }, { t: 0.5, c: "#78917c" },
+        { t: 0.7, c: "#506957" }, { t: 0.86, c: "#a9bba9" }, { t: 1, c: "#405547" },
+      ],
+      shadow: "#26362b", highlight: "#f7faf6",
+    },
+    {
+      id: "condolence-slate", name: "Condolence Slate", internal: true,
+      stops: [
+        { t: 0, c: "#f2f5f8" }, { t: 0.22, c: "#c1ccd7" }, { t: 0.48, c: "#73879b" },
+        { t: 0.68, c: "#4d6277" }, { t: 0.84, c: "#a8b6c4" }, { t: 1, c: "#3b4d60" },
+      ],
+      shadow: "#1b242e", highlight: "#f8fafc",
+    },
+    {
+      id: "condolence-navy", name: "Condolence Navy", internal: true,
+      stops: [
+        { t: 0, c: "#e7ebef" }, { t: 0.2, c: "#a9b5c1" }, { t: 0.44, c: "#52667b" },
+        { t: 0.66, c: "#263b52" }, { t: 0.82, c: "#718397" }, { t: 1, c: "#172a3d" },
+      ],
+      shadow: "#101b29", highlight: "#f4f6f8",
+    },
   ];
 
   function getPreset(id) { return PRESETS.find((p) => p.id === id) || PRESETS[0]; }
-  function list() { return PRESETS; }
+  function list() { return PRESETS.filter((preset) => !preset.internal); }
 
   return { list, getPreset };
 })();
@@ -1045,9 +1069,9 @@ const ThemeRegistry = (() => {
 // Application version. Shown in the header, stamped onto exported
 // backups, and kept in step with SW_VERSION in sw.js so a released
 // shell and the code inside it always report the same number.
-const APP_VERSION = "1.3.1";
+const APP_VERSION = "1.4.0";
 
-const CURRENT_SCHEMA_VERSION = 2;
+const CURRENT_SCHEMA_VERSION = 3;
 
 function createDefaultProject(overrides) {
   const now = Date.now();
@@ -1057,9 +1081,17 @@ function createDefaultProject(overrides) {
     title: "Untitled Card",
     createdAt: now,
     updatedAt: now,
+    occasion: {
+      id: "birthday",
+      subOccasion: null,
+      contentByOccasion: {
+        birthday: { greeting: "", autoGreetingEnabled: false, emotion: "heartfelt", messageMode: "manual", relationship: "" },
+        condolence: { greeting: "", autoGreetingEnabled: false, emotion: "heartfelt", messageMode: "manual", relationship: "" },
+      },
+    },
     recipient: { name: "", relationship: "" },
     sender: { name: "" },
-    content: { greeting: "", autoGreetingEnabled: false, emotion: "heartfelt" },
+    content: { greeting: "", autoGreetingEnabled: false, emotion: "heartfelt", messageMode: "manual", relationship: "" },
     theme: { id: "midnight-obsidian" },
     photo: null,
     layout: {
@@ -1091,68 +1123,248 @@ function createDefaultProject(overrides) {
 }
 
 /* =========================================================================
+   SECTION: OccasionRegistry
+   Canonical registry of supported occasions, allowed emotions/tones,
+   default centerpiece associations, and sensitivity metadata.
+   ========================================================================= */
+const OccasionRegistry = (() => {
+  const OCCASIONS = [
+    {
+      id: "birthday",
+      label: "Birthday",
+      hint: "Celebratory birthday greetings",
+      isSensitive: false,
+      allowPhoto: true,
+      allowedCenterpieces: ["auto", "belgian-gold-cake", "velvet-roses", "silk-gift-box", "champagne-gala", "theme-aura"],
+      emotions: [
+        { id: "heartfelt", label: "Heartfelt", hint: "Sincere and tender" },
+        { id: "poetic", label: "Poetic", hint: "Lyrical and image-rich" },
+        { id: "professional", label: "Professional", hint: "Warm but workplace-safe" },
+        { id: "playful", label: "Playful", hint: "Light, teasing, fun" },
+        { id: "milestone", label: "Milestone", hint: "For the big ones" },
+      ],
+      defaultCenterpieceMap: {
+        heartfelt: "velvet-roses",
+        poetic: "velvet-roses",
+        professional: "silk-gift-box",
+        playful: "belgian-gold-cake",
+        milestone: "champagne-gala",
+      },
+      fallbackCenterpiece: "velvet-roses",
+    },
+    {
+      id: "condolence",
+      label: "Condolence / Sympathy",
+      hint: "Comforting, respectful sympathy messages",
+      isSensitive: true,
+      allowPhoto: false,
+      emotions: [
+        { id: "heartfelt", label: "Heartfelt", hint: "Deeply caring and gentle" },
+        { id: "comforting", label: "Comforting", hint: "Warmth, peace and solace" },
+        { id: "reverent", label: "Reverent", hint: "Honoring their memory" },
+        { id: "professional", label: "Professional", hint: "Dignified and respectful" },
+      ],
+    },
+  ];
+
+  const CONDOLENCE_DESIGNS = {
+    heartfelt: {
+      composition: "centerpiece", centerpieceId: "white-lilies", showCenterpieceSize: true,
+      borderStyle: "heartfelt", borderPresetId: "gold", recipientPresetId: "gold", haloColor: "#d4af37",
+      geometry: { shape: "circle", centerpieceSize: 620 },
+      textLayout: { maxWidthRatio: 0.8, shiftX: 0, shiftY: 0 },
+      typography: { pairingId: "cinzel-source-sans", recipientSize: 78, greetingSize: 28, senderSize: 36, letterSpacing: 1.4, lineHeight: 1.3 },
+      foil: { mode: "foil", intensity: 85, grain: 35, highlight: 60, shadow: 50 },
+      palette: { text: "#2c2621", muted: "#7c6853", signature: "#5a4836" },
+      background: {
+        top: "#faf7ee", bottom: "#f1e9db", textureKey: "paper-heartfelt",
+        textureTint: "rgba(180, 160, 130, 0.12)", textureAlpha: 0.45,
+        aura: { y0: 0.32, r0: 80, y1: 0.45, r1: 0.65, stops: [[0, "rgba(255, 250, 240, 0.35)"], [0.5, "rgba(244, 235, 220, 0.18)"], [1, "rgba(235, 222, 205, 0)"]] },
+        vignette: { y0: 0.45, r0: 0.3, y1: 0.5, r1: 0.72, stops: [[0, "rgba(180, 150, 110, 0)"], [1, "rgba(160, 135, 100, 0.16)"]] },
+      },
+      decorations: [{ id: "white-lilies-corner", x: 600, y: 880, size: 1180, rot: 0, alpha: 0.88 }],
+    },
+    comforting: {
+      composition: "text-led", centerpieceId: null, showCenterpieceSize: false,
+      borderStyle: "comforting", borderPresetId: "condolence-sage", recipientPresetId: "condolence-sage", haloColor: "#7b927e",
+      geometry: { shape: "circle", centerpieceSize: 620 },
+      textLayout: { maxWidthRatio: 0.8, shiftX: 0, shiftY: 0, blockTop: 500 },
+      typography: { pairingId: "cormorant-inter", recipientSize: 78, greetingSize: 28, senderSize: 36, letterSpacing: 0.2, lineHeight: 1.3 },
+      foil: { mode: "foil", intensity: 76, grain: 28, highlight: 54, shadow: 46 },
+      palette: { text: "#26362b", muted: "#586b5c", signature: "#3e5043" },
+      background: {
+        top: "#f4f7f2", bottom: "#e5ece2", textureKey: "paper-comforting",
+        textureTint: "rgba(130, 155, 135, 0.12)", textureAlpha: 0.45,
+        aura: { y0: 0.4, r0: 80, y1: 0.48, r1: 0.65, stops: [[0, "rgba(235, 245, 235, 0.4)"], [0.6, "rgba(215, 230, 218, 0.15)"], [1, "rgba(200, 218, 204, 0)"]] },
+        vignette: { y0: 0.45, r0: 0.3, y1: 0.5, r1: 0.72, stops: [[0, "rgba(130, 150, 135, 0)"], [1, "rgba(110, 135, 115, 0.18)"]] },
+      },
+      decorations: [
+        { id: "sage-foliage-corner", x: 130, y: 245, size: 440, rot: 0, alpha: 0.86 },
+        { id: "sage-foliage-corner", x: 1070, y: 1515, size: 400, rot: Math.PI, alpha: 0.84 },
+      ],
+    },
+    reverent: {
+      composition: "text-led", centerpieceId: null, showCenterpieceSize: false,
+      borderStyle: "reverent", borderPresetId: "condolence-slate", recipientPresetId: "condolence-slate", haloColor: "#71849a",
+      geometry: { shape: "circle", centerpieceSize: 620 },
+      textLayout: { maxWidthRatio: 0.78, shiftX: 0, shiftY: 0, blockTop: 500 },
+      typography: { pairingId: "cinzel-source-sans", recipientSize: 74, greetingSize: 27, senderSize: 34, letterSpacing: 1.2, lineHeight: 1.35 },
+      foil: { mode: "foil", intensity: 76, grain: 28, highlight: 54, shadow: 46 },
+      palette: { text: "#1b242e", muted: "#526376", signature: "#384758" },
+      background: {
+        top: "#f0f4f8", bottom: "#e1e8f0", textureKey: "paper-reverent",
+        textureTint: "rgba(120, 140, 165, 0.12)", textureAlpha: 0.42,
+        aura: { y0: 0.4, r0: 70, y1: 0.48, r1: 0.62, stops: [[0, "rgba(240, 246, 252, 0.45)"], [0.6, "rgba(215, 228, 240, 0.18)"], [1, "rgba(195, 212, 228, 0)"]] },
+        vignette: { y0: 0.45, r0: 0.3, y1: 0.5, r1: 0.72, stops: [[0, "rgba(120, 140, 165, 0)"], [1, "rgba(95, 120, 145, 0.18)"]] },
+      },
+      decorations: [
+        { id: "slate-botanical-corner", x: 125, y: 240, size: 400, rot: 0, alpha: 0.82 },
+        { id: "slate-botanical-corner", x: 1075, y: 1520, size: 370, rot: Math.PI, alpha: 0.78 },
+      ],
+    },
+    professional: {
+      composition: "text-led", centerpieceId: null, showCenterpieceSize: false,
+      borderStyle: "professional", borderPresetId: "condolence-navy", recipientPresetId: "condolence-navy", haloColor: "#50647d",
+      geometry: { shape: "circle", centerpieceSize: 620 },
+      textLayout: { maxWidthRatio: 0.78, shiftX: 0, shiftY: 0, blockTop: 500 },
+      typography: { pairingId: "baskerville-manrope", recipientSize: 72, greetingSize: 26, senderSize: 34, letterSpacing: 0.1, lineHeight: 1.4 },
+      foil: { mode: "foil", intensity: 76, grain: 28, highlight: 54, shadow: 46 },
+      palette: { text: "#172333", muted: "#495b71", signature: "#324254" },
+      background: {
+        top: "#fbfaf8", bottom: "#f0ede6", textureKey: "paper-professional",
+        textureTint: "rgba(140, 140, 140, 0.10)", textureAlpha: 0.4,
+        aura: null,
+        vignette: { y0: 0.45, r0: 0.35, y1: 0.5, r1: 0.72, stops: [[0, "rgba(140, 140, 140, 0)"], [1, "rgba(110, 115, 125, 0.14)"]] },
+      },
+      decorations: [
+        { id: "navy-botanical-accent", x: 110, y: 225, size: 340, rot: 0, alpha: 0.72 },
+        { id: "navy-botanical-accent", x: 1090, y: 1535, size: 300, rot: Math.PI, alpha: 0.62 },
+      ],
+    },
+  };
+
+  function list() { return OCCASIONS; }
+  function get(id) { return OCCASIONS.find((o) => o.id === id) || OCCASIONS[0]; }
+  function isValid(id) { return OCCASIONS.some((o) => o.id === id); }
+  function normalizeOccasion(id) { return isValid(id) ? id : "birthday"; }
+  function allowsPhoto(id) { return get(id).allowPhoto !== false; }
+  function allowsStamps(id) { return get(id).id !== "condolence"; }
+  function getDesign(occasionId, emotion) {
+    if (normalizeOccasion(occasionId) !== "condolence") return null;
+    return CONDOLENCE_DESIGNS[emotion] || CONDOLENCE_DESIGNS.heartfelt;
+  }
+  return { list, get, isValid, normalizeOccasion, allowsPhoto, allowsStamps, getDesign };
+})();
+
+/* =========================================================================
    SECTION: GreetingGenerator
-   Emotion-based one-click message writer. Each emotion owns a pool of
-   templates using the {name} token; `generate()` picks a draft the caller
-   has not just seen, so tapping the same emotion twice yields a different
-   message. Every template is authored to stay under GREETING_MAX_CHARS so
-   a generated draft can never be the reason the text engine has to clamp.
+   Emotion-based one-click message writer. Message pools are partitioned by
+   occasion; each emotion owns a pool of templates using the {name} token.
+   Sensitive occasions enforce context-appropriate message pools and a
+   defensive secondary safety guard against celebratory phrasing.
    ========================================================================= */
 const GREETING_MAX_CHARS = 220;
 
 const GreetingGenerator = (() => {
-  const EMOTIONS = [
-    { id: "heartfelt", label: "Heartfelt", hint: "Sincere and tender" },
-    { id: "poetic", label: "Poetic", hint: "Lyrical and image-rich" },
-    { id: "professional", label: "Professional", hint: "Warm but workplace-safe" },
-    { id: "playful", label: "Playful", hint: "Light, teasing, fun" },
-    { id: "milestone", label: "Milestone", hint: "For the big ones" },
-  ];
-
   const POOLS = {
+    birthday: {
+      heartfelt: [
+        "{name}, you are loved more than words can hold. May this year bring you every good thing your heart has been quietly hoping for.",
+        "Thank you for being exactly who you are, {name}. The world is warmer because you are in it. Happy birthday.",
+        "Some people make life feel like home. You are one of them, {name}. Wishing you a birthday as kind as you have always been.",
+        "{name}, here is to another year of you — your laugh, your patience, your impossible generosity. You are quietly treasured.",
+        "However this year has treated you, {name}, know that you are cherished today and every day after it. Happy birthday.",
+        "There is no one quite like you, {name}. May this birthday remind you how much light you bring to the people around you.",
+      ],
+      poetic: [
+        "May your year unfold like morning light on still water, {name} — slow, golden, and entirely your own.",
+        "{name}, may you gather this year the way one gathers roses: gently, gratefully, and with room left for the wild ones.",
+        "Another orbit around the sun, {name}, and still the sky makes room for you. Happy birthday.",
+        "Let the candles be small suns tonight, {name}, and every wish a seed that knows precisely where to grow.",
+        "{name}, may the days ahead read like a good poem — unhurried, luminous, and ending somewhere kinder than they began.",
+        "Some souls arrive like music. Yours did, {name}. May this year be the long, lovely rest of the song.",
+      ],
+      professional: [
+        "Wishing you a very happy birthday, {name}. Thank you for the care and excellence you bring to everything you take on.",
+        "Happy birthday, {name}. It is a genuine pleasure to work alongside you — here is to a rewarding year ahead.",
+        "{name}, warmest wishes on your birthday. Your contribution this year has been valued more than you may realise.",
+        "On behalf of all of us, {name} — happy birthday. May the year ahead bring well-earned recognition and every success.",
+        "Happy birthday, {name}. Wishing you a year of good health, steady progress and the occasional well-deserved celebration.",
+        "Many happy returns, {name}. Thank you for your dedication; may this next year be your most accomplished yet.",
+      ],
+      playful: [
+        "Happy birthday, {name}! Cake for breakfast is not just allowed today, it is basically mandatory.",
+        "{name}, you are not older — you are a limited edition that keeps appreciating in value. Happy birthday!",
+        "Another year, another excellent excuse for cake. Well played, {name}. Happy birthday!",
+        "Warning: {name} is now one year more fabulous. Handle with confetti. Happy birthday!",
+        "Happy birthday, {name}! Blow out those candles quickly — at this rate it is becoming a fire hazard.",
+        "{name}, they say the more birthdays you have, the longer you live. Keep collecting them. Happy birthday!",
+      ],
+      milestone: [
+        "{name}, this is not just a birthday — it is a landmark. Look how far you have come, and how much road is still ahead.",
+        "Here is to a milestone worth celebrating properly, {name}. May this chapter be the finest one yet.",
+        "{name}, some birthdays deserve more than a candle. This one deserves a toast — to everything you have built.",
+        "A remarkable year for a remarkable person. Congratulations and happy birthday, {name} — this milestone suits you.",
+        "{name}, today marks a real milestone. Celebrate loudly, rest deeply, and take every ounce of the pride you earned.",
+        "To {name}, on a birthday that counts: may the years ahead be as full, as bold and as brilliant as those behind you.",
+      ],
+    },
+    condolence: {
+      heartfelt: [
+        "{name}, our thoughts and heartfelt sympathies are with you and your family during this time of sorrow. Wishing you strength and solace.",
+        "Deeply saddened by your loss, {name}. May you and your family find peace and comfort in the warm memories of a life dearly cherished.",
+        "{name}, sharing in your grief and sending sincere condolences to you and your loved ones. We stand with you during this difficult time.",
+        "Holding you and your family in our thoughts, {name}. May gentle memories bring comfort to your heart in the quiet moments.",
+        "{name}, please know that you are in our thoughts during this sorrowful time. Wishing you peace, resilience, and comfort in the days ahead.",
+        "Our sincere condolences to you and your family, {name}. May the love and support of those around you give you strength in your loss.",
+      ],
+      comforting: [
+        "{name}, wishing you quiet moments of solace as you remember a life deeply loved and cherished. May peace be with you and your family.",
+        "May the passage of time bring gentle healing to your heart, {name}. Holding you and your family in our quiet and supportive thoughts.",
+        "{name}, may fond memories bring a soothing light during these days of sorrow. Wishing you peace and strength as you navigate this loss.",
+        "In this quiet time of remembrance, {name}, may the warmth of shared memories bring solace and comfort to you and your loved ones.",
+        "{name}, sending comforting thoughts and strength to you and your family. May you find solace in the enduring love they left behind.",
+        "May the care and kindness of family and friends bring you comfort during this tender time, {name}. Wishing you peace and gentle solace.",
+      ],
+      reverent: [
+        "{name}, honoring the noble memory of a life lived with dignity, grace, and enduring values. They will always be remembered with profound respect.",
+        "A life of purpose and integrity leaves a lasting legacy, {name}. We pay our deepest respects and hold your family in our thoughts.",
+        "{name}, paying homage to a remarkable life that touched and guided so many. Their wisdom and virtues will continue to inspire us.",
+        "With utmost respect and reverence, we remember a life of noble character and immense kindness, {name}. Our thoughts are with your family.",
+        "{name}, their guidance, dignity, and upright life will always be treasured. Honoring their memory with the highest respect and esteem.",
+        "Remembering a deeply respected life of honour and kindness, {name}. May their inspiring legacy bring comfort and strength to your family.",
+      ],
+      professional: [
+        "{name}, please accept our sincere condolences on your loss. Wishing you and your family comfort and strength during this difficult time.",
+        "On behalf of all of us, {name}, we extend our deepest sympathies to you and your family. Our thoughts are with you during this period.",
+        "{name}, we offer our heartfelt condolences to you and your loved ones. Wishing you peace, support, and resilience in the days ahead.",
+        "Please accept our sincere condolences, {name}. We stand with you and your family during this time of sorrow and bereavement.",
+        "{name}, extending our respectful sympathy to you and your family. May fond memories and the support of colleagues bring you solace.",
+        "Our thoughts are with you and your family during this time of loss, {name}. Please accept our sincere condolences and respectful sympathies.",
+      ],
+    },
+  };
+
+  const CONDOLENCE_RELATIONSHIP_POOLS = {
     heartfelt: [
-      "{name}, you are loved more than words can hold. May this year bring you every good thing your heart has been quietly hoping for.",
-      "Thank you for being exactly who you are, {name}. The world is warmer because you are in it. Happy birthday.",
-      "Some people make life feel like home. You are one of them, {name}. Wishing you a birthday as kind as you have always been.",
-      "{name}, here is to another year of you — your laugh, your patience, your impossible generosity. You are quietly treasured.",
-      "However this year has treated you, {name}, know that you are cherished today and every day after it. Happy birthday.",
-      "There is no one quite like you, {name}. May this birthday remind you how much light you bring to the people around you.",
+      "{name}, we are deeply sorry for the loss of your {relationship}. Our thoughts are with you and your family, with wishes for strength and solace.",
+      "Our heartfelt sympathies are with you, {name}, as you mourn your {relationship}. May cherished memories bring comfort in the days ahead.",
     ],
-    poetic: [
-      "May your year unfold like morning light on still water, {name} — slow, golden, and entirely your own.",
-      "{name}, may you gather this year the way one gathers roses: gently, gratefully, and with room left for the wild ones.",
-      "Another orbit around the sun, {name}, and still the sky makes room for you. Happy birthday.",
-      "Let the candles be small suns tonight, {name}, and every wish a seed that knows precisely where to grow.",
-      "{name}, may the days ahead read like a good poem — unhurried, luminous, and ending somewhere kinder than they began.",
-      "Some souls arrive like music. Yours did, {name}. May this year be the long, lovely rest of the song.",
+    comforting: [
+      "{name}, may loving memories of your {relationship} bring gentle comfort to you and your family during this difficult time.",
+      "As you remember your {relationship}, {name}, may the care of family and friends bring you strength, peace, and solace.",
+    ],
+    reverent: [
+      "With deep respect, we remember your {relationship}, {name}. May their dignity, kindness, and lasting contribution always be treasured.",
+      "{name}, we honour the memory of your {relationship} with profound respect. Their guidance and values will continue to be remembered.",
     ],
     professional: [
-      "Wishing you a very happy birthday, {name}. Thank you for the care and excellence you bring to everything you take on.",
-      "Happy birthday, {name}. It is a genuine pleasure to work alongside you — here is to a rewarding year ahead.",
-      "{name}, warmest wishes on your birthday. Your contribution this year has been valued more than you may realise.",
-      "On behalf of all of us, {name} — happy birthday. May the year ahead bring well-earned recognition and every success.",
-      "Happy birthday, {name}. Wishing you a year of good health, steady progress and the occasional well-deserved celebration.",
-      "Many happy returns, {name}. Thank you for your dedication; may this next year be your most accomplished yet.",
-    ],
-    playful: [
-      "Happy birthday, {name}! Cake for breakfast is not just allowed today, it is basically mandatory.",
-      "{name}, you are not older — you are a limited edition that keeps appreciating in value. Happy birthday!",
-      "Another year, another excellent excuse for cake. Well played, {name}. Happy birthday!",
-      "Warning: {name} is now one year more fabulous. Handle with confetti. Happy birthday!",
-      "Happy birthday, {name}! Blow out those candles quickly — at this rate it is becoming a fire hazard.",
-      "{name}, they say the more birthdays you have, the longer you live. Keep collecting them. Happy birthday!",
-    ],
-    milestone: [
-      "{name}, this is not just a birthday — it is a landmark. Look how far you have come, and how much road is still ahead.",
-      "Here is to a milestone worth celebrating properly, {name}. May this chapter be the finest one yet.",
-      "{name}, some birthdays deserve more than a candle. This one deserves a toast — to everything you have built.",
-      "A remarkable year for a remarkable person. Congratulations and happy birthday, {name} — this milestone suits you.",
-      "{name}, today marks a real milestone. Celebrate loudly, rest deeply, and take every ounce of the pride you earned.",
-      "To {name}, on a birthday that counts: may the years ahead be as full, as bold and as brilliant as those behind you.",
+      "{name}, please accept our sincere condolences on the loss of your {relationship}. Our thoughts are with you and your family.",
+      "On behalf of all of us, {name}, we extend our respectful sympathies on the loss of your {relationship}. Wishing your family strength and support.",
     ],
   };
 
-  // Old schema (v1) tone ids mapped onto the five supported emotions.
+  // Old schema (v1) tone ids mapped onto the five supported birthday emotions.
   const LEGACY_EMOTION_MAP = {
     warm: "heartfelt",
     joyful: "playful",
@@ -1161,38 +1373,188 @@ const GreetingGenerator = (() => {
     romantic: "heartfelt",
   };
 
-  function list() { return EMOTIONS; }
+  // Defensive blocklist for sensitive occasions (secondary defense to occasion-scoped pools).
+  const SENSITIVE_FORBIDDEN_PATTERNS = [
+    /\b(happy|birthday|celebrat(e|ion|ing|es|ory)|cake|candles?|balloons?|champagne|congratulat(e|ion|ions|ing|ory)|cheers|party|milestone|happy to hear|many happy returns)\b/i,
+    /\bwish(?:ing)?\b[^.!?]{0,80}\bjoy\b[^.!?]{0,80}\bspecial day\b/i,
+    /\bwonderful day\b[^.!?]{0,80}\b(?:sweets?|gifts?)\b/i,
+  ];
 
-  function isValid(id) { return Object.prototype.hasOwnProperty.call(POOLS, id); }
-
-  function normalizeEmotion(id) {
-    if (isValid(id)) return id;
-    return LEGACY_EMOTION_MAP[id] || EMOTIONS[0].id;
+  function validateSafety(occasionId, text) {
+    const occ = OccasionRegistry.get(occasionId);
+    if (occ.isSensitive && SENSITIVE_FORBIDDEN_PATTERNS.some((pattern) => pattern.test(text || ""))) {
+      return false;
+    }
+    return true;
   }
 
-  function fill(template, name) {
+  function list(occasionId) {
+    const occ = OccasionRegistry.get(occasionId || "birthday");
+    if (occ.id === "condolence") return [];
+    return occ.emotions;
+  }
+
+  function isValid(id, occasionId) {
+    const occ = OccasionRegistry.get(occasionId || "birthday");
+    const pool = POOLS[occ.id];
+    return !!(pool && Object.prototype.hasOwnProperty.call(pool, id));
+  }
+
+  function normalizeEmotion(id, occasionId) {
+    const occ = OccasionRegistry.get(occasionId || "birthday");
+    if (isValid(id, occ.id)) return id;
+    if (occ.id === "birthday" && LEGACY_EMOTION_MAP[id]) return LEGACY_EMOTION_MAP[id];
+    return (occ.emotions[0] && occ.emotions[0].id) || "heartfelt";
+  }
+
+  function normalizeRelationship(relationship) {
+    const input = Utils.sanitizeText(relationship || "", 40).trim();
+    const value = input.toLowerCase();
+    const aliases = [
+      [/\b(father|dad|papa|pitaji)\b/, "father"],
+      [/\b(mother|mom|mum|mama|mataji)\b/, "mother"],
+      [/\b(grandfather|granddad|grandpa|dada|nana)\b/, "grandfather"],
+      [/\b(grandmother|grandma|dadi|nani)\b/, "grandmother"],
+      [/\b(grandparent)\b/, "grandparent"],
+      [/\b(husband|spouse)\b/, "spouse"],
+      [/\b(partner)\b/, "partner"],
+      [/\b(wife)\b/, "wife"],
+      [/\b(brother)\b/, "brother"],
+      [/\b(sister)\b/, "sister"],
+      [/\b(son)\b/, "son"],
+      [/\b(daughter)\b/, "daughter"],
+      [/\b(friend)\b/, "friend"],
+      [/\b(uncle)\b/, "uncle"],
+      [/\b(aunt)\b/, "aunt"],
+      [/\b(cousin)\b/, "cousin"],
+      [/\b(neighbour|neighbor)\b/, "neighbour"],
+      [/\b(manager)\b/, "manager"],
+      [/\b(relative)\b/, "relative"],
+      [/\b(family friend)\b/, "family friend"],
+      [/\b(colleague|coworker|co-worker)\b/, "colleague"],
+      [/\b(teacher)\b/, "teacher"],
+      [/\b(mentor)\b/, "mentor"],
+    ];
+    const match = aliases.find(([pattern]) => pattern.test(value));
+    // Keep the field itself untouched. An unrecognised but safe custom
+    // relationship is used as entered (lower-cased for sentence grammar)
+    // rather than erased or mapped to a sensitive inferred relationship.
+    return match ? match[1] : value.replace(/^(?:my|our|the)\s+/i, "");
+  }
+
+  function fill(template, name, relationship) {
     const who = String(name || "").trim() || "friend";
-    return template.split("{name}").join(who);
+    return template
+      .split("{name}").join(who)
+      .split("{relationship}").join(relationship || "loved one");
   }
 
-  // Returns a draft for `emotion`, avoiding `previousText` when the pool
-  // offers an alternative, so repeated taps cycle through the pool.
-  function generate(emotion, name, previousText) {
-    const pool = POOLS[normalizeEmotion(emotion)];
-    const candidates = pool.map((t) => fill(t, name));
+  // Returns a draft for `emotion` under `occasionId`, avoiding `previousText`
+  // when the pool offers an alternative.
+  function generate(emotion, name, previousText, occasionId, relationship) {
+    const occ = OccasionRegistry.get(occasionId || "birthday");
+    const normEmotion = normalizeEmotion(emotion, occ.id);
+    const relationshipLabel = occ.id === "condolence" ? normalizeRelationship(relationship) : "";
+    const pool = relationshipLabel
+      ? CONDOLENCE_RELATIONSHIP_POOLS[normEmotion]
+      : ((POOLS[occ.id] && POOLS[occ.id][normEmotion]) || POOLS.birthday.heartfelt);
+    const candidates = pool.map((t) => fill(t, name, relationshipLabel));
     const fresh = candidates.filter((c) => c !== previousText);
     const from = fresh.length ? fresh : candidates;
-    return from[Math.floor(Math.random() * from.length)];
+    let selected = from[Math.floor(Math.random() * from.length)];
+    if (!validateSafety(occ.id, selected)) {
+      selected = fill(pool[0], name, relationshipLabel);
+    }
+    return selected;
   }
 
   // Deterministic first draft, used by the "auto-write greeting" toggle so
   // the rendered card does not change text on every repaint.
-  function fallbackFor(emotion, name) {
-    return fill(POOLS[normalizeEmotion(emotion)][0], name);
+  function fallbackFor(emotion, name, occasionId, relationship) {
+    const occ = OccasionRegistry.get(occasionId || "birthday");
+    const normEmotion = normalizeEmotion(emotion, occ.id);
+    const relationshipLabel = occ.id === "condolence" ? normalizeRelationship(relationship) : "";
+    const pool = relationshipLabel
+      ? CONDOLENCE_RELATIONSHIP_POOLS[normEmotion]
+      : ((POOLS[occ.id] && POOLS[occ.id][normEmotion]) || POOLS.birthday.heartfelt);
+    return fill(pool[0], name, relationshipLabel);
   }
 
-  return { list, generate, fallbackFor, normalizeEmotion, isValid };
+  function resolveProjectGreeting(project) {
+    const occasionId = (project.occasion && project.occasion.id) || "birthday";
+    return project.content.autoGreetingEnabled
+      ? fallbackFor(project.content.emotion, project.recipient.name, occasionId, project.recipient.relationship)
+      : (project.content.greeting || "");
+  }
+
+  function validateProjectGreeting(project) {
+    const occasionId = (project.occasion && project.occasion.id) || "birthday";
+    const text = resolveProjectGreeting(project);
+    return { safe: validateSafety(occasionId, text), text, occasionId };
+  }
+
+  return {
+    list, generate, fallbackFor, normalizeEmotion, isValid, validateSafety,
+    normalizeRelationship, resolveProjectGreeting, validateProjectGreeting,
+  };
 })();
+
+function createOccasionContent(occasionId, relationship) {
+  return {
+    greeting: "",
+    autoGreetingEnabled: false,
+    emotion: GreetingGenerator.normalizeEmotion("heartfelt", occasionId),
+    messageMode: "manual",
+    relationship: String(relationship || ""),
+  };
+}
+
+function snapshotOccasionContent(content, occasionId, relationship) {
+  const source = content || {};
+  return {
+    greeting: String(source.greeting || ""),
+    autoGreetingEnabled: !!source.autoGreetingEnabled,
+    emotion: GreetingGenerator.normalizeEmotion(source.emotion, occasionId),
+    messageMode: ["auto", "generated", "edited", "manual"].includes(source.messageMode)
+      ? source.messageMode
+      : (source.autoGreetingEnabled ? "auto" : "manual"),
+    relationship: Object.prototype.hasOwnProperty.call(source, "relationship")
+      ? String(source.relationship || "")
+      : String(relationship || ""),
+  };
+}
+
+function ensureOccasionContentStates(project) {
+  project.occasion = project.occasion && typeof project.occasion === "object"
+    ? project.occasion
+    : { id: "birthday", subOccasion: null };
+  const activeId = OccasionRegistry.normalizeOccasion(project.occasion.id);
+  project.occasion.id = activeId;
+  const states = project.occasion.contentByOccasion && typeof project.occasion.contentByOccasion === "object"
+    ? project.occasion.contentByOccasion
+    : {};
+  const activeRelationship = String((project.recipient && project.recipient.relationship) || "");
+  ["birthday", "condolence"].forEach((id) => {
+    states[id] = states[id]
+      ? snapshotOccasionContent(states[id], id, id === activeId ? activeRelationship : "")
+      : createOccasionContent(id, id === activeId ? activeRelationship : "");
+  });
+  project.content = snapshotOccasionContent(project.content, activeId, activeRelationship);
+  states[activeId] = snapshotOccasionContent(project.content, activeId, activeRelationship);
+  project.occasion.contentByOccasion = states;
+  return states;
+}
+
+function switchProjectOccasion(project, targetOccasionId) {
+  const targetId = OccasionRegistry.normalizeOccasion(targetOccasionId);
+  const currentId = OccasionRegistry.normalizeOccasion(project.occasion && project.occasion.id);
+  const states = ensureOccasionContentStates(project);
+  states[currentId] = snapshotOccasionContent(project.content, currentId, project.recipient.relationship);
+  project.occasion.id = targetId;
+  project.occasion.subOccasion = null;
+  project.content = snapshotOccasionContent(states[targetId], targetId, "");
+  project.recipient.relationship = project.content.relationship;
+}
 
 const StateStore = (() => {
   let project = null;
@@ -1328,7 +1690,7 @@ const Migrations = (() => {
     // Both are additive/remappable, so a v1 card upgrades losslessly.
     if (v < 2) {
       record.content = record.content || {};
-      record.content.emotion = GreetingGenerator.normalizeEmotion(record.content.emotion);
+      record.content.emotion = GreetingGenerator.normalizeEmotion(record.content.emotion, "birthday");
       record.layout = Object.assign(
         { photoScale: 1, textPosition: 0.62, textMaxWidth: 0.8 },
         record.layout || {},
@@ -1348,14 +1710,29 @@ const Migrations = (() => {
       v = 2;
     }
 
+    if (!record.occasion || typeof record.occasion !== "object") {
+      record.occasion = { id: "birthday", subOccasion: null };
+    } else {
+      record.occasion.id = OccasionRegistry.normalizeOccasion(record.occasion.id);
+      if (!("subOccasion" in record.occasion)) {
+        record.occasion.subOccasion = null;
+      }
+    }
+    record.content = record.content || {};
+    record.content.emotion = GreetingGenerator.normalizeEmotion(record.content.emotion, record.occasion.id);
+    ensureOccasionContentStates(record);
+
     if (record.layout && record.layout.textShiftX == null) {
       record.layout.textShiftX = 0;
     }
 
-    if (v < CURRENT_SCHEMA_VERSION) {
-      record.version = CURRENT_SCHEMA_VERSION;
+    // v2 -> v3: Condolence is a render-time, no-photo design mode. Existing
+    // Birthday photo, centerpiece/layout and stamp state remains stored and
+    // is suppressed rather than rewritten while Condolence is active.
+    if (v < 3) {
+      v = 3;
     }
-    record.version = CURRENT_SCHEMA_VERSION;
+    record.version = v;
     record.typography = record.typography || {};
     // Older cards used a fixed 22px signature — there was no slider to set
     // it any other way, so any stored value below the new slider's floor
@@ -1665,20 +2042,25 @@ const LayoutEngine = (() => {
    are ever requested — this only ever looks at the local /assets folder.
    ========================================================================= */
 const CenterpieceAssetResolver = (() => {
-  const BASE = "assets/centerpieces/";
-  // PNG is the shipped format, so probe it first and avoid a noisy 404 for
-  // every card render. WebP remains supported for future replacements.
+  // PNG is the primary format for centerpieces and decorative assets.
   const EXTENSIONS = ["png", "webp"];
-  const SUPPORTED_IDS = ["belgian-gold-cake", "velvet-roses", "silk-gift-box", "champagne-gala"];
+  const ASSET_DIRS = {
+    "belgian-gold-cake": "assets/centerpieces/", "velvet-roses": "assets/centerpieces/",
+    "silk-gift-box": "assets/centerpieces/", "champagne-gala": "assets/centerpieces/",
+    "white-lilies": "assets/centerpieces/", "white-lilies-corner": "assets/decorations/",
+    "sage-foliage-corner": "assets/decorations/", "slate-botanical-corner": "assets/decorations/",
+    "navy-botanical-accent": "assets/decorations/",
+  };
+  const SUPPORTED_IDS = Object.keys(ASSET_DIRS);
   const cache = new Map(); // id -> Promise<HTMLImageElement|null>
 
   async function probeOne(id) {
+    const dir = ASSET_DIRS[id];
     for (const ext of EXTENSIONS) {
       try {
-        return await Utils.loadImage(BASE + id + "." + ext);
+        return await Utils.loadImage(dir + id + "." + ext);
       } catch (err) {
-        // Try the next extension; if none exist this resolves to null below
-        // and the caller falls back to the procedural painter.
+        // Try the next format; if neither exists this resolves to null below.
       }
     }
     return null;
@@ -1711,6 +2093,7 @@ const Centerpieces = (() => {
   const LIST = [
     { id: "auto", label: "Auto", hint: "Matches the greeting emotion" },
     { id: "belgian-gold-cake", label: "Belgian Gold Cake", hint: "Ganache, gold leaf, candlelight" },
+    { id: "white-lilies", label: "White Lilies", hint: "Graceful white lilies tribute" },
     { id: "velvet-roses", label: "Velvet Roses", hint: "Deep crimson bloom cluster" },
     { id: "silk-gift-box", label: "Silk Gift Box", hint: "Satin ribbon and hand-tied bow" },
     // Keep the historic id so existing backups automatically receive the
@@ -1718,14 +2101,6 @@ const Centerpieces = (() => {
     { id: "champagne-gala", label: "Luxury Balloons", hint: "Pearl, emerald and gold celebration balloons" },
     { id: "theme-aura", label: "Theme Aura", hint: "Abstract monogram glow" },
   ];
-
-  const EMOTION_MAP = {
-    heartfelt: "velvet-roses",
-    poetic: "velvet-roses",
-    professional: "silk-gift-box",
-    playful: "belgian-gold-cake",
-    milestone: "champagne-gala",
-  };
 
   /* ---------------- small drawing helpers ---------------- */
   function mulberry32(seed) {
@@ -2473,45 +2848,148 @@ const Centerpieces = (() => {
     const contain = Math.min(size / img.width, size / img.height) * 0.92;
     const dw = img.width * contain;
     const dh = img.height * contain;
-    const backing = rad(ctx, cx, cy - r * 0.12, r * 0.08, cx, cy, r, [
-      [0, withAlpha(opts.theme.palette.secondary, 0.22)],
-      [0.58, withAlpha(opts.theme.background.top, 0.7)],
-      [1, withAlpha(opts.theme.background.bottom, 0.94)],
-    ]);
-    ctx.fillStyle = backing;
-    ctx.fillRect(cx - r, cy - r, size, size);
-    ctx.drawImage(img, cx - dw / 2, cy - dh / 2, dw, dh);
+    const isCondolence = opts.occasionId === "condolence";
+    const isHeartfelt = isCondolence && opts.emotion === "heartfelt";
 
-    // Gentle theme tint. If this runtime doesn't honour "overlay" the
-    // composite operation is simply ignored per spec (no throw), so this
-    // degrades to a faint flat wash rather than failing.
+    if (!isHeartfelt) {
+      const backing = rad(ctx, cx, cy - r * 0.12, r * 0.08, cx, cy, r, [
+        [0, withAlpha(opts.theme.palette.secondary, 0.22)],
+        [0.58, withAlpha(opts.theme.background.top, 0.7)],
+        [1, withAlpha(opts.theme.background.bottom, 0.94)],
+      ]);
+      ctx.fillStyle = backing;
+      ctx.fillRect(cx - r, cy - r, size, size);
+      ctx.drawImage(img, cx - dw / 2, cy - dh / 2, dw, dh);
+      ctx.save();
+      ctx.globalAlpha = 0.14;
+      ctx.globalCompositeOperation = "overlay";
+      ctx.fillStyle = opts.theme.palette.secondary;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+      return;
+    }
+
+    const backing = rad(ctx, cx, cy - r * 0.1, r * 0.05, cx, cy, r, [
+        [0, "#fffef9"],
+        [0.55, "#f6ede0"],
+        [1, "#ece0ce"],
+    ]);
     ctx.save();
-    ctx.globalAlpha = 0.14;
-    ctx.globalCompositeOperation = "overlay";
-    ctx.fillStyle = opts.theme.palette.secondary;
     ctx.beginPath();
     ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.fillStyle = backing;
     ctx.fill();
+    ctx.drawImage(img, cx - dw / 2, cy - dh / 2, dw, dh);
+
     ctx.restore();
 
+  }
+
+  /* ---------------- 6. White lilies (sympathy) ---------------- */
+  function paintWhiteLilies(ctx, box) {
+    const { cx, cy, r } = box;
+    const u = r / 300;
+    backdrop(ctx, box, [
+      [0, "#2c332d"], [0.45, "#18201a"], [0.75, "#101411"], [1, "#070a08"],
+    ], -r * 0.18);
+    bokeh(ctx, box, ["#e8efe9", "#d4af37", "#a3b899"], 313, 14, 1);
+
+    // Leaves and foliage
+    [[-60, 20, 70, -0.6], [60, 30, 65, 0.55], [-40, -50, 55, -1.2], [45, -45, 55, 1.1]].forEach(([ox, oy, len, rot]) => {
+      ctx.save();
+      ctx.translate(cx + ox * u, cy + oy * u);
+      ctx.rotate(rot);
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.bezierCurveTo(len * 0.4 * u, -len * 0.22 * u, len * 0.8 * u, -len * 0.1 * u, len * u, 0);
+      ctx.bezierCurveTo(len * 0.8 * u, len * 0.1 * u, len * 0.4 * u, len * 0.22 * u, 0, 0);
+      ctx.closePath();
+      ctx.fillStyle = lin(ctx, 0, 0, len * u, 0, [[0, "#1e3a29"], [0.6, "#355e42"], [1, "#527e5e"]]);
+      ctx.fill();
+      ctx.restore();
+    });
+
+    // Central white lily bloom
+    const petals = 6;
+    for (let i = 0; i < petals; i++) {
+      const a = (i * Math.PI * 2) / petals + 0.26;
+      ctx.save();
+      ctx.translate(cx, cy - 10 * u);
+      ctx.rotate(a);
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.bezierCurveTo(45 * u, -22 * u, 95 * u, -18 * u, 130 * u, 0);
+      ctx.bezierCurveTo(95 * u, 18 * u, 45 * u, 22 * u, 0, 0);
+      ctx.closePath();
+      ctx.fillStyle = lin(ctx, 0, 0, 130 * u, 0, [
+        [0, "#8da87c"], [0.18, "#dcebd2"], [0.45, "#f7fcf5"], [0.85, "#ffffff"], [1, "#eae6dc"],
+      ]);
+      ctx.fill();
+      ctx.strokeStyle = "rgba(212, 175, 55, 0.28)";
+      ctx.lineWidth = 1.2 * u;
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // Lily Stamen / pistil
+    for (let j = 0; j < 5; j++) {
+      const sa = (j * Math.PI * 2) / 5 + 0.5;
+      const sx = cx + Math.cos(sa) * 38 * u;
+      const sy = cy - 10 * u + Math.sin(sa) * 38 * u;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy - 10 * u);
+      ctx.quadraticCurveTo(cx + Math.cos(sa) * 20 * u, cy - 10 * u + Math.sin(sa) * 20 * u, sx, sy);
+      ctx.strokeStyle = "rgba(180, 210, 150, 0.85)";
+      ctx.lineWidth = 1.8 * u;
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.ellipse(sx, sy, 5 * u, 2.5 * u, sa, 0, Math.PI * 2);
+      ctx.fillStyle = "#8a4f10";
+      ctx.fill();
+    }
+
+    grain(ctx, box, 0.04, 313);
   }
 
   /* ---------------- public API ---------------- */
   const PAINTERS = {
     "belgian-gold-cake": paintCake,
+    "white-lilies": paintWhiteLilies,
     "velvet-roses": paintRoses,
     "silk-gift-box": paintGiftBox,
     "champagne-gala": paintBalloons,
     "theme-aura": paintAura,
   };
 
-  function list() { return LIST; }
+  function list(occasionId) {
+    const occ = OccasionRegistry.get(occasionId || "birthday");
+    const allowed = occ.allowedCenterpieces || ["auto", "velvet-roses", "theme-aura"];
+    return LIST.filter((cp) => allowed.includes(cp.id)).map((cp) => {
+      if (cp.id === "auto" && occ.id === "condolence") {
+        return { ...cp, hint: "Matches the sympathy tone" };
+      }
+      return cp;
+    });
+  }
 
-  // "auto" resolves against the greeting emotion so the centrepiece always
-  // agrees with the tone of the message the user generated.
-  function resolveId(id, emotion) {
-    if (id && id !== "auto" && PAINTERS[id]) return id;
-    return EMOTION_MAP[GreetingGenerator.normalizeEmotion(emotion)] || "velvet-roses";
+  // "auto" resolves against the greeting emotion and occasion so the
+  // centrepiece always agrees with the tone and context of the message.
+  function resolveId(id, emotion, occasionId) {
+    const occ = OccasionRegistry.get(occasionId || "birthday");
+    if (occ.id === "condolence") {
+      const design = OccasionRegistry.getDesign(occ.id, emotion);
+      return design && design.centerpieceId && PAINTERS[design.centerpieceId]
+        ? design.centerpieceId
+        : "theme-aura";
+    }
+    const allowed = occ.allowedCenterpieces || ["auto", "velvet-roses", "theme-aura"];
+    if (id && id !== "auto" && PAINTERS[id] && allowed.includes(id)) return id;
+    const normEmotion = GreetingGenerator.normalizeEmotion(emotion, occ.id);
+    const map = occ.defaultCenterpieceMap || {};
+    const candidate = map[normEmotion] || occ.fallbackCenterpiece || "velvet-roses";
+    return allowed.includes(candidate) ? candidate : (occ.fallbackCenterpiece || "theme-aura");
   }
 
   // Tries a real photographic asset first (see CenterpieceAssetResolver);
@@ -2519,7 +2997,7 @@ const Centerpieces = (() => {
   // it fails to load/decode. Always resolves — never rejects — so a
   // missing or corrupt asset file can never break a render.
   async function paint(ctx, box, opts) {
-    const resolvedId = resolveId(opts.id, opts.emotion);
+    const resolvedId = resolveId(opts.id, opts.emotion, opts.occasionId);
     let asset = null;
     try {
       asset = await CenterpieceAssetResolver.resolve(resolvedId);
@@ -2761,7 +3239,47 @@ const Renderer = (() => {
   }
 
   /* ---------------- 1-4: Background, texture, vignette ---------------- */
-  function renderBackground(ctx, theme, quality) {
+  function renderBackground(ctx, theme, quality, project) {
+    const design = OccasionRegistry.getDesign(
+      project && project.occasion && project.occasion.id,
+      project && project.content && project.content.emotion
+    );
+
+    if (design) {
+      const size = quality === "preview" ? 160 : 256;
+      const background = design.background;
+      const grad = ctx.createLinearGradient(0, 0, 0, H);
+      grad.addColorStop(0, background.top);
+      grad.addColorStop(1, background.bottom);
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, W, H);
+
+      const tile = getCachedTile(background.textureKey, size, (c) => generatePaperTile(c, size, background.textureTint));
+      ctx.save();
+      ctx.globalAlpha = background.textureAlpha;
+      try {
+        const pattern = ctx.createPattern(tile, "repeat");
+        ctx.fillStyle = pattern;
+        ctx.fillRect(0, 0, W, H);
+      } catch (err) {}
+      ctx.restore();
+
+      if (background.aura) {
+        const auraDef = background.aura;
+        const aura = ctx.createRadialGradient(W / 2, H * auraDef.y0, auraDef.r0, W / 2, H * auraDef.y1, H * auraDef.r1);
+        auraDef.stops.forEach((stop) => aura.addColorStop(stop[0], stop[1]));
+        ctx.fillStyle = aura;
+        ctx.fillRect(0, 0, W, H);
+      }
+
+      const vignetteDef = background.vignette;
+      const vg = ctx.createRadialGradient(W / 2, H * vignetteDef.y0, H * vignetteDef.r0, W / 2, H * vignetteDef.y1, H * vignetteDef.r1);
+      vignetteDef.stops.forEach((stop) => vg.addColorStop(stop[0], stop[1]));
+      ctx.fillStyle = vg;
+      ctx.fillRect(0, 0, W, H);
+      return;
+    }
+
     const grad = ctx.createLinearGradient(0, 0, 0, H);
     grad.addColorStop(0, theme.background.top);
     grad.addColorStop(1, theme.background.bottom);
@@ -2773,7 +3291,7 @@ const Renderer = (() => {
 
     // Vignette / edge shading
     const vg = ctx.createRadialGradient(W / 2, H * 0.42, H * 0.25, W / 2, H * 0.5, H * 0.75);
-    const vigColor = theme.background.light ? "0,0,0" : "0,0,0";
+    const vigColor = "0,0,0";
     vg.addColorStop(0, "rgba(" + vigColor + ",0)");
     vg.addColorStop(1, "rgba(" + vigColor + "," + theme.background.vignette + ")");
     ctx.fillStyle = vg;
@@ -2788,9 +3306,7 @@ const Renderer = (() => {
      the same mask-based foil pipeline as the recipient name and sender
      signature (compositeFoil, defined below), so every theme gets a real
      metallic sheen driven by that theme's own foil preset rather than a
-     flat CSS-style outline. This is a fixed, polished theme default —
-     there is no user-facing control for it, matching the app's existing
-     pattern of "quiet" chrome the six themes already carry enough of. */
+     flat CSS-style outline. */
   const BORDER_MARGIN = LayoutEngine.SAFE_MARGIN;
   const BORDER_LINES = [
     { inset: 0, width: 3.2 },
@@ -2879,21 +3395,208 @@ const Renderer = (() => {
     });
   }
 
+  /* ---------------- Condolence Decorative Frames (Restrained & Mood-Aware) ---------------- */
+  function drawCondolenceBorderLines(mctx, borderStyle) {
+    mctx.save();
+    mctx.fillStyle = "#fff";
+    mctx.strokeStyle = "#fff";
+    const x0 = BORDER_MARGIN.x;
+    const y0 = BORDER_MARGIN.top;
+    const w0 = W - x0 * 2;
+    const h0 = H - y0 * 2;
+
+    if (borderStyle === "professional") {
+      // Clean, tailored double hairline frame
+      mctx.lineWidth = 2.0;
+      mctx.strokeRect(x0, y0, w0, h0);
+      mctx.lineWidth = 1.0;
+      mctx.strokeRect(x0 + 10, y0 + 10, w0 - 20, h0 - 20);
+    } else if (borderStyle === "reverent") {
+      // Classical dignified symmetrical stepped rule
+      mctx.lineWidth = 2.4;
+      mctx.strokeRect(x0, y0, w0, h0);
+      mctx.lineWidth = 1.0;
+      mctx.strokeRect(x0 + 14, y0 + 14, w0 - 28, h0 - 28);
+      // Small dignified center diamonds on horizontal rules
+      const cx = W / 2;
+      function diamond(x, y, s) {
+        mctx.beginPath();
+        mctx.moveTo(x, y - s);
+        mctx.lineTo(x + s, y);
+        mctx.lineTo(x, y + s);
+        mctx.lineTo(x - s, y);
+        mctx.closePath();
+        mctx.fill();
+      }
+      diamond(cx, y0 + 7, 5);
+      diamond(cx, y0 + h0 - 7, 5);
+    } else if (borderStyle === "comforting") {
+      // Soft gentle rounded double border
+      mctx.lineWidth = 2.0;
+      roundRectPath(mctx, x0, y0, w0, h0, 24);
+      mctx.stroke();
+      mctx.lineWidth = 1.0;
+      roundRectPath(mctx, x0 + 12, y0 + 12, w0 - 24, h0 - 24, 18);
+      mctx.stroke();
+    } else {
+      // Heartfelt: refined dual frame with subtle inner pin-stripe
+      mctx.lineWidth = 2.2;
+      mctx.strokeRect(x0, y0, w0, h0);
+      mctx.lineWidth = 1.0;
+      mctx.strokeRect(x0 + 12, y0 + 12, w0 - 24, h0 - 24);
+    }
+    mctx.restore();
+  }
+
+  function drawCondolenceCorner(mctx, borderStyle, size) {
+    const u = size / 96;
+    mctx.save();
+    mctx.fillStyle = "#fff";
+    mctx.strokeStyle = "#fff";
+    mctx.lineCap = "round";
+    mctx.lineJoin = "round";
+
+    if (borderStyle === "professional") {
+      // Minimal crisp tailored corner bracket
+      mctx.lineWidth = 2.0 * u;
+      mctx.beginPath();
+      mctx.moveTo(0, 36 * u);
+      mctx.lineTo(0, 0);
+      mctx.lineTo(36 * u, 0);
+      mctx.stroke();
+
+      mctx.lineWidth = 1.0 * u;
+      mctx.beginPath();
+      mctx.moveTo(10 * u, 28 * u);
+      mctx.lineTo(10 * u, 10 * u);
+      mctx.lineTo(28 * u, 10 * u);
+      mctx.stroke();
+    } else if (borderStyle === "reverent") {
+      // Symmetrical stepped geometric miter corners
+      mctx.lineWidth = 2.4 * u;
+      mctx.beginPath();
+      mctx.moveTo(0, 44 * u);
+      mctx.lineTo(0, 16 * u);
+      mctx.lineTo(16 * u, 0);
+      mctx.lineTo(44 * u, 0);
+      mctx.stroke();
+
+      mctx.lineWidth = 1.2 * u;
+      mctx.beginPath();
+      mctx.moveTo(14 * u, 40 * u);
+      mctx.lineTo(14 * u, 24 * u);
+      mctx.lineTo(24 * u, 14 * u);
+      mctx.lineTo(40 * u, 14 * u);
+      mctx.stroke();
+
+      mctx.beginPath();
+      mctx.arc(20 * u, 20 * u, 3 * u, 0, Math.PI * 2);
+      mctx.fill();
+    } else if (borderStyle === "comforting") {
+      // Gentle sweeping organic olive / foliage branch
+      mctx.lineWidth = 1.8 * u;
+      mctx.beginPath();
+      mctx.moveTo(8 * u, 48 * u);
+      mctx.quadraticCurveTo(8 * u, 8 * u, 48 * u, 8 * u);
+      mctx.stroke();
+
+      function comfortingLeaf(x, y, len, rot) {
+        mctx.save();
+        mctx.translate(x, y);
+        mctx.rotate(rot);
+        mctx.beginPath();
+        mctx.moveTo(0, 0);
+        mctx.bezierCurveTo(len * 0.4, -len * 0.25, len * 0.8, -len * 0.12, len, 0);
+        mctx.bezierCurveTo(len * 0.8, len * 0.12, len * 0.4, len * 0.25, 0, 0);
+        mctx.closePath();
+        mctx.fill();
+        mctx.restore();
+      }
+      comfortingLeaf(20 * u, 20 * u, 26 * u, -0.78);
+      comfortingLeaf(38 * u, 12 * u, 18 * u, -0.15);
+      comfortingLeaf(12 * u, 38 * u, 18 * u, -1.42);
+      comfortingLeaf(48 * u, 8 * u, 14 * u, 0.2);
+      comfortingLeaf(8 * u, 48 * u, 14 * u, -1.77);
+    } else {
+      // Heartfelt: delicate restrained floral / bud botanical flourish
+      mctx.lineWidth = 2.0 * u;
+      mctx.beginPath();
+      mctx.moveTo(6 * u, 42 * u);
+      mctx.quadraticCurveTo(6 * u, 6 * u, 42 * u, 6 * u);
+      mctx.stroke();
+
+      mctx.lineWidth = 1.0 * u;
+      mctx.beginPath();
+      mctx.moveTo(14 * u, 52 * u);
+      mctx.quadraticCurveTo(14 * u, 14 * u, 52 * u, 14 * u);
+      mctx.stroke();
+
+      function delicatePetal(x, y, len, rot) {
+        mctx.save();
+        mctx.translate(x, y);
+        mctx.rotate(rot);
+        mctx.beginPath();
+        mctx.moveTo(0, 0);
+        mctx.bezierCurveTo(len * 0.35, -len * 0.28, len * 0.85, -len * 0.15, len, 0);
+        mctx.bezierCurveTo(len * 0.85, len * 0.15, len * 0.35, len * 0.28, 0, 0);
+        mctx.closePath();
+        mctx.fill();
+        mctx.restore();
+      }
+      delicatePetal(24 * u, 24 * u, 26 * u, -0.78);
+      delicatePetal(42 * u, 10 * u, 18 * u, -0.12);
+      delicatePetal(10 * u, 42 * u, 18 * u, -1.45);
+
+      mctx.beginPath();
+      mctx.arc(24 * u, 24 * u, 3.2 * u, 0, Math.PI * 2);
+      mctx.fill();
+    }
+    mctx.restore();
+  }
+
+  function drawCondolenceCorners(mctx, borderStyle) {
+    const size = BORDER_CORNER_SIZE;
+    const left = BORDER_MARGIN.x;
+    const right = W - BORDER_MARGIN.x;
+    const top = BORDER_MARGIN.top;
+    const bottom = H - BORDER_MARGIN.bottom;
+    const placements = [
+      { x: left, y: top, sx: 1, sy: 1 },
+      { x: right, y: top, sx: -1, sy: 1 },
+      { x: left, y: bottom, sx: 1, sy: -1 },
+      { x: right, y: bottom, sx: -1, sy: -1 },
+    ];
+    placements.forEach((p) => {
+      mctx.save();
+      mctx.translate(p.x, p.y);
+      mctx.scale(p.sx, p.sy);
+      drawCondolenceCorner(mctx, borderStyle, size);
+      mctx.restore();
+    });
+  }
+
   // Theme-aware luxury frame: a triple-line border plus four corner
-  // flourishes. `compositeFoil` is defined further below in this module;
-  // as a hoisted function declaration it is callable here regardless of
-  // textual order.
-  function renderLuxuryBorder(ctx, theme, quality) {
+  // flourishes for Birthday, or mood-tuned restrained geometry for Condolence.
+  function renderLuxuryBorder(ctx, theme, quality, project) {
+    const isCondolence = project && project.occasion && project.occasion.id === "condolence";
+    const emotion = (project && project.content && project.content.emotion) || "heartfelt";
+    const design = OccasionRegistry.getDesign(isCondolence ? "condolence" : "birthday", emotion);
+
     compositeFoil(ctx, W, H, (mctx) => {
-      drawBorderLines(mctx);
-      drawCorners(mctx);
+      if (isCondolence) {
+        drawCondolenceBorderLines(mctx, design.borderStyle);
+        drawCondolenceCorners(mctx, design.borderStyle);
+      } else {
+        drawBorderLines(mctx);
+        drawCorners(mctx);
+      }
     }, {
-      presetId: theme.foilPresetId,
+      presetId: design ? design.borderPresetId : theme.foilPresetId,
       mode: "foil",
-      intensity: 82,
-      grain: 28,
-      highlight: 58,
-      shadow: 52,
+      intensity: design ? design.foil.intensity : 82,
+      grain: design ? design.foil.grain : 28,
+      highlight: design ? design.foil.highlight : 58,
+      shadow: design ? design.foil.shadow : 52,
       quality,
     });
   }
@@ -2945,17 +3648,30 @@ const Renderer = (() => {
   };
 
   function getTextProtectionRegions(project) {
-    const pairing = FontPairings.getPairing(project.typography.pairingId);
+    const isCondolence = project && project.occasion && project.occasion.id === "condolence";
+    const effective = getEffectiveTextStyle(project);
+    const design = effective.design;
+    const typography = effective.typography;
+    const isTextLed = design && design.composition === "text-led";
+
+    const pairing = effective.pairing;
     const margin = LayoutEngine.SAFE_MARGIN.x;
-    const maxWidth = (W - margin * 2) * (project.layout.textMaxWidth || pairing.maxTextWidthRatio || 0.8);
-    const maxShiftX = LayoutEngine.getMaxTextShiftX(project.layout.textMaxWidth);
-    const shiftX = Utils.clamp(project.layout.textShiftX || 0, -maxShiftX, maxShiftX);
+    const widthRatio = design ? design.textLayout.maxWidthRatio : (project.layout.textMaxWidth || pairing.maxTextWidthRatio || 0.8);
+    const maxWidth = (W - margin * 2) * widthRatio;
+    const maxShiftX = design ? 0 : LayoutEngine.getMaxTextShiftX(project.layout.textMaxWidth);
+    const shiftX = design ? design.textLayout.shiftX : Utils.clamp(project.layout.textShiftX || 0, -maxShiftX, maxShiftX);
     const cx = W / 2 + shiftX;
     const geo = getArtGeometry(project);
     const signatureTop = H - 150;
-    const anchored = 960 + (project.layout.textPosition - 0.62) * 400;
-    const shift = Utils.clamp(project.layout.textShift || 0, -90, 90);
-    const blockTop = Utils.clamp(Math.max(geo.bottom + 56, anchored) + shift, geo.bottom + 24, signatureTop - 170);
+
+    let blockTop;
+    if (isTextLed) {
+      blockTop = Utils.clamp(design.textLayout.blockTop, 280, signatureTop - 300);
+    } else {
+      const anchored = design ? 960 : 960 + (project.layout.textPosition - 0.62) * 400;
+      const shift = design ? design.textLayout.shiftY : Utils.clamp(project.layout.textShift || 0, -90, 90);
+      blockTop = Utils.clamp(Math.max(geo.bottom + 56, anchored) + shift, geo.bottom + 24, signatureTop - 170);
+    }
 
     const measureCtx = document.createElement("canvas").getContext("2d");
     const regions = [];
@@ -2967,13 +3683,13 @@ const Renderer = (() => {
       text: recipientText,
       fontFamily: pairing.recipientFont,
       weight: pairing.recipientWeight,
-      maxSize: project.typography.recipientSize,
+      maxSize: typography.recipientSize,
       minSize: 28,
       maxWidth,
       maxLines: 2,
-      letterSpacingStart: project.typography.letterSpacing,
+      letterSpacingStart: typography.letterSpacing,
     });
-    const recipientLineHeight = recipientFit.size * (project.typography.lineHeight || pairing.lineHeight);
+    const recipientLineHeight = recipientFit.size * (typography.lineHeight || pairing.lineHeight);
     const recipientHeight = recipientFit.lines.length * recipientLineHeight;
     const recipientWidth = Math.max(160, recipientFit.maxLineWidth + 32);
     regions.push({
@@ -2983,13 +3699,13 @@ const Renderer = (() => {
       height: recipientHeight + 24,
       radius: 18,
     });
-    cursorY += recipientHeight + 26;
+    cursorY += recipientHeight + (isCondolence ? 34 : 26);
 
     // 2. Greeting + optional relationship copy region
-    const greetingSource = project.content.autoGreetingEnabled
-      ? GreetingGenerator.fallbackFor(project.content.emotion, project.recipient.name)
-      : project.content.greeting;
-    const greetingText = Utils.truncateProse(greetingSource || "", GREETING_MAX_CHARS);
+    const greetingValidation = GreetingGenerator.validateProjectGreeting(project);
+    const greetingText = greetingValidation.safe
+      ? Utils.truncateProse(greetingValidation.text || "", GREETING_MAX_CHARS)
+      : "";
     let greetingWidth = 0;
     let greetingHeight = 0;
     const greetingTop = cursorY;
@@ -3001,7 +3717,7 @@ const Renderer = (() => {
         text: greetingText,
         fontFamily: pairing.greetingFont,
         weight: pairing.greetingWeight,
-        maxSize: project.typography.greetingSize,
+        maxSize: typography.greetingSize,
         minSize: 15,
         maxWidth: maxWidth * 0.92,
         maxLines: linesThatFit(15),
@@ -3017,10 +3733,11 @@ const Renderer = (() => {
           letterSpacing: 0,
         });
       }
-      const greetingLineHeight = greetingFit.size * 1.5;
+      const greetingLineRatio = isCondolence ? 1.6 : 1.5;
+      const greetingLineHeight = greetingFit.size * greetingLineRatio;
       greetingHeight = greetingFit.lines.length * greetingLineHeight;
       greetingWidth = greetingFit.maxLineWidth + 32;
-      cursorY += greetingHeight + 20;
+      cursorY += greetingHeight + (isCondolence ? 28 : 20);
     }
 
     const relationship = Utils.sanitizeText(project.recipient.relationship || "", 40);
@@ -3046,12 +3763,12 @@ const Renderer = (() => {
     // 3. Sender signature region (if present)
     const senderText = Utils.sanitizeText(project.sender.name || "", 40);
     if (senderText) {
-      const signY = Math.max(cursorY + 30, signatureTop);
+      const signY = Math.max(cursorY + (isCondolence ? 42 : 30), signatureTop);
       const senderFit = LayoutEngine.fitText(measureCtx, {
         text: "— " + senderText,
         fontFamily: pairing.signatureFont,
         weight: "500",
-        maxSize: project.typography.senderSize,
+        maxSize: typography.senderSize,
         minSize: 14,
         maxWidth: maxWidth * 0.7,
         maxLines: 1,
@@ -3086,7 +3803,11 @@ const Renderer = (() => {
   }
 
   async function renderThemeBorderDecorations(ctx, project, theme) {
-    const specs = THEME_BORDER_DECOR[theme.id] || THEME_BORDER_DECOR["pearl-marble"];
+    const isCondolence = project && project.occasion && project.occasion.id === "condolence";
+    const emotion = (project && project.content && project.content.emotion) || "heartfelt";
+    const design = OccasionRegistry.getDesign(isCondolence ? "condolence" : "birthday", emotion);
+    const specs = design ? design.decorations : (THEME_BORDER_DECOR[theme.id] || THEME_BORDER_DECOR["pearl-marble"]);
+
     const uniqueIds = Array.from(new Set(specs.map((spec) => spec.id)));
     const loaded = await Promise.all(uniqueIds.map(async (id) => [id, await CenterpieceAssetResolver.resolve(id)]));
     const images = new Map(loaded);
@@ -3099,20 +3820,22 @@ const Renderer = (() => {
       if (image) drawBorderAsset(dctx, image, spec);
     });
 
-    // Hard-clear the portrait/centrepiece plus a generous halo around its
-    // frame. The text lane clears only the actual tight bounds of each text group.
-    dctx.save();
-    dctx.globalCompositeOperation = "destination-out";
-    dctx.fillStyle = "#fff";
-    const art = getArtGeometry(project);
-    artPath(dctx, art, -42);
-    dctx.fill();
-    const regions = getTextProtectionRegions(project);
-    regions.forEach((r) => {
-      roundRectPath(dctx, r.x, r.y, r.width, r.height, r.radius || 20);
+    if (!isCondolence) {
+      // Hard-clear the portrait/centrepiece plus a generous halo around its
+      // frame. The text lane clears only the actual tight bounds of each text group.
+      dctx.save();
+      dctx.globalCompositeOperation = "destination-out";
+      dctx.fillStyle = "#fff";
+      const art = getArtGeometry(project);
+      artPath(dctx, art, -42);
       dctx.fill();
-    });
-    dctx.restore();
+      const regions = getTextProtectionRegions(project);
+      regions.forEach((r) => {
+        roundRectPath(dctx, r.x, r.y, r.width, r.height, r.radius || 20);
+        dctx.fill();
+      });
+      dctx.restore();
+    }
 
     ctx.save();
     ctx.drawImage(layer, 0, 0);
@@ -3135,10 +3858,23 @@ const Renderer = (() => {
   // framed-rectangle look. Both are centred horizontally and anchored near
   // the top of the safe zone so the text block below can grow downward.
   const ART_TOP = 148;
+  function getEffectiveTextStyle(project) {
+    const occasionId = (project.occasion && project.occasion.id) || "birthday";
+    const design = OccasionRegistry.getDesign(occasionId, project.content && project.content.emotion);
+    const typography = design ? design.typography : project.typography;
+    return { design, typography, pairing: FontPairings.getPairing(typography.pairingId) };
+  }
+
   function getArtGeometry(project) {
     const layout = (project && project.layout) || {};
-    const shape = layout.photoShape === "rect" ? "rect" : "circle";
-    const size = Utils.clamp(layout.centerpieceSize || 620, 320, 760);
+    const design = OccasionRegistry.getDesign(
+      project && project.occasion && project.occasion.id,
+      project && project.content && project.content.emotion
+    );
+    const geometry = design ? design.geometry : null;
+    const shapeValue = geometry ? geometry.shape : layout.photoShape;
+    const shape = shapeValue === "rect" ? "rect" : "circle";
+    const size = Utils.clamp(geometry ? geometry.centerpieceSize : (layout.centerpieceSize || 620), 320, 760);
     const cx = W / 2;
     if (shape === "rect") {
       const width = Math.min(W - 300, size * 1.32);
@@ -3167,9 +3903,14 @@ const Renderer = (() => {
   }
 
   async function renderCenterpieceFallback(ctx, project, theme, geo, monogram) {
+    const design = OccasionRegistry.getDesign(
+      project.occasion && project.occasion.id,
+      project.content && project.content.emotion
+    );
     await Centerpieces.paint(ctx, { cx: geo.cx, cy: geo.cy, r: Math.max(geo.width, geo.height) / 2 }, {
-      id: (project.layout && project.layout.centerpieceId) || "auto",
+      id: design && design.centerpieceId ? design.centerpieceId : ((project.layout && project.layout.centerpieceId) || "auto"),
       emotion: project.content.emotion,
+      occasionId: (project.occasion && project.occasion.id) || "birthday",
       theme,
       monogram,
     });
@@ -3189,12 +3930,13 @@ const Renderer = (() => {
   // before the medallion's own shadow/clip/content, so it is invisible
   // wherever the opaque photo or centrepiece artwork actually covers it;
   // it only shows in the surrounding dead space.
-  function drawMedallionHalo(ctx, theme, geo) {
+  function drawMedallionHalo(ctx, theme, geo, color) {
     const maxR = Math.max(geo.width, geo.height) / 2;
+    const haloColor = color || theme.palette.secondary;
     const g = ctx.createRadialGradient(geo.cx, geo.cy, maxR * 0.55, geo.cx, geo.cy, maxR * 1.55);
-    g.addColorStop(0, withAlphaHex(theme.palette.secondary, 0.22));
-    g.addColorStop(0.55, withAlphaHex(theme.palette.secondary, 0.08));
-    g.addColorStop(1, withAlphaHex(theme.palette.secondary, 0));
+    g.addColorStop(0, withAlphaHex(haloColor, 0.22));
+    g.addColorStop(0.55, withAlphaHex(haloColor, 0.08));
+    g.addColorStop(1, withAlphaHex(haloColor, 0));
     ctx.save();
     ctx.fillStyle = g;
     ctx.beginPath();
@@ -3245,9 +3987,20 @@ const Renderer = (() => {
   }
 
   async function renderPhoto(ctx, project, theme, photoImage, monogram, quality) {
+    const isCondolence = project.occasion && project.occasion.id === "condolence";
+    const emotion = (project.content && project.content.emotion) || "heartfelt";
+    const design = OccasionRegistry.getDesign(isCondolence ? "condolence" : "birthday", emotion);
+    const isTextLed = design && design.composition === "text-led";
+
+    if (isTextLed) {
+      // In Comforting, Reverent and Professional Condolence cards, the circular medallion placeholder
+      // is completely omitted in favour of an intentional full-card botanical / text-led composition.
+      return;
+    }
+
     const geo = getArtGeometry(project);
 
-    drawMedallionHalo(ctx, theme, geo);
+    drawMedallionHalo(ctx, theme, geo, design && design.haloColor);
 
     // Cast shadow behind the medallion
     ctx.save();
@@ -3262,7 +4015,8 @@ const Renderer = (() => {
     // A tailored dark mat gives pale card stock enough separation from
     // bright photographs and prevents the image from overpowering the
     // metallic frame on Pearl Marble.
-    if (theme.background.light) {
+    const isHeartfelt = isCondolence && emotion === "heartfelt";
+    if (theme.background.light && !isCondolence) {
       ctx.save();
       artPath(ctx, geo, -9);
       ctx.lineWidth = 20;
@@ -3279,7 +4033,8 @@ const Renderer = (() => {
     artPath(ctx, geo);
     ctx.clip();
 
-    if (photoImage) {
+    const allowPhoto = OccasionRegistry.allowsPhoto((project.occasion && project.occasion.id) || "birthday");
+    if (photoImage && allowPhoto) {
       const p = project.photo || {};
       const rotation = ((p.rotation || 0) * Math.PI) / 180;
       ctx.save();
@@ -3319,28 +4074,28 @@ const Renderer = (() => {
     artPath(ctx, geo, 3);
     ctx.lineWidth = 7;
     const frameGrad = ctx.createLinearGradient(geo.x, geo.y, geo.x + geo.width, geo.y + geo.height);
-    frameGrad.addColorStop(0, "rgba(255,255,255,0.6)");
-    frameGrad.addColorStop(0.35, theme.palette.secondary);
-    frameGrad.addColorStop(0.62, "rgba(255,246,210,0.85)");
-    frameGrad.addColorStop(1, "rgba(0,0,0,0.45)");
+    frameGrad.addColorStop(0, isHeartfelt ? "rgba(255,255,255,0.7)" : "rgba(255,255,255,0.6)");
+    frameGrad.addColorStop(0.35, isHeartfelt ? "#d4af37" : theme.palette.secondary);
+    frameGrad.addColorStop(0.62, isHeartfelt ? "rgba(255,246,210,0.9)" : "rgba(255,246,210,0.85)");
+    frameGrad.addColorStop(1, isHeartfelt ? "rgba(160,120,40,0.5)" : "rgba(0,0,0,0.45)");
     ctx.strokeStyle = frameGrad;
     ctx.stroke();
 
     artPath(ctx, geo, 10);
     ctx.lineWidth = 1.6;
-    ctx.strokeStyle = "rgba(232,199,119,0.55)";
+    ctx.strokeStyle = isHeartfelt ? "rgba(232,199,119,0.65)" : "rgba(232,199,119,0.55)";
     ctx.stroke();
 
     artPath(ctx, geo, -6);
     ctx.lineWidth = 1.2;
-    ctx.strokeStyle = "rgba(0,0,0,0.35)";
+    ctx.strokeStyle = isHeartfelt ? "rgba(180,140,80,0.3)" : "rgba(0,0,0,0.35)";
     ctx.stroke();
     ctx.restore();
 
     // Layered gold ring + sparkle flecks, composited through the same
     // metallic foil pipeline as the rest of the card's chrome.
     compositeFoil(ctx, W, H, (mctx) => drawMedallionAccents(mctx, geo), {
-      presetId: theme.foilPresetId, mode: "foil", intensity: 70,
+      presetId: design ? design.borderPresetId : theme.foilPresetId, mode: "foil", intensity: 70,
       grain: 20, highlight: 55, shadow: 40, quality,
     });
   }
@@ -3472,28 +4227,53 @@ const Renderer = (() => {
   }
 
   async function renderTextLayers(ctx, project, theme, pairing, diagnostics, quality) {
+    const effective = getEffectiveTextStyle(project);
+    const design = effective.design;
+    const typography = effective.typography;
+    pairing = effective.pairing;
     const margin = LayoutEngine.SAFE_MARGIN.x;
-    const maxWidth = (W - margin * 2) * (project.layout.textMaxWidth || pairing.maxTextWidthRatio || 0.8);
-    const maxShiftX = LayoutEngine.getMaxTextShiftX(project.layout.textMaxWidth);
-    const cx = W / 2 + Utils.clamp(project.layout.textShiftX || 0, -maxShiftX, maxShiftX);
+    const widthRatio = design ? design.textLayout.maxWidthRatio : (project.layout.textMaxWidth || pairing.maxTextWidthRatio || 0.8);
+    const maxWidth = (W - margin * 2) * widthRatio;
+    const maxShiftX = design ? 0 : LayoutEngine.getMaxTextShiftX(project.layout.textMaxWidth);
+    const shiftX = design ? design.textLayout.shiftX : Utils.clamp(project.layout.textShiftX || 0, -maxShiftX, maxShiftX);
+    const cx = W / 2 + shiftX;
 
-    // The text block starts below the centrepiece, never above its baseline
-    // position, and is then nudged by the layout-balance shift. Clamped so
-    // it can never collide with the medallion or run past the signature.
+    // The text block starts below the centrepiece (or centered for text-led condolence),
+    // and is then nudged by the layout-balance shift.
     const geo = getArtGeometry(project);
     const signatureTop = H - 150;
-    const anchored = 960 + (project.layout.textPosition - 0.62) * 400;
-    const shift = Utils.clamp(project.layout.textShift || 0, -90, 90);
-    const blockTop = Utils.clamp(
-      Math.max(geo.bottom + 56, anchored) + shift,
-      geo.bottom + 24,
-      signatureTop - 170
-    );
+    const isCondolence = project.occasion && project.occasion.id === "condolence";
+    const isTextLed = design && design.composition === "text-led";
+
+    let blockTop;
+    if (isTextLed) {
+      blockTop = Utils.clamp(design.textLayout.blockTop, 280, signatureTop - 300);
+    } else {
+      const anchored = design ? 960 : 960 + (project.layout.textPosition - 0.62) * 400;
+      const shift = design ? design.textLayout.shiftY : Utils.clamp(project.layout.textShift || 0, -90, 90);
+      blockTop = Utils.clamp(
+        Math.max(geo.bottom + 56, anchored) + shift,
+        geo.bottom + 24,
+        signatureTop - 170
+      );
+    }
 
     const measureCtx = document.createElement("canvas").getContext("2d");
 
     let cursorY = blockTop;
     const boxes = [];
+
+    let textColor = theme.palette.text;
+    let mutedColor = theme.palette.mutedText;
+    let signatureColor = theme.palette.mutedText;
+    let recipientPreset = project.foil.presetId;
+
+    if (design) {
+      recipientPreset = design.recipientPresetId;
+      textColor = design.palette.text;
+      mutedColor = design.palette.muted;
+      signatureColor = design.palette.signature;
+    }
 
     // Recipient name (highest text priority)
     const recipientText = Utils.sanitizeText(project.recipient.name || "Dear Friend", 40);
@@ -3501,11 +4281,11 @@ const Renderer = (() => {
       text: recipientText,
       fontFamily: pairing.recipientFont,
       weight: pairing.recipientWeight,
-      maxSize: project.typography.recipientSize,
+      maxSize: typography.recipientSize,
       minSize: 28,
       maxWidth,
       maxLines: 2,
-      letterSpacingStart: project.typography.letterSpacing,
+      letterSpacingStart: typography.letterSpacing,
     });
     if (recipientFit.overflow) diagnostics.textOverflow = true;
     if (recipientFit.clamped) diagnostics.textClamped = true;
@@ -3513,31 +4293,37 @@ const Renderer = (() => {
     const recipientMask = createWorkCanvas(W, H);
     const rmCtx = recipientMask.getContext("2d");
     rmCtx.fillStyle = "#fff";
-    const recipientLineHeight = recipientFit.size * (project.typography.lineHeight || pairing.lineHeight);
+    const recipientLineHeight = recipientFit.size * (typography.lineHeight || pairing.lineHeight);
     LayoutEngine.drawLines(rmCtx, recipientFit.lines, {
       fontFamily: pairing.recipientFont, weight: pairing.recipientWeight,
       size: recipientFit.size, letterSpacing: recipientFit.letterSpacing,
-      lineHeight: (project.typography.lineHeight || pairing.lineHeight),
+      lineHeight: (typography.lineHeight || pairing.lineHeight),
       cx, startY: cursorY + recipientFit.size * 0.85,
     });
     const recipientHeight = recipientFit.lines.length * recipientLineHeight;
     boxes.push(textBoxToLayoutBox("recipient-name", cx, cursorY, recipientFit.maxLineWidth, recipientHeight, 100));
     compositeFoil(ctx, W, H, (mctx) => mctx.drawImage(recipientMask, 0, 0), {
-      presetId: project.foil.presetId, mode: project.foil.mode, intensity: project.foil.intensity,
-      grain: project.foil.grain, highlight: project.foil.highlight, shadow: project.foil.shadow, quality,
+      presetId: recipientPreset,
+      mode: design ? design.foil.mode : project.foil.mode,
+      intensity: design ? design.foil.intensity : project.foil.intensity,
+      grain: design ? design.foil.grain : project.foil.grain,
+      highlight: design ? design.foil.highlight : project.foil.highlight,
+      shadow: design ? design.foil.shadow : project.foil.shadow,
+      quality,
     });
-    cursorY += recipientHeight + 26;
+    cursorY += recipientHeight + (isCondolence ? 34 : 26);
 
     // Greeting
-    const greetingSource = project.content.autoGreetingEnabled
-      ? GreetingGenerator.fallbackFor(project.content.emotion, project.recipient.name)
-      : project.content.greeting;
+    const greetingValidation = GreetingGenerator.validateProjectGreeting(project);
+    if (!greetingValidation.safe) diagnostics.unsafeGreeting = true;
     // truncateProse (not the plain sanitizeText slice used elsewhere) so
     // content that arrives already over GREETING_MAX_CHARS — an imported
     // backup from a different app version, for instance — backs up to a
     // word boundary and gets an ellipsis instead of stopping mid-word with
     // no indication anything was cut.
-    const greetingText = Utils.truncateProse(greetingSource || "", GREETING_MAX_CHARS);
+    const greetingText = greetingValidation.safe
+      ? Utils.truncateProse(greetingValidation.text || "", GREETING_MAX_CHARS)
+      : "";
     if (greetingText) {
       const GREETING_LINE_RATIO = 1.5;
       const greetingMinSize = 15;
@@ -3551,7 +4337,7 @@ const Renderer = (() => {
         text: greetingText,
         fontFamily: pairing.greetingFont,
         weight: pairing.greetingWeight,
-        maxSize: project.typography.greetingSize,
+        maxSize: typography.greetingSize,
         minSize: greetingMinSize,
         maxWidth: maxWidth * 0.92,
         maxLines: linesThatFit(greetingMinSize),
@@ -3573,24 +4359,25 @@ const Renderer = (() => {
       if (greetingFit.overflow) diagnostics.textOverflow = true;
       if (greetingFit.clamped) diagnostics.textClamped = true;
       ctx.save();
-      ctx.fillStyle = theme.palette.text;
-      const greetingLineHeight = greetingFit.size * 1.5;
+      ctx.fillStyle = textColor;
+      const greetingLineRatio = isCondolence ? 1.6 : 1.5;
+      const greetingLineHeight = greetingFit.size * greetingLineRatio;
       LayoutEngine.drawLines(ctx, greetingFit.lines, {
         fontFamily: pairing.greetingFont, weight: pairing.greetingWeight,
-        size: greetingFit.size, letterSpacing: 0, lineHeight: 1.5,
+        size: greetingFit.size, letterSpacing: 0, lineHeight: greetingLineRatio,
         cx, startY: cursorY + greetingFit.size * 0.85,
       });
       ctx.restore();
       const greetingHeight = greetingFit.lines.length * greetingLineHeight;
       boxes.push(textBoxToLayoutBox("greeting", cx, cursorY, greetingFit.maxLineWidth, greetingHeight, 90));
-      cursorY += greetingHeight + 20;
+      cursorY += greetingHeight + (isCondolence ? 28 : 20);
     }
 
     // Supporting copy (relationship line) — small, quiet, optional
     const relationship = Utils.sanitizeText(project.recipient.relationship || "", 40);
     if (relationship) {
       ctx.save();
-      ctx.fillStyle = theme.palette.mutedText;
+      ctx.fillStyle = mutedColor;
       ctx.font = "500 20px " + pairing.supportFont;
       ctx.textAlign = "center";
       ctx.globalAlpha = 0.85;
@@ -3603,12 +4390,12 @@ const Renderer = (() => {
     // Sender signature — pinned near the bottom, never overlapping name/greeting
     const senderText = Utils.sanitizeText(project.sender.name || "", 40);
     if (senderText) {
-      const signY = Math.max(cursorY + 30, H - 150);
+      const signY = Math.max(cursorY + (isCondolence ? 42 : 30), H - 150);
       const senderFit = LayoutEngine.fitText(measureCtx, {
         text: "— " + senderText,
         fontFamily: pairing.signatureFont,
         weight: "500",
-        maxSize: project.typography.senderSize,
+        maxSize: typography.senderSize,
         minSize: 14,
         maxWidth: maxWidth * 0.7,
         maxLines: 1,
@@ -3617,9 +4404,9 @@ const Renderer = (() => {
       if (senderFit.overflow) diagnostics.textOverflow = true;
       if (senderFit.clamped) diagnostics.textClamped = true;
       boxes.push(textBoxToLayoutBox("sender-signature", cx, signY - senderFit.size, senderFit.maxLineWidth, senderFit.size * 1.3, 95));
-      if (theme.background && theme.background.light) {
+      if (isCondolence || (theme.background && theme.background.light)) {
         ctx.save();
-        ctx.fillStyle = theme.palette.mutedText;
+        ctx.fillStyle = signatureColor;
         LayoutEngine.drawLines(ctx, senderFit.lines, {
           fontFamily: pairing.signatureFont, weight: "500",
           size: senderFit.size, letterSpacing: senderFit.letterSpacing, lineHeight: 1.3,
@@ -3654,6 +4441,7 @@ const Renderer = (() => {
   }
 
   function renderStampsForLayer(ctx, project, theme, layer, initials) {
+    if (!OccasionRegistry.allowsStamps((project.occasion && project.occasion.id) || "birthday")) return;
     const stamps = project.stamps.filter((s) => s.layer === layer);
     stamps.forEach((stamp) => {
       const def = StampCollections.getDef(stamp.assetId);
@@ -3708,17 +4496,23 @@ const Renderer = (() => {
     const theme = ThemeRegistry.getTheme(project.theme.id);
     const pairing = FontPairings.getPairing(project.typography.pairingId);
 
-    const diagnostics = { textOverflow: false, textClamped: false, collisions: [], missingAssets: [], safeZoneViolations: [] };
+    const diagnostics = {
+      textOverflow: false, textClamped: false, unsafeGreeting: false,
+      collisions: [], missingAssets: [], safeZoneViolations: [],
+    };
 
     ctx.clearRect(0, 0, W, H);
-    renderBackground(ctx, theme, quality);
+    renderBackground(ctx, theme, quality, project);
     await renderThemeBorderDecorations(ctx, project, theme);
-    renderLuxuryBorder(ctx, theme, quality);
+    renderLuxuryBorder(ctx, theme, quality, project);
 
     renderStampsForLayer(ctx, project, theme, "background", getInitials(project));
 
+    const occasionId = (project.occasion && project.occasion.id) || "birthday";
+    const allowPhoto = OccasionRegistry.allowsPhoto(occasionId);
+    const allowStamps = OccasionRegistry.allowsStamps(occasionId);
     let photoImage = null;
-    if (project.photo && project.photo.assetId) {
+    if (allowPhoto && project.photo && project.photo.assetId) {
       try {
         photoImage = await assets.resolvePhoto(project.photo.assetId, quality);
       } catch (err) {
@@ -3736,7 +4530,7 @@ const Renderer = (() => {
 
     // Collision + safe-zone diagnostics (non-blocking): compare stamp boxes
     // against text boxes and the safe zone; never mutates layout here.
-    const stampBoxes = project.stamps.map(stampToLayoutBox);
+    const stampBoxes = allowStamps ? project.stamps.map(stampToLayoutBox) : [];
     diagnostics.collisions = LayoutEngine.detectCollisions(textBoxes.concat(stampBoxes), 6);
     const safeZone = LayoutEngine.getSafeZone();
     stampBoxes.forEach((b) => { if (LayoutEngine.isOutsideSafeZone(b, safeZone)) diagnostics.safeZoneViolations.push(b.id); });
@@ -4112,6 +4906,13 @@ const ProjectVault = (() => {
    the PNG never implies audio is present.
    ========================================================================= */
 const ExportModule = (() => {
+  function assertSafeForOutput(project) {
+    const validation = GreetingGenerator.validateProjectGreeting(project);
+    if (!validation.safe) {
+      throw new Error("Correct the celebratory wording before exporting or sharing this Condolence card.");
+    }
+  }
+
   async function waitForFonts(pairing) {
     if (!("fonts" in document)) return;
     const families = FontPairings.familiesFor(pairing);
@@ -4130,6 +4931,7 @@ const ExportModule = (() => {
   }
 
   async function renderExportCanvas(project) {
+    assertSafeForOutput(project);
     const canvas = document.createElement("canvas");
     canvas.width = Renderer.W;
     canvas.height = Renderer.H;
@@ -4198,11 +5000,12 @@ const ExportModule = (() => {
   async function sharePng(blob, filename) {
     const file = new File([blob], filename, { type: "image/png" });
     if (!canShareFiles(file)) throw new Error("Sharing is not supported on this browser.");
-    await navigator.share({ files: [file], title: "A birthday card for you" });
+    await navigator.share({ files: [file], title: "A card for you" });
   }
 
   async function exportDigitalCardPackage(projectId) {
     const backup = await ProjectVault.exportBackup(projectId);
+    assertSafeForOutput(backup.project);
     const json = JSON.stringify(backup);
     const blob = new Blob([json], { type: "application/json" });
     const filename = "atul-digital-card-" + Utils.sanitizeFilenamePart(backup.project.recipient.name || "card") + ".json";
@@ -4212,6 +5015,7 @@ const ExportModule = (() => {
   return {
     exportPng, exportDigitalCardPackage, downloadBlob, canShareFiles, sharePng,
     renderExportCanvas, buildFilename, canUseSavePicker, choosePngDestination, savePng,
+    assertSafeForOutput,
   };
 })();
 
@@ -4237,16 +5041,14 @@ const PWAStatus = (() => {
       return;
     }
     try {
-      // Snapshot whether a controller already existed *before* this
-      // registration call. This is what correctly distinguishes "a real
-      // update to an already-installed app" from "the very first install":
-      // checking navigator.serviceWorker.controller inside the later
-      // 'installed' statechange handler is unreliable, because
-      // skipWaiting()+clients.claim() in sw.js can race ahead and set the
-      // controller before that handler runs, even on a first-ever install.
+      // Snapshot whether a controller existed before registration so a first
+      // install is distinguished from an update waiting for user approval.
       const hadControllerBeforeRegister = !!navigator.serviceWorker.controller;
       registration = await navigator.serviceWorker.register("sw.js");
       if (registration.active) setState({ offlineReady: true });
+      if (hadControllerBeforeRegister && registration.waiting) {
+        setState({ updateAvailable: true });
+      }
 
       registration.addEventListener("updatefound", () => {
         const installing = registration.installing;
@@ -4397,14 +5199,17 @@ const App = (() => {
     tabs.forEach((tab) => {
       tab.addEventListener("click", () => selectTab(tab));
       tab.addEventListener("keydown", (e) => {
-        const idx = tabs.indexOf(tab);
-        if (e.key === "ArrowRight") { e.preventDefault(); tabs[(idx + 1) % tabs.length].focus(); selectTab(tabs[(idx + 1) % tabs.length]); }
-        if (e.key === "ArrowLeft") { e.preventDefault(); tabs[(idx - 1 + tabs.length) % tabs.length].focus(); selectTab(tabs[(idx - 1 + tabs.length) % tabs.length]); }
+        const availableTabs = tabs.filter((candidate) => !candidate.hidden && !candidate.disabled);
+        const idx = availableTabs.indexOf(tab);
+        if (idx === -1) return;
+        if (e.key === "ArrowRight") { e.preventDefault(); availableTabs[(idx + 1) % availableTabs.length].focus(); selectTab(availableTabs[(idx + 1) % availableTabs.length]); }
+        if (e.key === "ArrowLeft") { e.preventDefault(); availableTabs[(idx - 1 + availableTabs.length) % availableTabs.length].focus(); selectTab(availableTabs[(idx - 1 + availableTabs.length) % availableTabs.length]); }
       });
     });
   }
 
   function selectTab(tab) {
+    if (!tab || tab.hidden || tab.disabled) return;
     document.querySelectorAll(".tab").forEach((t) => {
       const selected = t === tab;
       t.setAttribute("aria-selected", String(selected));
@@ -4416,10 +5221,21 @@ const App = (() => {
   }
 
   /* ---------------- Populate registries into DOM ---------------- */
-  function populateEmotionRow() {
+  function populateOccasionSelect() {
+    if (!dom.occasionSelect) return;
+    dom.occasionSelect.innerHTML = "";
+    OccasionRegistry.list().forEach((occ) => {
+      const opt = document.createElement("option");
+      opt.value = occ.id;
+      opt.textContent = occ.label;
+      dom.occasionSelect.appendChild(opt);
+    });
+  }
+
+  function populateEmotionRow(occasionId) {
     const row = dom.emotionRow;
     row.innerHTML = "";
-    GreetingGenerator.list().forEach((emotion) => {
+    GreetingGenerator.list(occasionId).forEach((emotion) => {
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "emotion-btn";
@@ -4442,10 +5258,12 @@ const App = (() => {
     });
   }
 
-  function populateCenterpieceList() {
+  function populateCenterpieceList(occasionId) {
     const list = dom.centerpieceList;
+    if (!list) return;
     list.innerHTML = "";
-    Centerpieces.list().forEach((cp) => {
+    const occId = occasionId || (StateStore.getProject() && StateStore.getProject().occasion && StateStore.getProject().occasion.id) || "birthday";
+    Centerpieces.list(occId).forEach((cp) => {
       const item = document.createElement("button");
       item.type = "button";
       item.className = "option-item";
@@ -4576,6 +5394,9 @@ const App = (() => {
   }
 
   function addStamp(def) {
+    const project = StateStore.getProject();
+    const occasionId = (project.occasion && project.occasion.id) || "birthday";
+    if (!OccasionRegistry.allowsStamps(occasionId)) return;
     const id = Utils.uuid();
     StateStore.update((p) => {
       p.stamps.push({
@@ -4623,6 +5444,7 @@ const App = (() => {
 
   function updateDiagnosticsBanner(diagnostics) {
     const messages = [];
+    if (diagnostics.unsafeGreeting) messages.push("This greeting contains celebratory wording that cannot appear on a Condolence card. Edit it or generate a Condolence message.");
     if (diagnostics.textOverflow) messages.push("Some text may be tight for its space — consider shortening it.");
     if (diagnostics.textClamped) messages.push("Your message was shortened to stay inside the card borders.");
     if (diagnostics.collisions.length) messages.push(diagnostics.collisions.length + " element(s) are overlapping.");
@@ -4642,9 +5464,9 @@ const App = (() => {
     const panel = dom.textPreviewPanel;
     if (panel.hidden) return;
     const theme = ThemeRegistry.getTheme(project.theme.id);
-    const greeting = project.content.autoGreetingEnabled
-      ? GreetingGenerator.fallbackFor(project.content.emotion, project.recipient.name)
-      : project.content.greeting;
+    const greetingValidation = GreetingGenerator.validateProjectGreeting(project);
+    const greeting = greetingValidation.safe ? greetingValidation.text : "(blocked until incompatible celebratory wording is corrected)";
+    const occasionId = (project.occasion && project.occasion.id) || "birthday";
     panel.innerHTML = "";
     const dl = document.createElement("dl");
     const rows = [
@@ -4653,8 +5475,8 @@ const App = (() => {
       ["Greeting", greeting || "(not set)"],
       ["From", project.sender.name || "(not set)"],
       ["Theme", theme.name],
-      ["Photo", project.photo ? "Uploaded photo" : "No photo (fallback centerpiece shown)"],
-      ["Stamps", project.stamps.length ? project.stamps.length + " placed" : "None"],
+      ["Photo", OccasionRegistry.allowsPhoto(occasionId) ? (project.photo ? "Uploaded photo" : "No photo (fallback centerpiece shown)") : "No personal photo for this occasion"],
+      ["Stamps", OccasionRegistry.allowsStamps(occasionId) ? (project.stamps.length ? project.stamps.length + " placed" : "None") : "Suppressed for this occasion"],
       ["Audio greeting", project.audio ? (project.audio.title || "Attached") : "None"],
     ];
     rows.forEach(([term, desc]) => {
@@ -4665,20 +5487,79 @@ const App = (() => {
     panel.appendChild(dl);
   }
 
+  function syncGreetingSafety(project) {
+    if (!dom.greetingSafetyWarning) return;
+    const result = GreetingGenerator.validateProjectGreeting(project);
+    const blocked = result.occasionId === "condolence" && !result.safe;
+    dom.greetingText.setAttribute("aria-invalid", String(blocked));
+    dom.greetingSafetyWarning.hidden = !blocked;
+    dom.greetingSafetyWarning.textContent = blocked
+      ? "Celebratory wording is not allowed on a Condolence card. Your text is preserved, but it will not appear in preview or export until corrected."
+      : "";
+    if (dom.useEditedMessageBtn) {
+      const edited = project.content.messageMode === "edited";
+      dom.useEditedMessageBtn.disabled = !edited;
+      dom.useEditedMessageBtn.textContent = edited ? "Use Edited Message" : "Message Saved";
+    }
+  }
+
+  function syncOccasionEditor(project) {
+    const isCondolence = project.occasion && project.occasion.id === "condolence";
+    [dom.themeTab, dom.typographyTab, dom.foilTab, dom.layoutTab].forEach((tab) => {
+      if (!tab) return;
+      const wasSelected = tab.getAttribute("aria-selected") === "true";
+      tab.hidden = isCondolence;
+      tab.disabled = isCondolence;
+      if (isCondolence && wasSelected) selectTab(dom.contentTab);
+    });
+    if (dom.recipientRelationshipLabel) {
+      dom.recipientRelationshipLabel.textContent = isCondolence
+        ? "Relationship to the deceased"
+        : "Relationship";
+    }
+    dom.recipientRelationship.placeholder = isCondolence
+      ? "e.g. Father, aunt, friend, colleague"
+      : "e.g. Brother, Best Friend";
+    if (dom.recipientRelationshipHint) {
+      dom.recipientRelationshipHint.hidden = !isCondolence;
+      dom.recipientRelationshipHint.textContent = isCondolence
+        ? "Enter the recipient’s relationship to the deceased. No religion or ritual is inferred."
+        : "";
+    }
+  }
+
   /* ---------------- Field binding: Content tab ---------------- */
   function bindContentTab() {
+    if (dom.occasionSelect) {
+      dom.occasionSelect.addEventListener("change", (e) => {
+        const newOccasionId = OccasionRegistry.normalizeOccasion(e.target.value);
+        StateStore.update((p) => {
+          switchProjectOccasion(p, newOccasionId);
+        }, { reason: "occasion-change" });
+        const p = StateStore.getProject();
+        syncControlsFromState(p);
+        toast(OccasionRegistry.get(newOccasionId).label + " selected.");
+      });
+    }
     dom.recipientName.addEventListener("input", (e) => {
       StateStore.update((p) => { p.recipient.name = Utils.sanitizeText(e.target.value, 40); }, { skipHistory: true });
     });
     dom.recipientName.addEventListener("change", () => StateStore.update(() => {}, { skipAutosave: false }));
     dom.recipientRelationship.addEventListener("input", (e) => {
-      StateStore.update((p) => { p.recipient.relationship = Utils.sanitizeText(e.target.value, 40); }, { skipHistory: true });
+      StateStore.update((p) => {
+        const relationship = Utils.sanitizeText(e.target.value, 40);
+        p.recipient.relationship = relationship;
+        p.content.relationship = relationship;
+      }, { skipHistory: true });
     });
     dom.senderName.addEventListener("input", (e) => {
       StateStore.update((p) => { p.sender.name = Utils.sanitizeText(e.target.value, 40); }, { skipHistory: true });
     });
     dom.autoGreetingToggle.addEventListener("change", (e) => {
-      StateStore.update((p) => { p.content.autoGreetingEnabled = e.target.checked; }, { reason: "auto-greeting" });
+      StateStore.update((p) => {
+        p.content.autoGreetingEnabled = e.target.checked;
+        p.content.messageMode = e.target.checked ? "auto" : "manual";
+      }, { reason: "auto-greeting" });
     });
     // Emotion generator: one tap writes a draft straight into the greeting
     // field so it stays fully editable, and records the emotion so "auto-
@@ -4688,16 +5569,19 @@ const App = (() => {
       if (!btn) return;
       const emotion = btn.dataset.emotion;
       const project = StateStore.getProject();
-      const draft = GreetingGenerator.generate(emotion, project.recipient.name, project.content.greeting);
+      const occasionId = (project.occasion && project.occasion.id) || "birthday";
+      const draft = GreetingGenerator.generate(emotion, project.recipient.name, project.content.greeting, occasionId, project.recipient.relationship);
       StateStore.update((p) => {
         p.content.emotion = emotion;
         p.content.greeting = draft;
         p.content.autoGreetingEnabled = false;
+        p.content.messageMode = "generated";
       }, { reason: "greeting-generated" });
       dom.greetingText.value = draft;
       dom.greetingCount.textContent = draft.length + " / " + GREETING_MAX_CHARS;
       dom.autoGreetingToggle.checked = false;
       markEmotionSelection(emotion);
+      syncLayoutControls(StateStore.getProject());
       toast(btn.dataset.label + " greeting written.");
     });
     dom.greetingText.addEventListener("input", (e) => {
@@ -4705,9 +5589,23 @@ const App = (() => {
       // maxlength already keeps this at or under the cap); it only changes
       // behavior in the defensive case where something bypasses that,
       // where it backs up to a word boundary instead of cutting mid-word.
-      const val = Utils.truncateProse(e.target.value, GREETING_MAX_CHARS);
+      const val = e.target.value;
       dom.greetingCount.textContent = val.length + " / " + GREETING_MAX_CHARS;
-      StateStore.update((p) => { p.content.greeting = val; }, { skipHistory: true });
+      StateStore.update((p) => {
+        p.content.greeting = val;
+        p.content.autoGreetingEnabled = false;
+        p.content.messageMode = "edited";
+      }, { skipHistory: true });
+    });
+    dom.useEditedMessageBtn.addEventListener("click", () => {
+      const exactText = dom.greetingText.value;
+      StateStore.update((p) => {
+        p.content.greeting = exactText;
+        p.content.autoGreetingEnabled = false;
+        p.content.messageMode = "manual";
+      }, { reason: "message-accepted" });
+      dom.autoGreetingToggle.checked = false;
+      toast("Edited message saved and used on the card.");
     });
   }
 
@@ -4765,6 +5663,12 @@ const App = (() => {
   /* ---------------- Field binding: Photo tab ---------------- */
   function bindPhotoTab() {
     dom.photoInput.addEventListener("change", async (e) => {
+      const occasionId = (StateStore.getProject().occasion && StateStore.getProject().occasion.id) || "birthday";
+      if (!OccasionRegistry.allowsPhoto(occasionId)) {
+        toast("Personal photos are disabled for " + OccasionRegistry.get(occasionId).label + " cards.", true);
+        e.target.value = "";
+        return;
+      }
       const file = e.target.files[0];
       if (!file) return;
       try {
@@ -4969,6 +5873,8 @@ const App = (() => {
   function hideStampToolbar() { dom.selectedStampToolbar.hidden = true; }
 
   function positionStampToolbar(project) {
+    const occasionId = (project.occasion && project.occasion.id) || "birthday";
+    if (!OccasionRegistry.allowsStamps(occasionId)) { selectedStampId = null; hideStampToolbar(); return; }
     if (!selectedStampId) { hideStampToolbar(); return; }
     const stamp = project.stamps.find((s) => s.id === selectedStampId);
     if (!stamp) { selectedStampId = null; hideStampToolbar(); return; }
@@ -5066,6 +5972,8 @@ const App = (() => {
 
     function hitTestStamp(cardPos) {
       const project = StateStore.getProject();
+      const occasionId = (project.occasion && project.occasion.id) || "birthday";
+      if (!OccasionRegistry.allowsStamps(occasionId)) return null;
       const boxes = project.stamps.map((s) => ({ stamp: s, box: Renderer.stampToLayoutBox(s) }));
       for (let i = boxes.length - 1; i >= 0; i--) {
         const { stamp, box } = boxes[i];
@@ -5081,8 +5989,10 @@ const App = (() => {
       activePointers.set(e.pointerId, e);
       if (activePointers.size === 2) {
         const pts = Array.from(activePointers.values());
-        pinchStartDist = Math.hypot(pts[0].clientX - pts[1].clientX, pts[0].clientY - pts[1].clientY);
         const project = StateStore.getProject();
+        const occasionId = (project.occasion && project.occasion.id) || "birthday";
+        if (!OccasionRegistry.allowsPhoto(occasionId) || !project.photo) return;
+        pinchStartDist = Math.hypot(pts[0].clientX - pts[1].clientX, pts[0].clientY - pts[1].clientY);
         pinchStartZoom = (project.photo && project.photo.zoom) || 1;
         dragMode = "pinch";
         return;
@@ -5099,7 +6009,8 @@ const App = (() => {
         selectedStampId = null;
         hideStampToolbar();
         const project = StateStore.getProject();
-        if (project.photo) {
+        const occasionId = (project.occasion && project.occasion.id) || "birthday";
+        if (OccasionRegistry.allowsPhoto(occasionId) && project.photo) {
           dragMode = "photo";
           dragStart = { clientX: e.clientX, clientY: e.clientY, panX: project.photo.panX, panY: project.photo.panY };
         }
@@ -5332,6 +6243,13 @@ const App = (() => {
 
     dom.exportPngBtn.addEventListener("click", async () => {
       const project = StateStore.getProject();
+      try {
+        ExportModule.assertSafeForOutput(project);
+      } catch (err) {
+        dom.exportStatus.textContent = err.message;
+        toast(err.message, true);
+        return;
+      }
       const theme = ThemeRegistry.getTheme(project.theme.id);
       const expectedFilename = ExportModule.buildFilename(project, theme);
       let saveHandle = null;
@@ -5372,6 +6290,7 @@ const App = (() => {
 
     dom.sharePngBtn.addEventListener("click", async () => {
       try {
+        ExportModule.assertSafeForOutput(StateStore.getProject());
         if (!lastPngBlob) {
           const result = await ExportModule.exportPng(StateStore.getProject());
           lastPngBlob = result.blob; lastPngFilename = result.filename;
@@ -5385,6 +6304,7 @@ const App = (() => {
     dom.exportDigitalBtn.addEventListener("click", async () => {
       dom.exportStatus.textContent = "Packaging digital card…";
       try {
+        ExportModule.assertSafeForOutput(StateStore.getProject());
         StateStore.flushAutosave();
         const { blob, filename } = await ExportModule.exportDigitalCardPackage(StateStore.getProject().id);
         ExportModule.downloadBlob(blob, filename);
@@ -5400,8 +6320,25 @@ const App = (() => {
   // Mirrors photo/centrepiece state onto its controls, and disables the
   // transform engine outright when there is no photo to transform.
   function syncPhotoControls(project) {
-    const photo = project.photo;
-    dom.photoTransformFieldset.disabled = !photo;
+    const occasionId = (project.occasion && project.occasion.id) || "birthday";
+    const occ = OccasionRegistry.get(occasionId);
+    const allowPhoto = occ.allowPhoto !== false;
+    const photo = allowPhoto ? project.photo : null;
+
+    if (dom.photoDisabledNotice) dom.photoDisabledNotice.hidden = allowPhoto;
+    if (dom.photoUploadField) dom.photoUploadField.hidden = !allowPhoto;
+    if (dom.photoShapeFieldset) dom.photoShapeFieldset.hidden = !allowPhoto;
+    if (dom.photoCenterpieceFieldset) dom.photoCenterpieceFieldset.hidden = !allowPhoto;
+
+    if (dom.photoTransformFieldset) {
+      dom.photoTransformFieldset.disabled = !photo || !allowPhoto;
+      dom.photoTransformFieldset.hidden = !allowPhoto;
+    }
+    if (dom.removePhotoBtn) {
+      dom.removePhotoBtn.disabled = !photo;
+      dom.removePhotoBtn.hidden = !allowPhoto;
+    }
+
     const zoom = photo ? photo.zoom : 1;
     const panX = photo ? (photo.panX || 0) : 0;
     const panY = photo ? (photo.panY || 0) : 0;
@@ -5414,12 +6351,17 @@ const App = (() => {
     dom.photoPanYOut.textContent = Math.round(panY * 100);
     dom.photoRotation.value = rotation;
     dom.photoRotationOut.textContent = Math.round(rotation);
-    dom.removePhotoBtn.disabled = !photo;
-    markShapeSelection(project.layout.photoShape || "circle");
-    markCenterpieceSelection(project.layout.centerpieceId || "auto");
+
+    markShapeSelection((project.layout && project.layout.photoShape) || "circle");
+    populateCenterpieceList(occasionId);
+    markCenterpieceSelection((project.layout && project.layout.centerpieceId) || "auto");
   }
 
   function syncLayoutControls(project) {
+    const design = OccasionRegistry.getDesign(
+      project.occasion && project.occasion.id,
+      project.content && project.content.emotion
+    );
     const size = project.layout.centerpieceSize || 620;
     const shift = project.layout.textShift || 0;
     const widthRatio = project.layout.textMaxWidth || 0.8;
@@ -5427,6 +6369,10 @@ const App = (() => {
     const maxShiftX = LayoutEngine.getMaxTextShiftX(widthRatio);
     const shiftX = Utils.clamp(project.layout.textShiftX || 0, -maxShiftX, maxShiftX);
     project.layout.textShiftX = shiftX;
+
+    if (dom.layoutCenterpieceSizeField) {
+      dom.layoutCenterpieceSizeField.hidden = !!design && !design.showCenterpieceSize;
+    }
 
     dom.layoutPhotoSize.value = size;
     dom.layoutPhotoSizeOut.textContent = Math.round(size);
@@ -5443,6 +6389,19 @@ const App = (() => {
   }
 
   function syncControlsFromState(project) {
+    const occasionId = (project.occasion && project.occasion.id) || "birthday";
+    const allowStamps = OccasionRegistry.allowsStamps(occasionId);
+    if (dom.occasionSelect) dom.occasionSelect.value = occasionId;
+    populateEmotionRow(occasionId);
+    syncOccasionEditor(project);
+
+    if (dom.stampsTab) {
+      const stampsWasSelected = dom.stampsTab.getAttribute("aria-selected") === "true";
+      dom.stampsTab.hidden = !allowStamps;
+      dom.stampsTab.disabled = !allowStamps;
+      if (!allowStamps && stampsWasSelected) selectTab(dom.contentTab);
+    }
+
     dom.recipientName.value = project.recipient.name || "";
     dom.recipientRelationship.value = project.recipient.relationship || "";
     dom.senderName.value = project.sender.name || "";
@@ -5450,6 +6409,7 @@ const App = (() => {
     dom.greetingText.value = project.content.greeting || "";
     dom.greetingCount.textContent = (project.content.greeting || "").length + " / " + GREETING_MAX_CHARS;
     markEmotionSelection(project.content.emotion);
+    syncGreetingSafety(project);
 
     document.querySelectorAll("#theme-grid .swatch").forEach((el) => {
       el.setAttribute("aria-checked", String(el.dataset.themeId === project.theme.id));
@@ -5597,11 +6557,16 @@ const App = (() => {
       canvas: $("#card-canvas"), canvasFrame: $("#canvas-frame"),
       diagnosticsBanner: $("#diagnostics-banner"),
       selectedStampToolbar: $("#selected-stamp-toolbar"),
+      contentTab: $("#tab-content"), themeTab: $("#tab-theme"), typographyTab: $("#tab-typography"),
+      foilTab: $("#tab-foil"), layoutTab: $("#tab-layout"), stampsTab: $("#tab-stamps"),
       toggleTextPreview: $("#toggle-text-preview"), textPreviewPanel: $("#text-preview-panel"),
 
       recipientName: $("#recipient-name"), recipientRelationship: $("#recipient-relationship"),
+      recipientRelationshipLabel: $("#recipient-relationship-label"), recipientRelationshipHint: $("#recipient-relationship-hint"),
+      occasionSelect: $("#occasion-select"),
       senderName: $("#sender-name"), autoGreetingToggle: $("#auto-greeting-toggle"),
       emotionRow: $("#emotion-row"), greetingText: $("#greeting-text"), greetingCount: $("#greeting-count"),
+      greetingSafetyWarning: $("#greeting-safety-warning"), useEditedMessageBtn: $("#use-edited-message-btn"),
 
       themeGrid: $("#theme-grid"),
 
@@ -5618,14 +6583,20 @@ const App = (() => {
       foilHighlight: $("#foil-highlight"), foilHighlightOut: $("#foil-highlight-out"),
       foilShadow: $("#foil-shadow"), foilShadowOut: $("#foil-shadow-out"),
 
+      photoDisabledNotice: $("#photo-disabled-notice"),
+      photoUploadField: $("#photo-upload-field"),
+      photoShapeFieldset: $("#photo-shape-fieldset"),
       photoInput: $("#photo-input"), photoZoom: $("#photo-zoom"), photoZoomOut: $("#photo-zoom-out"),
       photoPanX: $("#photo-pan-x"), photoPanXOut: $("#photo-pan-x-out"),
       photoPanY: $("#photo-pan-y"), photoPanYOut: $("#photo-pan-y-out"),
       photoRotation: $("#photo-rotation"), photoRotationOut: $("#photo-rotation-out"),
       photoTransformFieldset: $("#photo-transform-fieldset"), resetTransformBtn: $("#reset-transform-btn"),
-      photoShapeGroup: $("#photo-shape-group"), centerpieceList: $("#centerpiece-list"),
+      photoShapeGroup: $("#photo-shape-group"),
+      photoCenterpieceFieldset: $("#photo-centerpiece-fieldset"),
+      centerpieceList: $("#centerpiece-list"),
       removePhotoBtn: $("#remove-photo-btn"),
 
+      layoutCenterpieceSizeField: $("#layout-centerpiece-size-field"),
       layoutPhotoSize: $("#layout-photo-size"), layoutPhotoSizeOut: $("#layout-photo-size-out"),
       layoutTextShift: $("#layout-text-shift"), layoutTextShiftOut: $("#layout-text-shift-out"),
       layoutTextShiftX: $("#layout-text-shift-x"), layoutTextShiftXOut: $("#layout-text-shift-x-out"),
@@ -5652,6 +6623,7 @@ const App = (() => {
     cacheDom();
     dom.appVersion.textContent = "v" + APP_VERSION;
     initTabs();
+    populateOccasionSelect();
     populateThemeGrid();
     populateFoilGrid();
     populatePairingList();
@@ -5682,12 +6654,13 @@ const App = (() => {
     initCanvasPointerHandlers();
 
     StateStore.subscribe((project, reason) => {
-      if (reason !== "silent") scheduleRender(reason === "photo-rotate" || reason === "theme-change" ? "preview" : "preview");
+      if (reason !== "silent") scheduleRender(reason === "photo-rotate" || reason === "theme-change" || reason === "occasion-change" ? "preview" : "preview");
+      syncGreetingSafety(project);
       populateStampGalleryThumbsIfThemeChanged(reason);
       if (reason === "photo-set" || reason === "photo-remove" || reason === "photo-reset") {
         syncPhotoControls(project);
       }
-      if (reason === "theme-change" || reason === "init" || reason === "undo" || reason === "redo") {
+      if (reason === "theme-change" || reason === "occasion-change" || reason === "init" || reason === "undo" || reason === "redo") {
         syncControlsFromState(project);
       }
     });

@@ -172,6 +172,16 @@ Message generation must follow this context order:
 
 `Occasion → Sub-occasion/Festival → Relationship → Tone/Mood → Generate → Context validation`
 
+#### Indian-Context Message Requirement (Permanent Rule)
+All generated messages across current and future occasions must be primarily appropriate for Indian users, family relationships, traditions, and social conventions:
+- **Avoid Western card clichés:** Remove expressions such as “another orbit around the sun,” “cake for breakfast,” “handle with confetti,” and casual Western idioms.
+- **Natural relationship awareness:** Respect Indian social dynamics across elders, parents, spouse, siblings, children, relatives, teachers, friends, and professional colleagues.
+- **Elders & Mentors:** Express respect, good health, peace, longevity, and warm good wishes.
+- **Family & Friends:** Warm, personal, sincere, and enduring.
+- **Professional:** Dignified, polite, and respectful.
+- **Secular & Inclusive by default:** Do not assume religious beliefs (Hindu, Muslim, Christian, Sikh, Jain) on personal occasions. Do not insert token Hindi/Sanskrit expressions into generic messages. (Festival-specific cultural language is reserved strictly for when that specific festival is selected).
+- **Condolence & Sympathy:** Dignified, comforting, respectful, and compassionate without casual Western phrases or assumptions about the afterlife.
+
 Required behavior:
 
 - Match the selected occasion or festival.
@@ -461,12 +471,24 @@ Use the decision flow: `Idea → Park → Review → Approve as a specific task 
 
 ## 8. Current Task
 
-- **Active Permission Level:** None (Specification & Gap Analysis)
-- **Status:** No implementation task is currently authorized.
+- **Approved Current Task:** Task 002A — Condolence / Sympathy occasion correction and completion
+- **Active Permission Level:** IMPLEMENT
+- **Status:** Implementation authorized; not complete
+- **Authorization boundary:** Local working-tree edits and local verification for Task 002A only. COMMIT, PUSH, DEPLOY, branch changes, reset, restore, clean, and disposal of existing unfinished work are not authorized.
 
-The project is at the specification and gap-analysis stage. An AI agent may inspect the exact Atul Card Studio repository and report the current implementation against this document. It must not modify files, install or replace dependencies, change Git state, commit, push, deploy, rename, merge repositories, or implement any requirement until the user approves a specific task and its smallest safe plan.
+Task 002A acceptance criteria:
 
-The next controlled activity is to review this document for accuracy, then perform a read-only repository gap analysis if requested.
+- Birthday photo state, including the IndexedDB asset reference, zoom, pan, rotation, mask, and layout values, survives Birthday → Condolence → Birthday unchanged.
+- Stored Birthday stamps and Birthday centerpiece/layout choices are preserved but suppressed while Condolence is active, then restored unchanged on return to Birthday.
+- Condolence remains No-Photo and exposes no stamp customization.
+- Incompatible manual Condolence text remains editable in the field, is clearly warned, is omitted from rendering, and blocks PNG, share, and Digital Card output until corrected.
+- Condolence generation follows occasion → recipient relationship to the deceased → tone, remains Indian-context appropriate and religion-neutral, and does not alter Birthday relationship behavior or Birthday message pools.
+- The four deterministic designs are Heartfelt white lilies/warm ivory/gold; Comforting sage/soft ivory-pale sage/text-led; Reverent slate-blue/pale blue-grey-ivory/text-led; Professional navy-slate/ivory formal border/text-led.
+- The project schema advances to v3 and application, manifest, service-worker, and cache release versions advance together to 1.4.0.
+- All five approved Condolence PNG assets are included in rendering and offline precaching without optimization or recompression in this task.
+- Existing Birthday behavior remains unchanged except for occasion-neutral output metadata required to support Condolence.
+
+Do not mark Task 002A complete until implementation and available verification have been reported and the owner separately authorizes any later Git or release action.
 
 ## 9. Change / Handover Report Format
 

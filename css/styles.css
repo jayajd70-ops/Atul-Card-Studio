@@ -324,6 +324,17 @@ input, select, textarea { font-family: inherit; }
   color: #ffd7d2;
 }
 
+.info-banner {
+  font-size: 12.5px;
+  line-height: 1.45;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: rgba(212, 175, 55, 0.08);
+  border: 1px solid rgba(212, 175, 55, 0.28);
+  color: var(--gold-200);
+  margin-bottom: 12px;
+}
+
 .canvas-frame {
   position: relative;
   width: 100%;

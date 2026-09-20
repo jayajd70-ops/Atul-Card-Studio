@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>Atul Card Studio &mdash; Luxury Digital Atelier</title>
-<meta name="description" content="A private digital atelier for crafting luxury, foiled birthday cards with cinematic typography, hand-placed seals, and an optional voice greeting." />
+<meta name="description" content="A private digital atelier for crafting luxury birthday and sympathy cards with cinematic typography, hand-placed seals, and an optional voice greeting." />
 <meta name="theme-color" content="#d4af37" />
 <meta name="color-scheme" content="dark" />
 <link rel="manifest" href="manifest.json" />
@@ -117,12 +117,20 @@
         <!-- CONTENT -->
         <div class="tabpanel" id="panel-content" role="tabpanel" aria-labelledby="tab-content">
           <div class="field">
+            <label for="occasion-select">Occasion</label>
+            <select id="occasion-select">
+              <option value="birthday">Birthday</option>
+              <option value="condolence">Condolence / Sympathy</option>
+            </select>
+          </div>
+          <div class="field">
             <label for="recipient-name">Recipient name</label>
             <input id="recipient-name" type="text" maxlength="40" placeholder="e.g. Atul" autocomplete="off" />
           </div>
           <div class="field">
-            <label for="recipient-relationship">Relationship <span class="field-optional">(optional)</span></label>
+            <label for="recipient-relationship"><span id="recipient-relationship-label">Relationship</span> <span class="field-optional">(optional)</span></label>
             <input id="recipient-relationship" type="text" maxlength="40" placeholder="e.g. Brother, Best Friend" autocomplete="off" />
+            <p class="field-hint" id="recipient-relationship-hint" hidden></p>
           </div>
           <div class="field">
             <label for="sender-name">From</label>
@@ -144,6 +152,8 @@
             <label for="greeting-text">Greeting</label>
             <textarea id="greeting-text" rows="4" maxlength="220" placeholder="Wishing you a year as remarkable as you are."></textarea>
             <p class="field-hint" id="greeting-count">0 / 220</p>
+            <p class="field-hint field-warning" id="greeting-safety-warning" role="alert" hidden></p>
+            <button id="use-edited-message-btn" class="btn btn-ghost btn-small" type="button" disabled>Use Edited Message</button>
           </div>
         </div>
 
@@ -227,7 +237,12 @@
 
         <!-- PHOTO -->
         <div class="tabpanel" id="panel-photo" role="tabpanel" aria-labelledby="tab-photo" hidden>
-          <div class="field">
+          <div id="photo-disabled-notice" class="info-banner" hidden>
+            <strong>Personal photos are disabled for Condolence / Sympathy cards.</strong>
+            <p class="field-hint" style="margin: 4px 0 0 0;">Condolence cards use restrained tribute centrepieces and elegant typography.</p>
+          </div>
+
+          <div class="field" id="photo-upload-field">
             <label for="photo-input" class="btn btn-ghost btn-block file-btn">
               Upload photo
               <input id="photo-input" type="file" accept="image/png,image/jpeg,image/webp" class="visually-hidden-input" />
@@ -256,7 +271,7 @@
             <p class="field-hint">Drag the photo on the card to pan. Pinch on touch devices to zoom.</p>
           </fieldset>
 
-          <fieldset class="field">
+          <fieldset class="field" id="photo-shape-fieldset">
             <legend>Mask shape</legend>
             <div id="photo-shape-group" class="segmented" role="radiogroup" aria-label="Mask shape">
               <button type="button" class="segmented-btn" role="radio" aria-checked="true" data-shape="circle">Circle</button>
@@ -264,10 +279,10 @@
             </div>
           </fieldset>
 
-          <fieldset class="field">
-            <legend>Fallback centrepiece</legend>
+          <fieldset class="field" id="photo-centerpiece-fieldset">
+            <legend>Centrepiece</legend>
             <p class="field-hint">Choose a realistic celebration centrepiece for cards without a personal photo.</p>
-            <div id="centerpiece-list" class="option-list" role="radiogroup" aria-label="Fallback centrepiece"></div>
+            <div id="centerpiece-list" class="option-list" role="radiogroup" aria-label="Centrepiece"></div>
           </fieldset>
 
           <button id="remove-photo-btn" class="btn btn-ghost btn-danger-text btn-block" type="button">Remove photo</button>
@@ -276,7 +291,7 @@
         <!-- LAYOUT BALANCE -->
         <div class="tabpanel" id="panel-layout" role="tabpanel" aria-labelledby="tab-layout" hidden>
           <p class="field-hint">Balance the medallion against the message. The text engine re-fits itself as you drag.</p>
-          <div class="field">
+          <div class="field" id="layout-centerpiece-size-field">
             <label for="layout-photo-size">Centrepiece size <output id="layout-photo-size-out">620</output>px</label>
             <input id="layout-photo-size" type="range" min="320" max="760" step="4" value="620" />
           </div>
