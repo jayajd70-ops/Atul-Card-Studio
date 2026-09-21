@@ -1087,9 +1087,23 @@ const ThemeRegistry = (() => {
 // Application version. Shown in the header, stamped onto exported
 // backups, and kept in step with SW_VERSION in sw.js so a released
 // shell and the code inside it always report the same number.
-const APP_VERSION = "1.6.0";
+const APP_VERSION = "1.7.0";
 
-const CURRENT_SCHEMA_VERSION = 4;
+const CURRENT_SCHEMA_VERSION = 5;
+
+function localDateISO(timestamp) {
+  const date = new Date(Number.isFinite(Number(timestamp)) ? Number(timestamp) : Date.now());
+  const pad = (value) => String(value).padStart(2, "0");
+  return date.getFullYear() + "-" + pad(date.getMonth() + 1) + "-" + pad(date.getDate());
+}
+
+function formatCardDate(value) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(value || ""));
+  if (!match) return "";
+  const date = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+  if (Number.isNaN(date.getTime())) return "";
+  return new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "long", year: "numeric" }).format(date);
+}
 
 function createDefaultProject(overrides) {
   const now = Date.now();
@@ -1099,6 +1113,7 @@ function createDefaultProject(overrides) {
     title: "Untitled Card",
     createdAt: now,
     updatedAt: now,
+    cardDate: { value: localDateISO(now), visible: true },
     occasion: {
       id: "birthday",
       subOccasion: null,
@@ -1982,6 +1997,19 @@ const Migrations = (() => {
     if (v < 4) {
       v = 4;
     }
+    // v4 -> v5: add an editable card date without changing the appearance
+    // of existing saved cards until the owner explicitly enables it.
+    if (v < 5) {
+      record.cardDate = { value: localDateISO(record.createdAt || Date.now()), visible: false };
+      v = 5;
+    }
+    if (!record.cardDate || typeof record.cardDate !== "object") {
+      record.cardDate = { value: localDateISO(record.createdAt || Date.now()), visible: false };
+    }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(record.cardDate.value || ""))) {
+      record.cardDate.value = localDateISO(record.createdAt || Date.now());
+    }
+    record.cardDate.visible = !!record.cardDate.visible;
     record.version = v;
     record.typography = record.typography || {};
     // Older cards used a fixed 22px signature — there was no slider to set
@@ -4679,6 +4707,21 @@ const Renderer = (() => {
       }
     }
 
+    const cardDate = project.cardDate || {};
+    const dateText = cardDate.visible ? formatCardDate(cardDate.value) : "";
+    if (dateText) {
+      const dateY = H - 76;
+      ctx.save();
+      ctx.fillStyle = mutedColor;
+      ctx.globalAlpha = 0.82;
+      ctx.font = "500 20px " + pairing.supportFont;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(dateText, cx, dateY);
+      ctx.restore();
+      boxes.push(textBoxToLayoutBox("card-date", cx, dateY - 14, 320, 28, 60));
+    }
+
     return boxes;
   }
 
@@ -5841,6 +5884,18 @@ const App = (() => {
     dom.senderName.addEventListener("input", (e) => {
       StateStore.update((p) => { p.sender.name = Utils.sanitizeText(e.target.value, 40); }, { skipHistory: true });
     });
+    dom.cardDate.addEventListener("change", (e) => {
+      StateStore.update((p) => {
+        if (!p.cardDate) p.cardDate = { value: localDateISO(), visible: false };
+        p.cardDate.value = /^\d{4}-\d{2}-\d{2}$/.test(e.target.value) ? e.target.value : localDateISO();
+      }, { reason: "card-date" });
+    });
+    dom.cardDateVisible.addEventListener("change", (e) => {
+      StateStore.update((p) => {
+        if (!p.cardDate) p.cardDate = { value: localDateISO(), visible: false };
+        p.cardDate.visible = !!e.target.checked;
+      }, { reason: "card-date-visibility" });
+    });
     dom.autoGreetingToggle.addEventListener("change", (e) => {
       StateStore.update((p) => {
         p.content.autoGreetingEnabled = e.target.checked;
@@ -6691,6 +6746,9 @@ const App = (() => {
     dom.recipientName.value = project.recipient.name || "";
     dom.recipientRelationship.value = project.recipient.relationship || "";
     dom.senderName.value = project.sender.name || "";
+    const cardDate = project.cardDate || { value: localDateISO(project.createdAt), visible: false };
+    dom.cardDate.value = cardDate.value || localDateISO(project.createdAt);
+    dom.cardDateVisible.checked = !!cardDate.visible;
     dom.autoGreetingToggle.checked = !!project.content.autoGreetingEnabled;
     dom.greetingText.value = project.content.greeting || "";
     dom.greetingCount.textContent = (project.content.greeting || "").length + " / " + GREETING_MAX_CHARS;
@@ -6850,7 +6908,8 @@ const App = (() => {
       recipientName: $("#recipient-name"), recipientRelationship: $("#recipient-relationship"),
       recipientRelationshipLabel: $("#recipient-relationship-label"), recipientRelationshipHint: $("#recipient-relationship-hint"),
       occasionSelect: $("#occasion-select"),
-      senderName: $("#sender-name"), autoGreetingToggle: $("#auto-greeting-toggle"),
+      senderName: $("#sender-name"), cardDate: $("#card-date"), cardDateVisible: $("#card-date-visible"),
+      autoGreetingToggle: $("#auto-greeting-toggle"),
       emotionRow: $("#emotion-row"), greetingText: $("#greeting-text"), greetingCount: $("#greeting-count"),
       greetingSafetyWarning: $("#greeting-safety-warning"), useEditedMessageBtn: $("#use-edited-message-btn"),
 
