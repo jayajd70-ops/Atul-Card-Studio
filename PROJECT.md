@@ -556,18 +556,18 @@ Task 003 implementation and release were explicitly authorized. The Current Task
 
 - **Approved Task:** Task 009 — Camera photo input through the shared photo workflow (R11)
 - **Baseline:** `main` at commit `d6a6e27`
-- **Status:** Implementation complete; release verification pending
-- **Completed commit:** Pending
+- **Status:** Complete, committed, pushed, deployed, and verified
+- **Completed commit:** `32bb5f9` — `feat: add camera photo input`
 - **Release:** Application, manifest, service worker, and cache version `1.11.0`; schema remains v5
 - **Behavior:** Adds a separate Take Photo / Camera source on compatible devices while preserving Upload Photo. Both sources use the same validation, private IndexedDB storage, replacement cleanup, transform, preview, save/reopen, and export workflow.
 - **Compatibility:** Existing card data, occasion isolation, uploaded-photo priority, manual centerpiece choices, Condolence no-photo behavior, saved projects, exports, and offline behavior remain preserved.
-- **Verification:** Local syntax/static checks and focused mobile/desktop browser checks passed for camera/upload intake, transform persistence, Birthday–Condolence isolation, replacement cleanup, manual-centerpiece restoration, content preservation, PNG export, save/reload, and offline startup. Public-release checks remain pending.
+- **Verification:** Syntax/static checks and focused mobile/desktop browser checks passed for camera/upload intake, transform persistence, Birthday–Condolence isolation, replacement cleanup, manual-centerpiece restoration, content preservation, PNG export, save/reload, and offline startup. GitHub Pages run `35650144683` succeeded; live HTTPS version/assets, camera intake, occasion isolation, manual-centerpiece restoration, service-worker control, and offline restart passed.
 
 ## 9. Current Task
 
-- **Approved Current Task:** Task 009 — Camera photo input through the shared photo workflow (R11)
+- **Approved Current Task:** Task 010 — Select the next R1–R18 improvement
 - **Active Permission Level:** REPORT-ONLY between tasks; standing owner authorization permits the next specific approved task and its commit, push, and deployment without another permission prompt
-- **Status:** Implementation complete; verification and release in progress
+- **Status:** Task 009 complete; ready to select the next approved requirement
 - **Authorization boundary:** The agent may start and release the next specific approved task under the standing owner authorization. Branch changes, destructive Git/filesystem actions, unrelated scope expansion, and disposal of existing work remain unauthorized.
 
 No additional requirement is authorized. The R1–R18 requirements remain product direction, not blanket implementation permission.
