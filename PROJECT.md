@@ -552,11 +552,22 @@ Task 003 implementation and release were explicitly authorized. The Current Task
 - **Compatibility:** Existing photos, manual centerpiece choices, occasion state isolation, saved projects, exports, and offline behavior remain preserved.
 - **Verification:** Syntax/static checks, automatic-centerpiece resolution, Royal Burgundy, Imperial Emerald, and Pearl Marble visual checks, occasion/decorations/date/mobile-navigation regressions, service-worker precaching, live asset delivery, live rendering, and live occasion-state regression passed.
 
+### Task 009 Implementation Record
+
+- **Approved Task:** Task 009 — Camera photo input through the shared photo workflow (R11)
+- **Baseline:** `main` at commit `d6a6e27`
+- **Status:** Implementation complete; release verification pending
+- **Completed commit:** Pending
+- **Release:** Application, manifest, service worker, and cache version `1.11.0`; schema remains v5
+- **Behavior:** Adds a separate Take Photo / Camera source on compatible devices while preserving Upload Photo. Both sources use the same validation, private IndexedDB storage, replacement cleanup, transform, preview, save/reopen, and export workflow.
+- **Compatibility:** Existing card data, occasion isolation, uploaded-photo priority, manual centerpiece choices, Condolence no-photo behavior, saved projects, exports, and offline behavior remain preserved.
+- **Verification:** Local syntax/static checks and focused mobile/desktop browser checks passed for camera/upload intake, transform persistence, Birthday–Condolence isolation, replacement cleanup, manual-centerpiece restoration, content preservation, PNG export, save/reload, and offline startup. Public-release checks remain pending.
+
 ## 9. Current Task
 
-- **Approved Current Task:** Task 009 — Select the next R1–R18 improvement
+- **Approved Current Task:** Task 009 — Camera photo input through the shared photo workflow (R11)
 - **Active Permission Level:** REPORT-ONLY between tasks; standing owner authorization permits the next specific approved task and its commit, push, and deployment without another permission prompt
-- **Status:** New task section opened; no feature implementation is in progress
+- **Status:** Implementation complete; verification and release in progress
 - **Authorization boundary:** The agent may start and release the next specific approved task under the standing owner authorization. Branch changes, destructive Git/filesystem actions, unrelated scope expansion, and disposal of existing work remain unauthorized.
 
 No additional requirement is authorized. The R1–R18 requirements remain product direction, not blanket implementation permission.

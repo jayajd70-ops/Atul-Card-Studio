@@ -263,7 +263,11 @@
               Upload photo
               <input id="photo-input" type="file" accept="image/png,image/jpeg,image/webp" class="visually-hidden-input" />
             </label>
-            <p class="field-hint">JPG, PNG or WEBP. The original is kept untouched; only your zoom, pan and rotation are stored.</p>
+            <label for="camera-input" class="btn btn-ghost btn-block file-btn">
+              Take photo / Camera
+              <input id="camera-input" type="file" accept="image/*" capture="environment" class="visually-hidden-input" />
+            </label>
+            <p class="field-hint">Use your camera on a compatible device, or upload a JPG, PNG or WEBP. The original is kept untouched; only your zoom, pan and rotation are stored.</p>
           </div>
           <fieldset class="field" id="photo-transform-fieldset" disabled>
             <legend>Transform engine</legend>

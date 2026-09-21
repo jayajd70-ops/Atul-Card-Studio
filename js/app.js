@@ -1087,7 +1087,7 @@ const ThemeRegistry = (() => {
 // Application version. Shown in the header, stamped onto exported
 // backups, and kept in step with SW_VERSION in sw.js so a released
 // shell and the code inside it always report the same number.
-const APP_VERSION = "1.10.0";
+const APP_VERSION = "1.11.0";
 
 const CURRENT_SCHEMA_VERSION = 5;
 
@@ -6160,14 +6160,14 @@ const App = (() => {
 
   /* ---------------- Field binding: Photo tab ---------------- */
   function bindPhotoTab() {
-    dom.photoInput.addEventListener("change", async (e) => {
+    async function useSelectedPhoto(input, sourceLabel) {
       const occasionId = (StateStore.getProject().occasion && StateStore.getProject().occasion.id) || "birthday";
       if (!OccasionRegistry.allowsPhoto(occasionId)) {
         toast("Personal photos are disabled for " + OccasionRegistry.get(occasionId).label + " cards.", true);
-        e.target.value = "";
+        input.value = "";
         return;
       }
-      const file = e.target.files[0];
+      const file = input.files[0];
       if (!file) return;
       try {
         const previousAssetId = StateStore.getProject().photo && StateStore.getProject().photo.assetId;
@@ -6179,11 +6179,18 @@ const App = (() => {
           AssetResolver.invalidate(previousAssetId);
           await AssetRepository.deleteAsset(previousAssetId).catch(() => {});
         }
-        toast("Photo added.");
+        toast(sourceLabel + " added.");
       } catch (err) {
-        toast(err.message || "Could not add that photo.", true);
+        toast(err.message || "Could not add that " + sourceLabel.toLowerCase() + ".", true);
       }
-      e.target.value = "";
+      input.value = "";
+    }
+
+    dom.photoInput.addEventListener("change", () => {
+      useSelectedPhoto(dom.photoInput, "Photo");
+    });
+    dom.cameraInput.addEventListener("change", () => {
+      useSelectedPhoto(dom.cameraInput, "Camera photo");
     });
 
     // Transform engine. Pan is stored normalised (-1..1) so it survives a
@@ -7089,7 +7096,8 @@ const App = (() => {
       photoDisabledNotice: $("#photo-disabled-notice"),
       photoUploadField: $("#photo-upload-field"),
       photoShapeFieldset: $("#photo-shape-fieldset"),
-      photoInput: $("#photo-input"), photoZoom: $("#photo-zoom"), photoZoomOut: $("#photo-zoom-out"),
+      photoInput: $("#photo-input"), cameraInput: $("#camera-input"),
+      photoZoom: $("#photo-zoom"), photoZoomOut: $("#photo-zoom-out"),
       photoPanX: $("#photo-pan-x"), photoPanXOut: $("#photo-pan-x-out"),
       photoPanY: $("#photo-pan-y"), photoPanYOut: $("#photo-pan-y-out"),
       photoRotation: $("#photo-rotation"), photoRotationOut: $("#photo-rotation-out"),
