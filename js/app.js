@@ -1087,7 +1087,7 @@ const ThemeRegistry = (() => {
 // Application version. Shown in the header, stamped onto exported
 // backups, and kept in step with SW_VERSION in sw.js so a released
 // shell and the code inside it always report the same number.
-const APP_VERSION = "1.8.0";
+const APP_VERSION = "1.9.0";
 
 const CURRENT_SCHEMA_VERSION = 5;
 
@@ -1205,7 +1205,9 @@ const OccasionRegistry = (() => {
     },
     {
       id: "new-baby", label: "New Baby", hint: "Welcome and blessings for a growing family",
-      isSensitive: false, allowPhoto: true, allowedCenterpieces: ["auto", "velvet-roses", "silk-gift-box", "theme-aura"],
+      isSensitive: false, allowPhoto: true, allowedCenterpieces: ["auto", "baby-teddy", "newborn-hand-feet", "champagne-gala", "theme-aura"],
+      defaultCenterpieceMap: { heartfelt: "baby-teddy", poetic: "baby-teddy", professional: "baby-teddy", playful: "champagne-gala" },
+      fallbackCenterpiece: "baby-teddy",
       emotions: PERSONAL_EMOTIONS, recommendedStampIds: ["welcome-baby", "celestial-ornament", "made-for-you"],
     },
     {
@@ -2325,6 +2327,7 @@ const CenterpieceAssetResolver = (() => {
   const ASSET_DIRS = {
     "belgian-gold-cake": "assets/centerpieces/", "velvet-roses": "assets/centerpieces/",
     "silk-gift-box": "assets/centerpieces/", "champagne-gala": "assets/centerpieces/",
+    "baby-teddy": "assets/centerpieces/", "newborn-hand-feet": "assets/centerpieces/",
     "white-lilies": "assets/centerpieces/", "white-lilies-corner": "assets/decorations/",
     "sage-foliage-corner": "assets/decorations/", "slate-botanical-corner": "assets/decorations/",
     "navy-botanical-accent": "assets/decorations/",
@@ -2377,6 +2380,8 @@ const Centerpieces = (() => {
     // Keep the historic id so existing backups automatically receive the
     // replacement artwork instead of becoming incompatible.
     { id: "champagne-gala", label: "Luxury Balloons", hint: "Pearl, emerald and gold celebration balloons" },
+    { id: "baby-teddy", label: "Baby Teddy Bear", hint: "A gentle teddy-bear welcome" },
+    { id: "newborn-hand-feet", label: "Newborn Hands and Feet", hint: "Hands cradling tiny feet" },
     { id: "theme-aura", label: "Theme Aura", hint: "Abstract monogram glow" },
   ];
 
@@ -3098,7 +3103,7 @@ const Centerpieces = (() => {
     ctx.fillRect(cx - r, cy - r, r * 2, r * 2);
     bokeh(ctx, box, [opts.theme.palette.primary, opts.theme.palette.secondary], 55, 16, 1);
 
-    if (opts.monogram) {
+    if (opts.monogram && opts.occasionId !== "new-baby") {
       ctx.save();
       ctx.globalAlpha = 0.24;
       ctx.fillStyle = opts.theme.palette.primary;
@@ -3109,6 +3114,78 @@ const Centerpieces = (() => {
       ctx.restore();
     }
     grain(ctx, box, 0.05, 55);
+  }
+
+  /* ---------------- 5a. New baby teddy bear ---------------- */
+  function paintBabyTeddy(ctx, box, opts) {
+    const { cx, cy, r } = box;
+    const u = r / 300;
+    const primary = opts.theme.palette.primary || "#d4af37";
+    const secondary = opts.theme.palette.secondary || "#f1d7a0";
+    backdrop(ctx, box, [
+      [0, "#3b2b2a"], [0.42, "#241719"], [0.78, "#120b10"], [1, "#08050a"],
+    ], -r * 0.16);
+    bokeh(ctx, box, [secondary, primary, "#f3d5c0"], 414, 12, 1);
+
+    const star = (x, y, size, alpha) => {
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = secondary;
+      ctx.beginPath();
+      ctx.moveTo(x, y - size);
+      ctx.lineTo(x + size * 0.22, y - size * 0.22);
+      ctx.lineTo(x + size, y);
+      ctx.lineTo(x + size * 0.22, y + size * 0.22);
+      ctx.lineTo(x, y + size);
+      ctx.lineTo(x - size * 0.22, y + size * 0.22);
+      ctx.lineTo(x - size, y);
+      ctx.lineTo(x - size * 0.22, y - size * 0.22);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    };
+    [[-0.58, -0.46, 10, 0.78], [0.57, -0.32, 8, 0.65], [-0.58, 0.36, 7, 0.55], [0.62, 0.5, 11, 0.72], [0.04, -0.68, 6, 0.6]].forEach(([x, y, s, a]) => star(cx + x * r, cy + y * r, s * u, a));
+
+    const fur = "#c18b66";
+    const furLight = "#e6b38d";
+    const furShadow = "#8b5a48";
+    const eye = "#2a1720";
+    const bearY = cy + 18 * u;
+    ctx.save();
+    ctx.shadowColor = "rgba(0,0,0,0.38)";
+    ctx.shadowBlur = 20 * u;
+    ctx.fillStyle = furShadow;
+    ctx.beginPath(); ctx.ellipse(cx, bearY + 92 * u, 112 * u, 120 * u, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = fur;
+    ctx.beginPath(); ctx.arc(cx - 78 * u, bearY - 84 * u, 50 * u, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx + 78 * u, bearY - 84 * u, 50 * u, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx, bearY - 42 * u, 116 * u, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+
+    ctx.save();
+    ctx.fillStyle = furLight;
+    ctx.beginPath(); ctx.arc(cx - 78 * u, bearY - 84 * u, 28 * u, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx + 78 * u, bearY - 84 * u, 28 * u, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(cx, bearY - 16 * u, 66 * u, 54 * u, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = eye;
+    ctx.beginPath(); ctx.arc(cx - 40 * u, bearY - 54 * u, 9 * u, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx + 40 * u, bearY - 54 * u, 9 * u, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = furShadow;
+    ctx.beginPath(); ctx.ellipse(cx, bearY - 14 * u, 17 * u, 12 * u, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = eye; ctx.lineWidth = 4 * u; ctx.lineCap = "round";
+    ctx.beginPath(); ctx.arc(cx, bearY - 4 * u, 20 * u, 0.2, Math.PI - 0.2); ctx.stroke();
+    ctx.fillStyle = secondary;
+    ctx.beginPath(); ctx.arc(cx, bearY + 66 * u, 30 * u, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+
+    // Small champagne bow keeps the teddy aligned with the luxury palette.
+    ctx.save();
+    ctx.fillStyle = primary;
+    ctx.beginPath(); ctx.ellipse(cx - 24 * u, bearY + 50 * u, 30 * u, 17 * u, -0.35, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(cx + 24 * u, bearY + 50 * u, 30 * u, 17 * u, 0.35, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx, bearY + 50 * u, 11 * u, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+    grain(ctx, box, 0.045, 414);
   }
 
   /* ---------------- realistic asset presentation ---------------- */
@@ -3238,6 +3315,7 @@ const Centerpieces = (() => {
     "velvet-roses": paintRoses,
     "silk-gift-box": paintGiftBox,
     "champagne-gala": paintBalloons,
+    "baby-teddy": paintBabyTeddy,
     "theme-aura": paintAura,
   };
 
@@ -3263,7 +3341,8 @@ const Centerpieces = (() => {
         : "theme-aura";
     }
     const allowed = occ.allowedCenterpieces || ["auto", "velvet-roses", "theme-aura"];
-    if (id && id !== "auto" && PAINTERS[id] && allowed.includes(id)) return id;
+    if (occ.id === "new-baby" && id === "theme-aura") return "newborn-hand-feet";
+    if (id && id !== "auto" && allowed.includes(id) && (PAINTERS[id] || CenterpieceAssetResolver.isSupported(id))) return id;
     const normEmotion = GreetingGenerator.normalizeEmotion(emotion, occ.id);
     const map = occ.defaultCenterpieceMap || {};
     const candidate = map[normEmotion] || occ.fallbackCenterpiece || "velvet-roses";
@@ -3925,8 +4004,27 @@ const Renderer = (() => {
     ],
   };
 
+  // New Baby uses a restrained celebration frame: balloons remain as the
+  // birth cue, while cake, gift boxes, and romantic rose clusters stay out
+  // of the newborn composition.
+  const NEW_BABY_THEME_DECOR = {
+    "royal-burgundy": [
+      { id: "champagne-gala", x: 82, y: 245, size: 325, rot: -0.13, alpha: 0.78 },
+      { id: "champagne-gala", x: 1122, y: 270, size: 315, rot: 0.13, alpha: 0.74, flip: true },
+    ],
+    "amber-tuscan": [
+      { id: "champagne-gala", x: 78, y: 245, size: 325, rot: -0.13, alpha: 0.8 },
+      { id: "champagne-gala", x: 1125, y: 270, size: 315, rot: 0.13, alpha: 0.76, flip: true },
+    ],
+    "imperial-emerald": [
+      { id: "champagne-gala", x: 78, y: 245, size: 325, rot: -0.13, alpha: 0.78 },
+      { id: "champagne-gala", x: 1125, y: 270, size: 315, rot: 0.13, alpha: 0.74, flip: true },
+    ],
+  };
+
   function getTextProtectionRegions(project) {
     const isCondolence = project && project.occasion && project.occasion.id === "condolence";
+    const isNewBaby = project && project.occasion && project.occasion.id === "new-baby";
     const effective = getEffectiveTextStyle(project);
     const design = effective.design;
     const typography = effective.typography;
@@ -4016,6 +4114,7 @@ const Renderer = (() => {
       greetingHeight = greetingFit.lines.length * greetingLineHeight;
       greetingWidth = greetingFit.maxLineWidth + 32;
       cursorY += greetingHeight + (isCondolence ? 28 : 20);
+      if (isNewBaby) cursorY += 34;
     }
 
     const relationship = Utils.sanitizeText(project.recipient.relationship || "", 40);
@@ -4023,7 +4122,7 @@ const Renderer = (() => {
     if (relationship) {
       measureCtx.font = "500 20px " + pairing.supportFont;
       relationshipWidth = measureCtx.measureText(relationship.toUpperCase()).width + 36;
-      cursorY += 46;
+      cursorY += isNewBaby ? 34 : 46;
     }
 
     if (greetingHeight > 0 || relationship) {
@@ -4039,9 +4138,9 @@ const Renderer = (() => {
     }
 
     // 3. Sender signature region (if present)
-    const senderText = Utils.sanitizeText(project.sender.name || "", 40);
+    const senderText = Utils.sanitizeText(project.sender.name || "", 40).replace(/\s*&\s*/g, " & ");
     if (senderText) {
-      const signY = Math.max(cursorY + (isCondolence ? 42 : 30), signatureTop);
+      const signY = isNewBaby ? cursorY + 28 : Math.max(cursorY + (isCondolence ? 42 : 30), signatureTop);
       const senderFit = LayoutEngine.fitText(measureCtx, {
         text: "— " + senderText,
         fontFamily: pairing.signatureFont,
@@ -4082,9 +4181,12 @@ const Renderer = (() => {
 
   async function renderThemeBorderDecorations(ctx, project, theme) {
     const isCondolence = project && project.occasion && project.occasion.id === "condolence";
+    const isNewBaby = project && project.occasion && project.occasion.id === "new-baby";
     const emotion = (project && project.content && project.content.emotion) || "heartfelt";
     const design = OccasionRegistry.getDesign(isCondolence ? "condolence" : "birthday", emotion);
-    const specs = design ? design.decorations : (THEME_BORDER_DECOR[theme.id] || THEME_BORDER_DECOR["pearl-marble"]);
+    const specs = isNewBaby
+      ? (NEW_BABY_THEME_DECOR[theme.id] || NEW_BABY_THEME_DECOR["amber-tuscan"])
+      : (design ? design.decorations : (THEME_BORDER_DECOR[theme.id] || THEME_BORDER_DECOR["pearl-marble"]));
 
     const uniqueIds = Array.from(new Set(specs.map((spec) => spec.id)));
     const loaded = await Promise.all(uniqueIds.map(async (id) => [id, await CenterpieceAssetResolver.resolve(id)]));
@@ -4521,6 +4623,7 @@ const Renderer = (() => {
     const geo = getArtGeometry(project);
     const signatureTop = H - 150;
     const isCondolence = project.occasion && project.occasion.id === "condolence";
+    const isNewBaby = project.occasion && project.occasion.id === "new-baby";
     const isTextLed = design && design.composition === "text-led";
 
     let blockTop;
@@ -4649,6 +4752,17 @@ const Renderer = (() => {
       const greetingHeight = greetingFit.lines.length * greetingLineHeight;
       boxes.push(textBoxToLayoutBox("greeting", cx, cursorY, greetingFit.maxLineWidth, greetingHeight, 90));
       cursorY += greetingHeight + (isCondolence ? 28 : 20);
+      if (isNewBaby) {
+        ctx.save();
+        ctx.fillStyle = mutedColor;
+        ctx.font = "500 30px 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("🧿♥️", cx, cursorY + 8);
+        ctx.restore();
+        boxes.push(textBoxToLayoutBox("new-baby-emoji", cx, cursorY - 10, 120, 34, 85));
+        cursorY += 34;
+      }
     }
 
     // Supporting copy (relationship line) — small, quiet, optional
@@ -4662,13 +4776,13 @@ const Renderer = (() => {
       ctx.fillText(relationship.toUpperCase(), cx, cursorY + 16);
       ctx.restore();
       boxes.push(textBoxToLayoutBox("support-copy", cx, cursorY - 6, 300, 30, 70));
-      cursorY += 46;
+      cursorY += isNewBaby ? 34 : 46;
     }
 
     // Sender signature — pinned near the bottom, never overlapping name/greeting
-    const senderText = Utils.sanitizeText(project.sender.name || "", 40);
+    const senderText = Utils.sanitizeText(project.sender.name || "", 40).replace(/\s*&\s*/g, " & ");
     if (senderText) {
-      const signY = Math.max(cursorY + (isCondolence ? 42 : 30), H - 150);
+      const signY = isNewBaby ? cursorY + 28 : Math.max(cursorY + (isCondolence ? 42 : 30), H - 150);
       const senderFit = LayoutEngine.fitText(measureCtx, {
         text: "— " + senderText,
         fontFamily: pairing.signatureFont,
@@ -4714,12 +4828,12 @@ const Renderer = (() => {
       ctx.save();
       ctx.fillStyle = mutedColor;
       ctx.globalAlpha = 0.82;
-      ctx.font = "500 20px " + pairing.supportFont;
+      ctx.font = "500 26px " + pairing.supportFont;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.fillText(dateText, cx, dateY);
       ctx.restore();
-      boxes.push(textBoxToLayoutBox("card-date", cx, dateY - 14, 320, 28, 60));
+      boxes.push(textBoxToLayoutBox("card-date", cx, dateY - 17, 360, 34, 60));
     }
 
     return boxes;

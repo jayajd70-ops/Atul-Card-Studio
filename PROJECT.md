@@ -530,11 +530,22 @@ Task 003 implementation and release were explicitly authorized. The Current Task
 - **Compatibility:** Existing tab keyboard navigation, Undo/Redo history, photo/stamp pointer gestures, saved card data, and all existing greeting, decoration, date, export, and offline behavior remain preserved.
 - **Verification:** Syntax/static checks, focused Task 006 browser checks, gesture-surface preservation, unsaved-change warning, and the existing Task 002A, Task 003, Task 004, and Task 005 regression suite passed.
 
+### Task 007 Implementation Record
+
+- **Approved Task:** Task 007 — New Baby visual refinement
+- **Baseline:** `main` at commit `205c5d2`
+- **Status:** Complete, committed, pushed, deployed, and verified
+- **Completed commit:** `PLACEHOLDER_TASK007_COMMIT` — `feat: refine newborn card visuals`
+- **Release:** Application, manifest, service worker, and cache version `1.9.0`; schema remains v5
+- **Behavior:** Adds a realistic teddy-bear centerpiece, adds a reference-style newborn hands-and-feet centerpiece for Theme Aura, removes the New Baby `MY` monogram, adds `🧿♥️` after the New Baby message, tightens the Grandparents-to-sender spacing, normalizes sender-name ampersand spacing, and increases footer date readability.
+- **Compatibility:** Birthday and other occasion state isolation, existing centerpieces, saved projects, exports, offline caching, and all prior navigation behavior remain preserved.
+- **Verification:** Syntax/static checks, New Baby visual previews for Royal Burgundy, Amber Tuscan, and Imperial Emerald, Theme Aura hands-and-feet preview, and the Task 003 occasion/state regression passed.
+
 ## 9. Current Task
 
 - **Approved Current Task:** None
 - **Active Permission Level:** REPORT-ONLY between tasks; standing owner authorization permits the next specific approved task and its commit, push, and deployment without another permission prompt
-- **Status:** Task 006 complete; ready to select the next approved requirement
+- **Status:** Task 007 complete; ready to select the next approved requirement
 - **Authorization boundary:** The agent may start and release the next specific approved task under the standing owner authorization. Branch changes, destructive Git/filesystem actions, unrelated scope expansion, and disposal of existing work remain unauthorized.
 
 No additional requirement is authorized. The R1–R18 requirements remain product direction, not blanket implementation permission.
