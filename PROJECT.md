@@ -482,6 +482,18 @@ Use the decision flow: `Idea → Park → Review → Approve as a specific task 
 
 Task 002A is complete. Its implementation, commit, push, deployment, and available regression verification were reported and authorized.
 
+### Task 003 Completion Record
+
+- **Completed Task:** Task 003 — Add eight personal greeting occasions
+- **Baseline:** `main` at commit `bb96e99`
+- **Release:** Application, manifest, service worker, and cache version `1.5.0`; schema remains v3
+- **Added occasions:** Anniversary, Congratulations, New Baby, New Home, Graduation, Retirement, Get Well, and Friendship / Thanks
+- **Behavior:** Each occasion has Heartfelt, Poetic, Professional, and Playful message pools and retains independent message, tone, mode, and relationship state through occasion changes.
+- **Compatibility:** Birthday and Condolence behavior, photo/layout data, saved projects, exports, and the existing backup format remain preserved.
+- **Verification:** Syntax/static checks and focused local browser checks passed for all 10 occasion options, message generation for all eight new occasions, Birthday state round-trip, and Condolence isolation.
+
+Task 003 implementation and release were explicitly authorized. The Current Task returns to report-only after publication verification.
+
 ## 9. Current Task
 
 - **Approved Current Task:** None

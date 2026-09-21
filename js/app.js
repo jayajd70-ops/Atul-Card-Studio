@@ -1069,7 +1069,7 @@ const ThemeRegistry = (() => {
 // Application version. Shown in the header, stamped onto exported
 // backups, and kept in step with SW_VERSION in sw.js so a released
 // shell and the code inside it always report the same number.
-const APP_VERSION = "1.4.0";
+const APP_VERSION = "1.5.0";
 
 const CURRENT_SCHEMA_VERSION = 3;
 
@@ -1128,6 +1128,12 @@ function createDefaultProject(overrides) {
    default centerpiece associations, and sensitivity metadata.
    ========================================================================= */
 const OccasionRegistry = (() => {
+  const PERSONAL_EMOTIONS = [
+    { id: "heartfelt", label: "Heartfelt", hint: "Sincere and warm" },
+    { id: "poetic", label: "Poetic", hint: "Lyrical and expressive" },
+    { id: "professional", label: "Professional", hint: "Warm but workplace-safe" },
+    { id: "playful", label: "Playful", hint: "Light and cheerful" },
+  ];
   const OCCASIONS = [
     {
       id: "birthday",
@@ -1151,6 +1157,46 @@ const OccasionRegistry = (() => {
         milestone: "champagne-gala",
       },
       fallbackCenterpiece: "velvet-roses",
+    },
+    {
+      id: "anniversary", label: "Anniversary", hint: "Warm wishes for a shared journey",
+      isSensitive: false, allowPhoto: true, allowedCenterpieces: ["auto", "velvet-roses", "silk-gift-box", "champagne-gala", "theme-aura"],
+      emotions: PERSONAL_EMOTIONS,
+    },
+    {
+      id: "congratulations", label: "Congratulations", hint: "Celebrate an achievement or good news",
+      isSensitive: false, allowPhoto: true, allowedCenterpieces: ["auto", "silk-gift-box", "champagne-gala", "theme-aura"],
+      emotions: PERSONAL_EMOTIONS,
+    },
+    {
+      id: "new-baby", label: "New Baby", hint: "Welcome and blessings for a growing family",
+      isSensitive: false, allowPhoto: true, allowedCenterpieces: ["auto", "velvet-roses", "silk-gift-box", "theme-aura"],
+      emotions: PERSONAL_EMOTIONS,
+    },
+    {
+      id: "new-home", label: "New Home", hint: "Good wishes for a new beginning at home",
+      isSensitive: false, allowPhoto: true, allowedCenterpieces: ["auto", "silk-gift-box", "theme-aura"],
+      emotions: PERSONAL_EMOTIONS,
+    },
+    {
+      id: "graduation", label: "Graduation", hint: "Pride and encouragement for a milestone",
+      isSensitive: false, allowPhoto: true, allowedCenterpieces: ["auto", "champagne-gala", "silk-gift-box", "theme-aura"],
+      emotions: PERSONAL_EMOTIONS,
+    },
+    {
+      id: "retirement", label: "Retirement", hint: "Warm wishes for a new chapter",
+      isSensitive: false, allowPhoto: true, allowedCenterpieces: ["auto", "velvet-roses", "silk-gift-box", "theme-aura"],
+      emotions: PERSONAL_EMOTIONS,
+    },
+    {
+      id: "get-well", label: "Get Well", hint: "Thoughtful wishes for recovery and good health",
+      isSensitive: false, allowPhoto: true, allowedCenterpieces: ["auto", "velvet-roses", "theme-aura"],
+      emotions: PERSONAL_EMOTIONS,
+    },
+    {
+      id: "friendship-thanks", label: "Friendship / Thanks", hint: "Appreciation for friendship and kindness",
+      isSensitive: false, allowPhoto: true, allowedCenterpieces: ["auto", "velvet-roses", "silk-gift-box", "theme-aura"],
+      emotions: PERSONAL_EMOTIONS,
     },
     {
       id: "condolence",
@@ -1266,6 +1312,15 @@ const OccasionRegistry = (() => {
 const GREETING_MAX_CHARS = 220;
 
 const GreetingGenerator = (() => {
+  function buildPersonalPool(label, heartfelt, poetic, professional, playful) {
+    return {
+      heartfelt: heartfelt.map((text) => text.replaceAll("{occasion}", label)),
+      poetic: poetic.map((text) => text.replaceAll("{occasion}", label)),
+      professional: professional.map((text) => text.replaceAll("{occasion}", label)),
+      playful: playful.map((text) => text.replaceAll("{occasion}", label)),
+    };
+  }
+
   const POOLS = {
     birthday: {
       heartfelt: [
@@ -1309,6 +1364,110 @@ const GreetingGenerator = (() => {
         "To {name}, on a birthday that counts: may the years ahead be as full, as bold and as brilliant as those behind you.",
       ],
     },
+    anniversary: buildPersonalPool("anniversary", [
+      "Wishing you both a beautiful anniversary, {name}. May the years ahead bring continued understanding, laughter, and companionship.",
+      "{name}, may this anniversary remind you of the strength and warmth you have built together. Warmest wishes to you both.",
+    ], [
+      "Two lives, one journey, and many treasured moments, {name}. May your anniversary be filled with gentle joy.",
+      "May the story you share, {name}, continue to unfold with patience, friendship, and quiet happiness.",
+    ], [
+      "Warm anniversary wishes, {name}. May your partnership continue to bring mutual respect, happiness, and strength.",
+      "Wishing you both a very happy anniversary, {name}, and many fulfilling years ahead.",
+    ], [
+      "Happy anniversary, {name}! Wishing you both another wonderful chapter together.",
+      "{name}, here is to the teamwork, laughter, and memories that make your journey special. Happy anniversary!",
+    ]),
+    congratulations: buildPersonalPool("congratulations", [
+      "Heartfelt congratulations, {name}. Your achievement reflects your dedication and deserves every bit of appreciation.",
+      "{name}, this is wonderful news. May this success open the door to many more fulfilling opportunities.",
+    ], [
+      "A well-earned moment of pride, {name}. May this new chapter rise brightly from everything you have worked for.",
+      "{name}, today your effort has found its answer. May the road ahead be generous and inspiring.",
+    ], [
+      "Congratulations, {name}. Your achievement is well deserved, and we wish you continued success.",
+      "Warm congratulations, {name}, on this important milestone. Your commitment has made a real difference.",
+    ], [
+      "Congratulations, {name}! You worked for this moment, and now it is time to enjoy it.",
+      "Well done, {name}! A fantastic achievement and a very good reason to smile today.",
+    ]),
+    "new-baby": buildPersonalPool("new baby", [
+      "Warm congratulations, {name}, on the arrival of your little one. Wishing your family health, love, and many peaceful moments.",
+      "{name}, may your new baby bring your home endless tenderness and happiness. Best wishes to the whole family.",
+    ], [
+      "A tiny new presence has made your world larger, {name}. May each day bring a beautiful new memory.",
+      "{name}, may your family’s newest chapter be filled with soft mornings, loving care, and countless smiles.",
+    ], [
+      "Congratulations, {name}, on your growing family. Wishing you health, happiness, and a joyful new beginning.",
+      "Warm wishes to you and your family, {name}, as you welcome your new baby.",
+    ], [
+      "Congratulations, {name}! Your family just gained its smallest and most important team member.",
+      "Welcome to a new adventure, {name}. Wishing you plenty of smiles and at least a little sleep!",
+    ]),
+    "new-home": buildPersonalPool("new home", [
+      "Congratulations on your new home, {name}. May it be filled with peace, warmth, and happy memories.",
+      "{name}, wishing you comfort and contentment as you make your new home truly your own.",
+    ], [
+      "May every room in your new home gather stories, laughter, and the quiet feeling of belonging, {name}.",
+      "A new home is a new beginning, {name}. May yours welcome many beautiful days.",
+    ], [
+      "Warm congratulations, {name}, on your new home. Wishing you a smooth transition and many happy years there.",
+      "Best wishes for your new home, {name}. May it be a place of comfort, connection, and lasting memories.",
+    ], [
+      "Congratulations, {name}! May your new home have great light, good company, and a reliable internet connection.",
+      "New keys, new memories, {name}! Wishing you a wonderful start in your new home.",
+    ]),
+    graduation: buildPersonalPool("graduation", [
+      "Heartfelt congratulations, {name}. Your hard work has brought you to a proud and promising milestone.",
+      "{name}, may your graduation be the beginning of a fulfilling journey shaped by courage, learning, and purpose.",
+    ], [
+      "A new horizon opens before you, {name}. May your knowledge and dreams guide you towards meaningful work and joy.",
+      "{name}, every lesson has brought you here. May the next chapter be wide, bright, and entirely your own.",
+    ], [
+      "Congratulations on your graduation, {name}. We wish you continued growth and success in the years ahead.",
+      "Warm congratulations, {name}, on this well-earned achievement. Your discipline and effort are admirable.",
+    ], [
+      "You did it, {name}! Congratulations on graduating and unlocking your next great adventure.",
+      "Congratulations, {name}! Today the cap is yours, and tomorrow the possibilities are too.",
+    ]),
+    retirement: buildPersonalPool("retirement", [
+      "Warm retirement wishes, {name}. May this new chapter bring you good health, peace, and time for everything you enjoy.",
+      "{name}, your years of dedication have made a lasting difference. Wishing you a deeply rewarding retirement.",
+    ], [
+      "May the days ahead move at your own gentle pace, {name}, filled with new places, old joys, and well-earned rest.",
+      "A long chapter closes and a spacious one begins, {name}. May retirement bring you freedom and fulfilment.",
+    ], [
+      "Congratulations on your retirement, {name}. Thank you for your years of valuable contribution, and best wishes for what comes next.",
+      "Wishing you a happy retirement, {name}, with good health and many rewarding experiences ahead.",
+    ], [
+      "Happy retirement, {name}! Your new full-time role is choosing exactly what to do with your time.",
+      "Congratulations, {name}! May your calendar now contain more joy and far fewer meetings.",
+    ]),
+    "get-well": buildPersonalPool("get well", [
+      "Thinking of you, {name}, and wishing you steady recovery, renewed strength, and good health each day.",
+      "{name}, sending warm wishes and encouragement as you recover. Please take good care and be gentle with yourself.",
+    ], [
+      "May each new day bring a little more strength and comfort, {name}. We are thinking of you warmly.",
+      "{name}, may rest restore you and hopeful moments brighten the path back to good health.",
+    ], [
+      "Wishing you a smooth recovery, {name}. Please accept our warm thoughts and best wishes for your health.",
+      "Get well soon, {name}. We hope you regain your strength steadily and comfortably.",
+    ], [
+      "Get well soon, {name}! Take the time you need—your only job is to feel better.",
+      "Sending you a big dose of good wishes, {name}. We look forward to seeing you back at your best.",
+    ]),
+    "friendship-thanks": buildPersonalPool("friendship and thanks", [
+      "Thank you, {name}, for your kindness and steady friendship. You make life feel warmer and more supported.",
+      "{name}, your thoughtfulness has meant more than I can say. I am grateful for you and all the care you share.",
+    ], [
+      "Some friendships become quiet places of strength, {name}. Thank you for being one of mine.",
+      "{name}, kindness leaves a lasting light. Thank you for all the ways you bring that light into my days.",
+    ], [
+      "Thank you, {name}, for your support and cooperation. Your thoughtfulness is sincerely appreciated.",
+      "With sincere thanks, {name}. It is a pleasure to know and work with someone so dependable and considerate.",
+    ], [
+      "Thank you, {name}! Good friends like you make every ordinary day better.",
+      "{name}, friendship points are officially yours in abundance. Thank you for being wonderful!",
+    ]),
     condolence: {
       heartfelt: [
         "{name}, our thoughts and heartfelt sympathies are with you and your family during this time of sorrow. Wishing you strength and solace.",
@@ -1534,7 +1693,8 @@ function ensureOccasionContentStates(project) {
     ? project.occasion.contentByOccasion
     : {};
   const activeRelationship = String((project.recipient && project.recipient.relationship) || "");
-  ["birthday", "condolence"].forEach((id) => {
+  OccasionRegistry.list().forEach((occasion) => {
+    const id = occasion.id;
     states[id] = states[id]
       ? snapshotOccasionContent(states[id], id, id === activeId ? activeRelationship : "")
       : createOccasionContent(id, id === activeId ? activeRelationship : "");
