@@ -1087,7 +1087,7 @@ const ThemeRegistry = (() => {
 // Application version. Shown in the header, stamped onto exported
 // backups, and kept in step with SW_VERSION in sw.js so a released
 // shell and the code inside it always report the same number.
-const APP_VERSION = "1.9.0";
+const APP_VERSION = "1.10.0";
 
 const CURRENT_SCHEMA_VERSION = 5;
 
@@ -1175,7 +1175,7 @@ const OccasionRegistry = (() => {
       hint: "Celebratory birthday greetings",
       isSensitive: false,
       allowPhoto: true,
-      allowedCenterpieces: ["auto", "belgian-gold-cake", "velvet-roses", "silk-gift-box", "champagne-gala", "theme-aura"],
+      allowedCenterpieces: ["auto", "birthday-floral-cake", "belgian-gold-cake", "velvet-roses", "silk-gift-box", "champagne-gala", "theme-aura"],
       emotions: [
         { id: "heartfelt", label: "Heartfelt", hint: "Sincere and tender" },
         { id: "poetic", label: "Poetic", hint: "Lyrical and image-rich" },
@@ -1184,18 +1184,25 @@ const OccasionRegistry = (() => {
         { id: "milestone", label: "Milestone", hint: "For the big ones" },
       ],
       defaultCenterpieceMap: {
-        heartfelt: "velvet-roses",
-        poetic: "velvet-roses",
-        professional: "silk-gift-box",
-        playful: "belgian-gold-cake",
-        milestone: "champagne-gala",
+        heartfelt: "birthday-floral-cake",
+        poetic: "birthday-floral-cake",
+        professional: "birthday-floral-cake",
+        playful: "birthday-floral-cake",
+        milestone: "birthday-floral-cake",
       },
-      fallbackCenterpiece: "velvet-roses",
+      fallbackCenterpiece: "birthday-floral-cake",
       recommendedStampIds: ["happy-birthday", "ribbon-badge", "celebrating-you"],
     },
     {
       id: "anniversary", label: "Anniversary", hint: "Warm wishes for a shared journey",
-      isSensitive: false, allowPhoto: true, allowedCenterpieces: ["auto", "velvet-roses", "silk-gift-box", "champagne-gala", "theme-aura"],
+      isSensitive: false, allowPhoto: true, allowedCenterpieces: ["auto", "anniversary-floral-cake", "velvet-roses", "silk-gift-box", "champagne-gala", "theme-aura"],
+      defaultCenterpieceMap: {
+        heartfelt: "anniversary-floral-cake",
+        poetic: "anniversary-floral-cake",
+        professional: "anniversary-floral-cake",
+        playful: "anniversary-floral-cake",
+      },
+      fallbackCenterpiece: "anniversary-floral-cake",
       emotions: PERSONAL_EMOTIONS, recommendedStampIds: ["happy-anniversary", "with-love", "floral-ornament"],
     },
     {
@@ -2328,6 +2335,7 @@ const CenterpieceAssetResolver = (() => {
     "belgian-gold-cake": "assets/centerpieces/", "velvet-roses": "assets/centerpieces/",
     "silk-gift-box": "assets/centerpieces/", "champagne-gala": "assets/centerpieces/",
     "baby-teddy": "assets/centerpieces/", "newborn-hand-feet": "assets/centerpieces/",
+    "birthday-floral-cake": "assets/centerpieces/", "anniversary-floral-cake": "assets/centerpieces/",
     "white-lilies": "assets/centerpieces/", "white-lilies-corner": "assets/decorations/",
     "sage-foliage-corner": "assets/decorations/", "slate-botanical-corner": "assets/decorations/",
     "navy-botanical-accent": "assets/decorations/",
@@ -2382,6 +2390,8 @@ const Centerpieces = (() => {
     { id: "champagne-gala", label: "Luxury Balloons", hint: "Pearl, emerald and gold celebration balloons" },
     { id: "baby-teddy", label: "Baby Teddy Bear", hint: "A gentle teddy-bear welcome" },
     { id: "newborn-hand-feet", label: "Newborn Hands and Feet", hint: "Hands cradling tiny feet" },
+    { id: "birthday-floral-cake", label: "Birthday Floral Cake", hint: "Blush florals, lace icing and birthday lettering" },
+    { id: "anniversary-floral-cake", label: "Anniversary Floral Cake", hint: "Romantic florals, rings and anniversary lettering" },
     { id: "theme-aura", label: "Theme Aura", hint: "Abstract monogram glow" },
   ];
 

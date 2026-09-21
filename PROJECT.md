@@ -541,11 +541,22 @@ Task 003 implementation and release were explicitly authorized. The Current Task
 - **Compatibility:** Birthday and other occasion state isolation, existing centerpieces, saved projects, exports, offline caching, and all prior navigation behavior remain preserved.
 - **Verification:** Syntax/static checks, New Baby visual previews for Royal Burgundy, Amber Tuscan, and Imperial Emerald, Theme Aura hands-and-feet preview, and the Task 003 occasion/state regression passed.
 
+### Task 008 Implementation Record
+
+- **Approved Task:** Task 008 — Occasion cake fallbacks for Birthday and Anniversary
+- **Baseline:** `main` at commit `8837508`
+- **Status:** Implementation complete; release verification pending
+- **Completed commit:** Pending
+- **Release:** Application, manifest, service worker, and cache version `1.10.0`; schema remains v5
+- **Behavior:** When no user photo is uploaded, Auto uses a realistic ivory floral cake marked `Happy Birthday` for Birthday cards and a coordinated cake marked `Happy Anniversary` for Anniversary cards. Burgundy lettering with champagne-gold highlights remains legible across light and dark themes. Uploaded photos and explicitly selected alternative centerpieces retain priority.
+- **Compatibility:** Existing photos, manual centerpiece choices, occasion state isolation, saved projects, exports, and offline behavior remain preserved.
+- **Verification:** Pending focused rendering, theme-contrast, regression, offline-shell, and public-release checks.
+
 ## 9. Current Task
 
-- **Approved Current Task:** None
+- **Approved Current Task:** Task 008 — Occasion cake fallbacks for Birthday and Anniversary
 - **Active Permission Level:** REPORT-ONLY between tasks; standing owner authorization permits the next specific approved task and its commit, push, and deployment without another permission prompt
-- **Status:** Task 007 complete; ready to select the next approved requirement
+- **Status:** Implementation complete; verification and release in progress
 - **Authorization boundary:** The agent may start and release the next specific approved task under the standing owner authorization. Branch changes, destructive Git/filesystem actions, unrelated scope expansion, and disposal of existing work remain unauthorized.
 
 No additional requirement is authorized. The R1–R18 requirements remain product direction, not blanket implementation permission.
