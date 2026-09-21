@@ -1129,7 +1129,7 @@ const ThemePreferences = (() => {
 // Application version. Shown in the header, stamped onto exported
 // backups, and kept in step with SW_VERSION in sw.js so a released
 // shell and the code inside it always report the same number.
-const APP_VERSION = "1.14.0";
+const APP_VERSION = "1.15.0";
 
 const CURRENT_SCHEMA_VERSION = 5;
 
@@ -5778,6 +5778,7 @@ const App = (() => {
     document.querySelectorAll(".tabpanel").forEach((p) => {
       p.hidden = p.id !== tab.getAttribute("aria-controls");
     });
+    tab.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "smooth" });
     updateEditorNavigation();
   }
 

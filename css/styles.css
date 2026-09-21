@@ -416,6 +416,8 @@ input, select, textarea { font-family: inherit; }
   overflow-x: auto;
   gap: 2px;
   padding: 8px;
+  scroll-padding-inline: 8px;
+  scroll-snap-type: x proximity;
   border-bottom: 1px solid var(--border-glass);
   scrollbar-width: none;
 }
@@ -434,6 +436,8 @@ input, select, textarea { font-family: inherit; }
 
 .tab {
   flex: 0 0 auto;
+  scroll-snap-align: start;
+  scroll-margin-inline: 8px;
   min-height: 44px;
   padding: 0 14px;
   border: none;
