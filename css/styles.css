@@ -680,6 +680,23 @@ fieldset[disabled] button { cursor: not-allowed; }
 
 /* Stamp gallery */
 .stamp-gallery {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.stamp-gallery-section {
+  display: grid;
+  gap: 8px;
+}
+.stamp-gallery-heading {
+  margin: 0;
+  color: var(--paper-200);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.stamp-gallery-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
   gap: 10px;

@@ -563,11 +563,22 @@ Task 003 implementation and release were explicitly authorized. The Current Task
 - **Compatibility:** Existing card data, occasion isolation, uploaded-photo priority, manual centerpiece choices, Condolence no-photo behavior, saved projects, exports, and offline behavior remain preserved.
 - **Verification:** Syntax/static checks and focused mobile/desktop browser checks passed for camera/upload intake, transform persistence, Birthday–Condolence isolation, replacement cleanup, manual-centerpiece restoration, content preservation, PNG export, save/reload, and offline startup. GitHub Pages run `35650144683` succeeded; live HTTPS version/assets, camera intake, occasion isolation, manual-centerpiece restoration, service-worker control, and offline restart passed.
 
+### Task 010 Implementation Record
+
+- **Approved Task:** Task 010 — Categorized decoration gallery (R4)
+- **Baseline:** `main` at commit `40eceba`
+- **Status:** Implementation complete; release verification pending
+- **Completed commit:** Pending
+- **Release:** Application, manifest, service worker, and cache version `1.12.0`; schema remains v5
+- **Behavior:** Groups the existing decoration library into Recommended, Occasion Greetings, Love & Messages, Flowers & Nature, Celebration & Keepsakes, and Personal sections. Occasion recommendations remain first and every available decoration appears exactly once.
+- **Compatibility:** Decoration selection and placement, per-occasion stamp state, card content, uploaded-photo priority, manual centerpiece choices, saved projects, preview/export, and offline behavior remain unchanged.
+- **Verification:** Local syntax/static checks and focused mobile/desktop browser checks passed for category order, all 19 unique decorations, Birthday/Anniversary recommendation updates, occasion-state round-trip, responsive layout, PNG export, and offline startup. Rendered mobile and desktop gallery layouts were visually reviewed. Public-release checks remain pending.
+
 ## 9. Current Task
 
-- **Approved Current Task:** Task 010 — Select the next R1–R18 improvement
+- **Approved Current Task:** Task 010 — Categorized decoration gallery (R4)
 - **Active Permission Level:** REPORT-ONLY between tasks; standing owner authorization permits the next specific approved task and its commit, push, and deployment without another permission prompt
-- **Status:** Task 009 complete; ready to select the next approved requirement
+- **Status:** Implementation complete; verification and release in progress
 - **Authorization boundary:** The agent may start and release the next specific approved task under the standing owner authorization. Branch changes, destructive Git/filesystem actions, unrelated scope expansion, and disposal of existing work remain unauthorized.
 
 No additional requirement is authorized. The R1–R18 requirements remain product direction, not blanket implementation permission.

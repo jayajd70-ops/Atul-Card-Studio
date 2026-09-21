@@ -1087,7 +1087,7 @@ const ThemeRegistry = (() => {
 // Application version. Shown in the header, stamped onto exported
 // backups, and kept in step with SW_VERSION in sw.js so a released
 // shell and the code inside it always report the same number.
-const APP_VERSION = "1.11.0";
+const APP_VERSION = "1.12.0";
 
 const CURRENT_SCHEMA_VERSION = 5;
 
@@ -5850,19 +5850,51 @@ const App = (() => {
     const project = StateStore.getProject();
     const occasionId = (project.occasion && project.occasion.id) || "birthday";
     const recommendedIds = OccasionRegistry.getRecommendedStampIds(occasionId);
-    const definitions = StampCollections.list().slice().sort((a, b) => {
-      const ai = recommendedIds.indexOf(a.id);
-      const bi = recommendedIds.indexOf(b.id);
-      if (ai === -1 && bi === -1) return 0;
-      if (ai === -1) return 1;
-      if (bi === -1) return -1;
-      return ai - bi;
-    });
+    const definitions = StampCollections.list().slice();
+    const groups = [
+      { id: "recommended", label: "Recommended for " + OccasionRegistry.get(occasionId).label,
+        items: recommendedIds.map((id) => definitions.find((def) => def.id === id)).filter(Boolean) },
+      { id: "occasion", label: "Occasion Greetings", items: [] },
+      { id: "messages", label: "Love & Messages", items: [] },
+      { id: "nature", label: "Flowers & Nature", items: [] },
+      { id: "celebration", label: "Celebration & Keepsakes", items: [] },
+      { id: "personal", label: "Personal", items: [] },
+    ];
+    const groupById = Object.fromEntries(groups.map((group) => [group.id, group]));
     definitions.forEach((def) => {
+      if (recommendedIds.includes(def.id)) return;
+      let groupId = "celebration";
+      if (def.category === "occasion") groupId = "occasion";
+      else if (def.category === "badge") groupId = "messages";
+      else if (def.id === "floral-ornament" || def.id === "celestial-ornament") groupId = "nature";
+      else if (def.category === "monogram") groupId = "personal";
+      groupById[groupId].items.push(def);
+    });
+    groups.filter((group) => group.items.length).forEach((group) => {
+      const section = document.createElement("section");
+      section.className = "stamp-gallery-section";
+      section.dataset.stampGroup = group.id;
+      const heading = document.createElement("h4");
+      heading.className = "stamp-gallery-heading";
+      heading.id = "stamp-group-" + group.id;
+      heading.textContent = group.label;
+      const grid = document.createElement("div");
+      grid.className = "stamp-gallery-grid";
+      grid.setAttribute("role", "list");
+      grid.setAttribute("aria-labelledby", heading.id);
+      group.items.forEach((def) => grid.appendChild(createStampGalleryItem(def, recommendedIds, project)));
+      section.appendChild(heading);
+      section.appendChild(grid);
+      gallery.appendChild(section);
+    });
+  }
+
+  function createStampGalleryItem(def, recommendedIds, project) {
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "stamp-gallery-item";
       btn.setAttribute("role", "listitem");
+      btn.dataset.stampId = def.id;
       const theme = ThemeRegistry.getTheme(project.theme.id);
       const preset = FoilPresets.getPreset(theme.foilPresetId);
       const thumb = StampCollections.renderToCanvas(def.id, 92, { preset, monogram: Renderer.getInitials(project) || "A" });
@@ -5875,8 +5907,7 @@ const App = (() => {
       btn.appendChild(label);
       btn.setAttribute("aria-label", (recommended ? "Recommended for this occasion. " : "") + "Add " + def.name + " decoration");
       btn.addEventListener("click", () => addStamp(def));
-      gallery.appendChild(btn);
-    });
+      return btn;
   }
 
   function addStamp(def) {
