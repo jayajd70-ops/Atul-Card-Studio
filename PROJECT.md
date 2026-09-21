@@ -524,7 +524,7 @@ Task 003 implementation and release were explicitly authorized. The Current Task
 - **Approved Task:** Task 006 — Mobile editor navigation and safe scrolling (R9)
 - **Baseline:** `main` at commit `1bc5eb8`
 - **Status:** Complete, committed, pushed, deployed, and verified
-- **Completed commit:** `PLACEHOLDER_TASK006_COMMIT` — `feat: improve mobile editor navigation`
+- **Completed commit:** `ef6c30b` — `feat: improve mobile editor navigation`
 - **Release:** Application, manifest, service worker, and cache version `1.8.0`; schema remains v5
 - **Behavior:** Adds mobile-friendly Back, Next, and return-to-top controls; Back uses independent tab navigation history and never invokes Undo; editor state remains unchanged while moving between sections; pending edits trigger the browser leave warning; the card canvas keeps its deliberate gesture surface while ordinary editor scrolling remains available.
 - **Compatibility:** Existing tab keyboard navigation, Undo/Redo history, photo/stamp pointer gestures, saved card data, and all existing greeting, decoration, date, export, and offline behavior remain preserved.
