@@ -1129,7 +1129,7 @@ const ThemePreferences = (() => {
 // Application version. Shown in the header, stamped onto exported
 // backups, and kept in step with SW_VERSION in sw.js so a released
 // shell and the code inside it always report the same number.
-const APP_VERSION = "1.13.0";
+const APP_VERSION = "1.14.0";
 
 const CURRENT_SCHEMA_VERSION = 5;
 
@@ -1249,7 +1249,9 @@ const OccasionRegistry = (() => {
     },
     {
       id: "congratulations", label: "Congratulations", hint: "Celebrate an achievement or good news",
-      isSensitive: false, allowPhoto: true, allowedCenterpieces: ["auto", "silk-gift-box", "champagne-gala", "theme-aura"],
+      isSensitive: false, allowPhoto: true, allowedCenterpieces: ["auto", "congratulations-laurel", "silk-gift-box", "champagne-gala", "theme-aura"],
+      defaultCenterpieceMap: { heartfelt: "congratulations-laurel", poetic: "congratulations-laurel", professional: "congratulations-laurel", playful: "congratulations-laurel" },
+      fallbackCenterpiece: "congratulations-laurel",
       emotions: PERSONAL_EMOTIONS, recommendedStampIds: ["congratulations-badge", "ribbon-badge", "crest"],
     },
     {
@@ -1261,27 +1263,37 @@ const OccasionRegistry = (() => {
     },
     {
       id: "new-home", label: "New Home", hint: "Good wishes for a new beginning at home",
-      isSensitive: false, allowPhoto: true, allowedCenterpieces: ["auto", "silk-gift-box", "theme-aura"],
+      isSensitive: false, allowPhoto: true, allowedCenterpieces: ["auto", "new-home-welcome", "silk-gift-box", "theme-aura"],
+      defaultCenterpieceMap: { heartfelt: "new-home-welcome", poetic: "new-home-welcome", professional: "new-home-welcome", playful: "new-home-welcome" },
+      fallbackCenterpiece: "new-home-welcome",
       emotions: PERSONAL_EMOTIONS, recommendedStampIds: ["new-home-badge", "crest", "floral-ornament"],
     },
     {
       id: "graduation", label: "Graduation", hint: "Pride and encouragement for a milestone",
-      isSensitive: false, allowPhoto: true, allowedCenterpieces: ["auto", "champagne-gala", "silk-gift-box", "theme-aura"],
+      isSensitive: false, allowPhoto: true, allowedCenterpieces: ["auto", "graduation-diploma", "champagne-gala", "silk-gift-box", "theme-aura"],
+      defaultCenterpieceMap: { heartfelt: "graduation-diploma", poetic: "graduation-diploma", professional: "graduation-diploma", playful: "graduation-diploma" },
+      fallbackCenterpiece: "graduation-diploma",
       emotions: PERSONAL_EMOTIONS, recommendedStampIds: ["proud-graduate", "ribbon-badge", "gold-medallion"],
     },
     {
       id: "retirement", label: "Retirement", hint: "Warm wishes for a new chapter",
-      isSensitive: false, allowPhoto: true, allowedCenterpieces: ["auto", "velvet-roses", "silk-gift-box", "theme-aura"],
+      isSensitive: false, allowPhoto: true, allowedCenterpieces: ["auto", "retirement-compass", "velvet-roses", "silk-gift-box", "theme-aura"],
+      defaultCenterpieceMap: { heartfelt: "retirement-compass", poetic: "retirement-compass", professional: "retirement-compass", playful: "retirement-compass" },
+      fallbackCenterpiece: "retirement-compass",
       emotions: PERSONAL_EMOTIONS, recommendedStampIds: ["happy-retirement", "gold-medallion", "floral-ornament"],
     },
     {
       id: "get-well", label: "Get Well", hint: "Thoughtful wishes for recovery and good health",
-      isSensitive: false, allowPhoto: true, allowedCenterpieces: ["auto", "velvet-roses", "theme-aura"],
+      isSensitive: false, allowPhoto: true, allowedCenterpieces: ["auto", "get-well-comfort", "velvet-roses", "theme-aura"],
+      defaultCenterpieceMap: { heartfelt: "get-well-comfort", poetic: "get-well-comfort", professional: "get-well-comfort", playful: "get-well-comfort" },
+      fallbackCenterpiece: "get-well-comfort",
       emotions: PERSONAL_EMOTIONS, recommendedStampIds: ["get-well-soon", "floral-ornament", "celestial-ornament"],
     },
     {
       id: "friendship-thanks", label: "Friendship / Thanks", hint: "Appreciation for friendship and kindness",
-      isSensitive: false, allowPhoto: true, allowedCenterpieces: ["auto", "velvet-roses", "silk-gift-box", "theme-aura"],
+      isSensitive: false, allowPhoto: true, allowedCenterpieces: ["auto", "thanks-note", "velvet-roses", "silk-gift-box", "theme-aura"],
+      defaultCenterpieceMap: { heartfelt: "thanks-note", poetic: "thanks-note", professional: "thanks-note", playful: "thanks-note" },
+      fallbackCenterpiece: "thanks-note",
       emotions: PERSONAL_EMOTIONS, recommendedStampIds: ["thank-you-badge", "with-love", "floral-ornament"],
     },
     {
@@ -2378,6 +2390,9 @@ const CenterpieceAssetResolver = (() => {
     "silk-gift-box": "assets/centerpieces/", "champagne-gala": "assets/centerpieces/",
     "baby-teddy": "assets/centerpieces/", "newborn-hand-feet": "assets/centerpieces/",
     "birthday-floral-cake": "assets/centerpieces/", "anniversary-floral-cake": "assets/centerpieces/",
+    "congratulations-laurel": "assets/centerpieces/", "new-home-welcome": "assets/centerpieces/",
+    "graduation-diploma": "assets/centerpieces/", "retirement-compass": "assets/centerpieces/",
+    "get-well-comfort": "assets/centerpieces/", "thanks-note": "assets/centerpieces/",
     "white-lilies": "assets/centerpieces/", "white-lilies-corner": "assets/decorations/",
     "sage-foliage-corner": "assets/decorations/", "slate-botanical-corner": "assets/decorations/",
     "navy-botanical-accent": "assets/decorations/",
@@ -2434,6 +2449,12 @@ const Centerpieces = (() => {
     { id: "newborn-hand-feet", label: "Newborn Hands and Feet", hint: "Hands cradling tiny feet" },
     { id: "birthday-floral-cake", label: "Birthday Floral Cake", hint: "Blush florals, lace icing and birthday lettering" },
     { id: "anniversary-floral-cake", label: "Anniversary Floral Cake", hint: "Romantic florals, rings and anniversary lettering" },
+    { id: "congratulations-laurel", label: "Congratulations Laurel", hint: "Gold laurel and achievement ribbon" },
+    { id: "new-home-welcome", label: "New Home Welcome", hint: "A warmly lit home and welcome lamp" },
+    { id: "graduation-diploma", label: "Graduation Diploma", hint: "Mortarboard, diploma and laurel" },
+    { id: "retirement-compass", label: "Retirement Compass", hint: "Compass, book and a new chapter" },
+    { id: "get-well-comfort", label: "Get Well Comfort", hint: "Herbal tea, gentle flowers and care" },
+    { id: "thanks-note", label: "Friendship and Thanks", hint: "A personal note of appreciation" },
     { id: "theme-aura", label: "Theme Aura", hint: "Abstract monogram glow" },
   ];
 
@@ -4074,6 +4095,26 @@ const Renderer = (() => {
     ],
   };
 
+  // Personal occasions use their own quiet frame cue instead of inheriting
+  // the birthday-party balloons, cake, gifts, or romantic roses from a theme.
+  // The art zone and text lanes are still cleared below, so photos and manual
+  // layout adjustments remain authoritative.
+  function occasionCornerFrame(id) {
+    return [
+      { id, x: 120, y: 265, size: 250, rot: -0.12, alpha: 0.74 },
+      { id, x: 1080, y: 1490, size: 250, rot: 0.12, alpha: 0.7, flip: true },
+    ];
+  }
+
+  const OCCASION_BORDER_DECOR = {
+    "congratulations": occasionCornerFrame("congratulations-laurel"),
+    "new-home": occasionCornerFrame("new-home-welcome"),
+    "graduation": occasionCornerFrame("graduation-diploma"),
+    "retirement": occasionCornerFrame("retirement-compass"),
+    "get-well": occasionCornerFrame("get-well-comfort"),
+    "friendship-thanks": occasionCornerFrame("thanks-note"),
+  };
+
   function getTextProtectionRegions(project) {
     const isCondolence = project && project.occasion && project.occasion.id === "condolence";
     const isNewBaby = project && project.occasion && project.occasion.id === "new-baby";
@@ -4232,13 +4273,17 @@ const Renderer = (() => {
   }
 
   async function renderThemeBorderDecorations(ctx, project, theme) {
-    const isCondolence = project && project.occasion && project.occasion.id === "condolence";
-    const isNewBaby = project && project.occasion && project.occasion.id === "new-baby";
+    const occasionId = project && project.occasion && project.occasion.id;
+    const isCondolence = occasionId === "condolence";
+    const isNewBaby = occasionId === "new-baby";
     const emotion = (project && project.content && project.content.emotion) || "heartfelt";
-    const design = OccasionRegistry.getDesign(isCondolence ? "condolence" : "birthday", emotion);
-    const specs = isNewBaby
-      ? (NEW_BABY_THEME_DECOR[theme.id] || NEW_BABY_THEME_DECOR["amber-tuscan"])
-      : (design ? design.decorations : (THEME_BORDER_DECOR[theme.id] || THEME_BORDER_DECOR["pearl-marble"]));
+    const design = OccasionRegistry.getDesign(occasionId, emotion);
+    const occasionSpecs = OCCASION_BORDER_DECOR[occasionId];
+    const specs = design
+      ? design.decorations
+      : (isNewBaby
+        ? (NEW_BABY_THEME_DECOR[theme.id] || NEW_BABY_THEME_DECOR["amber-tuscan"])
+        : (occasionSpecs || THEME_BORDER_DECOR[theme.id] || THEME_BORDER_DECOR["pearl-marble"]));
 
     const uniqueIds = Array.from(new Set(specs.map((spec) => spec.id)));
     const loaded = await Promise.all(uniqueIds.map(async (id) => [id, await CenterpieceAssetResolver.resolve(id)]));

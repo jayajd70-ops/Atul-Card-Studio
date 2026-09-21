@@ -10,7 +10,7 @@
 // Kept in step with APP_VERSION in js/app.js: bumping either one must
 // bump the other, since the cache name is what forces clients onto a
 // freshly released shell.
-const SW_VERSION = "v1.13.0";
+const SW_VERSION = "v1.14.0";
 const SHELL_CACHE = "atul-shell-" + SW_VERSION;
 
 // Everything needed to open and use the editor while offline. User photos
@@ -37,6 +37,12 @@ const SHELL_ASSETS = [
   "./assets/centerpieces/newborn-hand-feet.png",
   "./assets/centerpieces/birthday-floral-cake.png",
   "./assets/centerpieces/anniversary-floral-cake.png",
+  "./assets/centerpieces/congratulations-laurel.png",
+  "./assets/centerpieces/new-home-welcome.png",
+  "./assets/centerpieces/graduation-diploma.png",
+  "./assets/centerpieces/retirement-compass.png",
+  "./assets/centerpieces/get-well-comfort.png",
+  "./assets/centerpieces/thanks-note.png",
   "./assets/centerpieces/champagne-gala.png",
   "./assets/centerpieces/white-lilies.png",
   "./assets/decorations/white-lilies-corner.png",
