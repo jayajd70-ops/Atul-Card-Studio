@@ -421,6 +421,17 @@ input, select, textarea { font-family: inherit; }
 }
 .tabs::-webkit-scrollbar { display: none; }
 
+.editor-navigation {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border-glass);
+  touch-action: manipulation;
+}
+.editor-navigation .btn { min-height: 38px; }
+.editor-navigation .btn:last-child { margin-left: auto; }
+
 .tab {
   flex: 0 0 auto;
   min-height: 44px;

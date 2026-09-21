@@ -519,11 +519,22 @@ Task 003 implementation and release were explicitly authorized. The Current Task
 - **Compatibility:** Existing saved cards migrate with their creation date stored but hidden, preserving their previous appearance.
 - **Verification:** Current-date initialization, editing, Show/Hide, occasion round-trip, rendering, save/reopen, public HTTPS behavior, Task 002A regression, Task 003 occasion/message regression, Task 004 decoration-state regression, and offline PWA startup passed.
 
+### Task 006 Implementation Record
+
+- **Approved Task:** Task 006 — Mobile editor navigation and safe scrolling (R9)
+- **Baseline:** `main` at commit `1bc5eb8`
+- **Status:** Complete, committed, pushed, deployed, and verified
+- **Completed commit:** `PLACEHOLDER_TASK006_COMMIT` — `feat: improve mobile editor navigation`
+- **Release:** Application, manifest, service worker, and cache version `1.8.0`; schema remains v5
+- **Behavior:** Adds mobile-friendly Back, Next, and return-to-top controls; Back uses independent tab navigation history and never invokes Undo; editor state remains unchanged while moving between sections; pending edits trigger the browser leave warning; the card canvas keeps its deliberate gesture surface while ordinary editor scrolling remains available.
+- **Compatibility:** Existing tab keyboard navigation, Undo/Redo history, photo/stamp pointer gestures, saved card data, and all existing greeting, decoration, date, export, and offline behavior remain preserved.
+- **Verification:** Syntax/static checks, focused Task 006 browser checks, gesture-surface preservation, unsaved-change warning, and the existing Task 002A, Task 003, Task 004, and Task 005 regression suite passed.
+
 ## 9. Current Task
 
 - **Approved Current Task:** None
-- **Active Permission Level:** REPORT-ONLY between tasks; standing authorization applies when the next specific task is recorded
-- **Status:** Task 005 complete; ready to select the next approved requirement
+- **Active Permission Level:** REPORT-ONLY between tasks; standing owner authorization permits the next specific approved task and its commit, push, and deployment without another permission prompt
+- **Status:** Task 006 complete; ready to select the next approved requirement
 - **Authorization boundary:** The agent may start and release the next specific approved task under the standing owner authorization. Branch changes, destructive Git/filesystem actions, unrelated scope expansion, and disposal of existing work remain unauthorized.
 
 No additional requirement is authorized. The R1–R18 requirements remain product direction, not blanket implementation permission.

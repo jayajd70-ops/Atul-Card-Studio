@@ -1087,7 +1087,7 @@ const ThemeRegistry = (() => {
 // Application version. Shown in the header, stamped onto exported
 // backups, and kept in step with SW_VERSION in sw.js so a released
 // shell and the code inside it always report the same number.
-const APP_VERSION = "1.7.0";
+const APP_VERSION = "1.8.0";
 
 const CURRENT_SCHEMA_VERSION = 5;
 
@@ -5438,6 +5438,8 @@ const App = (() => {
   let selectedStampId = null;
   let renderRAF = null;
   let renderQueuedQuality = "preview";
+  let editorTabHistory = [];
+  let hasUnsavedChanges = false;
 
   /* ---------------- Toasts / live region ---------------- */
   function toast(message, isError) {
@@ -5513,6 +5515,9 @@ const App = (() => {
   /* ---------------- Tabs ---------------- */
   function initTabs() {
     const tabs = Array.from(document.querySelectorAll(".tab"));
+    const backBtn = document.querySelector("#editor-back-btn");
+    const nextBtn = document.querySelector("#editor-next-btn");
+    const topBtn = document.querySelector("#editor-top-btn");
     tabs.forEach((tab) => {
       tab.addEventListener("click", () => selectTab(tab));
       tab.addEventListener("keydown", (e) => {
@@ -5523,10 +5528,37 @@ const App = (() => {
         if (e.key === "ArrowLeft") { e.preventDefault(); availableTabs[(idx - 1 + availableTabs.length) % availableTabs.length].focus(); selectTab(availableTabs[(idx - 1 + availableTabs.length) % availableTabs.length]); }
       });
     });
+    backBtn?.addEventListener("click", () => {
+      const previous = editorTabHistory.pop();
+      if (previous) selectTab(previous, { recordHistory: false });
+      updateEditorNavigation(tabs);
+    });
+    nextBtn?.addEventListener("click", () => {
+      const availableTabs = tabs.filter((candidate) => !candidate.hidden && !candidate.disabled);
+      const current = availableTabs.find((candidate) => candidate.getAttribute("aria-selected") === "true");
+      const next = availableTabs[(availableTabs.indexOf(current) + 1) % availableTabs.length];
+      if (next && next !== current) selectTab(next);
+    });
+    topBtn?.addEventListener("click", () => {
+      document.querySelector(".tabpanels")?.scrollTo({ top: 0, behavior: "smooth" });
+    });
+    updateEditorNavigation(tabs);
   }
 
-  function selectTab(tab) {
+  function updateEditorNavigation(tabs) {
+    const backBtn = document.querySelector("#editor-back-btn");
+    const nextBtn = document.querySelector("#editor-next-btn");
+    const availableTabs = (tabs || Array.from(document.querySelectorAll(".tab"))).filter((candidate) => !candidate.hidden && !candidate.disabled);
+    const current = availableTabs.find((candidate) => candidate.getAttribute("aria-selected") === "true");
+    if (backBtn) backBtn.disabled = editorTabHistory.length === 0;
+    if (nextBtn) nextBtn.disabled = availableTabs.length < 2 || !current;
+  }
+
+  function selectTab(tab, opts) {
     if (!tab || tab.hidden || tab.disabled) return;
+    opts = opts || {};
+    const current = document.querySelector('.tab[aria-selected="true"]');
+    if (opts.recordHistory !== false && current && current !== tab) editorTabHistory.push(current);
     document.querySelectorAll(".tab").forEach((t) => {
       const selected = t === tab;
       t.setAttribute("aria-selected", String(selected));
@@ -5535,6 +5567,7 @@ const App = (() => {
     document.querySelectorAll(".tabpanel").forEach((p) => {
       p.hidden = p.id !== tab.getAttribute("aria-controls");
     });
+    updateEditorNavigation();
   }
 
   /* ---------------- Populate registries into DOM ---------------- */
@@ -6869,6 +6902,7 @@ const App = (() => {
       announceSaveStatus("Saving…");
       try {
         await ProjectVault.saveProject(project);
+        hasUnsavedChanges = false;
         announceSaveStatus("Saved");
         clearTimeout(thumbTimer);
         thumbTimer = setTimeout(async () => {
@@ -6999,6 +7033,7 @@ const App = (() => {
     initCanvasPointerHandlers();
 
     StateStore.subscribe((project, reason) => {
+      if (reason !== "init" && reason !== "silent") hasUnsavedChanges = true;
       if (reason !== "silent") scheduleRender(reason === "photo-rotate" || reason === "theme-change" || reason === "occasion-change" ? "preview" : "preview");
       syncGreetingSafety(project);
       populateStampGalleryThumbsIfThemeChanged(reason);
@@ -7025,7 +7060,13 @@ const App = (() => {
       }
     }
 
-    window.addEventListener("beforeunload", () => StateStore.flushAutosave());
+    window.addEventListener("beforeunload", (event) => {
+      StateStore.flushAutosave();
+      if (hasUnsavedChanges) {
+        event.preventDefault();
+        event.returnValue = "";
+      }
+    });
     document.addEventListener("visibilitychange", () => {
       if (document.hidden) StateStore.flushAutosave();
     });
