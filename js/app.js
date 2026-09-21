@@ -1078,6 +1078,48 @@ const ThemeRegistry = (() => {
 })();
 
 /* =========================================================================
+   SECTION: ThemePreferences
+   Local, non-card preferences for retaining familiar themes. These never
+   change a CardProject, backup, export, or another device's library.
+   ========================================================================= */
+const ThemePreferences = (() => {
+  const SETTINGS_KEY = "theme-preferences";
+  let favouriteIds = new Set();
+
+  async function init() {
+    try {
+      const record = await DB.get("settings", SETTINGS_KEY);
+      const knownIds = new Set(ThemeRegistry.list().map((theme) => theme.id));
+      favouriteIds = new Set(
+        Array.isArray(record && record.favouriteIds)
+          ? record.favouriteIds.filter((id) => knownIds.has(id))
+          : []
+      );
+    } catch (err) {
+      favouriteIds = new Set();
+    }
+  }
+
+  function isFavourite(themeId) { return favouriteIds.has(themeId); }
+
+  async function toggle(themeId) {
+    const wasFavourite = favouriteIds.has(themeId);
+    if (wasFavourite) favouriteIds.delete(themeId);
+    else favouriteIds.add(themeId);
+    try {
+      await DB.put("settings", { key: SETTINGS_KEY, favouriteIds: Array.from(favouriteIds) });
+    } catch (err) {
+      if (wasFavourite) favouriteIds.add(themeId);
+      else favouriteIds.delete(themeId);
+      throw err;
+    }
+    return favouriteIds.has(themeId);
+  }
+
+  return { init, isFavourite, toggle };
+})();
+
+/* =========================================================================
    SECTION: StateStore
    Owns the canonical CardProject, undo/redo history, autosave scheduling,
    and schema migrations. All mutation flows through `update()`, which
@@ -1087,7 +1129,7 @@ const ThemeRegistry = (() => {
 // Application version. Shown in the header, stamped onto exported
 // backups, and kept in step with SW_VERSION in sw.js so a released
 // shell and the code inside it always report the same number.
-const APP_VERSION = "1.12.0";
+const APP_VERSION = "1.13.0";
 
 const CURRENT_SCHEMA_VERSION = 5;
 
@@ -5783,6 +5825,14 @@ const App = (() => {
       const name = document.createElement("span");
       name.className = "swatch-name";
       name.textContent = theme.name;
+      if (ThemePreferences.isFavourite(theme.id)) {
+        const favourite = document.createElement("span");
+        favourite.className = "swatch-favourite";
+        favourite.setAttribute("aria-hidden", "true");
+        favourite.textContent = "★";
+        btn.appendChild(favourite);
+        btn.setAttribute("aria-label", theme.name + ", favourite theme");
+      }
       btn.appendChild(preview);
       btn.appendChild(name);
       btn.addEventListener("click", () => {
@@ -5791,6 +5841,19 @@ const App = (() => {
       });
       grid.appendChild(btn);
     });
+  }
+
+  function syncThemeFavouriteControls(project) {
+    if (!dom.themeFavouriteBtn || !project) return;
+    const theme = ThemeRegistry.getTheme(project.theme.id);
+    const isFavourite = ThemePreferences.isFavourite(theme.id);
+    dom.themeFavouriteBtn.textContent = isFavourite
+      ? "Remove " + theme.name + " from favourites"
+      : "Favourite " + theme.name;
+    dom.themeFavouriteBtn.setAttribute("aria-pressed", String(isFavourite));
+    dom.themeFavouriteHint.textContent = isFavourite
+      ? theme.name + " is retained in your local favourites."
+      : "Favourites stay on this device and do not change the card.";
   }
 
   function populateFoilGrid() {
@@ -6165,6 +6228,22 @@ const App = (() => {
         StateStore.update((p) => { apply(p, v); p.typography.userCustomized = true; }, { skipHistory: true });
       });
       el.addEventListener("change", () => StateStore.update(() => {}));
+    });
+  }
+
+  function bindThemeTab() {
+    dom.themeFavouriteBtn.addEventListener("click", async () => {
+      const project = StateStore.getProject();
+      if (!project) return;
+      const theme = ThemeRegistry.getTheme(project.theme.id);
+      try {
+        const isFavourite = await ThemePreferences.toggle(theme.id);
+        populateThemeGrid();
+        syncThemeFavouriteControls(project);
+        toast(isFavourite ? theme.name + " added to favourites." : theme.name + " removed from favourites.");
+      } catch (err) {
+        toast("Could not update theme favourites.", true);
+      }
     });
   }
 
@@ -6953,6 +7032,7 @@ const App = (() => {
     document.querySelectorAll("#theme-grid .swatch").forEach((el) => {
       el.setAttribute("aria-checked", String(el.dataset.themeId === project.theme.id));
     });
+    syncThemeFavouriteControls(project);
     document.querySelectorAll("#foil-grid .swatch").forEach((el) => {
       el.setAttribute("aria-checked", String(el.dataset.foilId === project.foil.presetId));
     });
@@ -7109,7 +7189,7 @@ const App = (() => {
       emotionRow: $("#emotion-row"), greetingText: $("#greeting-text"), greetingCount: $("#greeting-count"),
       greetingSafetyWarning: $("#greeting-safety-warning"), useEditedMessageBtn: $("#use-edited-message-btn"),
 
-      themeGrid: $("#theme-grid"),
+      themeGrid: $("#theme-grid"), themeFavouriteBtn: $("#theme-favourite-btn"), themeFavouriteHint: $("#theme-favourite-hint"),
 
       moodSelect: $("#mood-select"), pairingList: $("#pairing-list"),
       recipientSize: $("#recipient-size"), recipientSizeOut: $("#recipient-size-out"),
@@ -7165,6 +7245,7 @@ const App = (() => {
     cacheDom();
     dom.appVersion.textContent = "v" + APP_VERSION;
     initTabs();
+    await ThemePreferences.init();
     populateOccasionSelect();
     populateThemeGrid();
     populateFoilGrid();
@@ -7179,6 +7260,7 @@ const App = (() => {
     // populateStampGalleryThumbsIfThemeChanged().
 
     bindContentTab();
+    bindThemeTab();
     bindTypographyTab();
     bindFoilTab();
     bindPhotoTab();

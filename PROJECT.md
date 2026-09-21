@@ -574,11 +574,22 @@ Task 003 implementation and release were explicitly authorized. The Current Task
 - **Compatibility:** Decoration selection and placement, per-occasion stamp state, card content, uploaded-photo priority, manual centerpiece choices, saved projects, preview/export, and offline behavior remain unchanged.
 - **Verification:** Syntax/static checks and focused mobile/desktop browser checks passed for category order, all 19 unique decorations, Birthday/Anniversary recommendation updates, occasion-state round-trip, responsive layout, PNG export, and offline startup. Rendered mobile and desktop gallery layouts were visually reviewed. GitHub Pages run `35651734461` succeeded; live HTTPS version/assets, unique categorized items, recommendation switching, decoration placement, service-worker control, and offline restart passed.
 
+### Task 011 Implementation Record
+
+- **Approved Task:** Task 011 — Persisted theme favourites (R1)
+- **Baseline:** `main` at commit `08b599b`
+- **Status:** Implementation complete; release verification pending
+- **Completed commit:** Pending
+- **Release:** Application, manifest, service worker, and cache version `1.13.0`; schema remains v5
+- **Behavior:** Lets people retain preferred built-in themes locally. A visible star marks each favourite, and the selected theme can be added or removed without changing card data.
+- **Compatibility:** Theme rendering, card state, save/reopen, backup/import, previews, exports, occasion isolation, photo priority, manual centerpiece choices, and offline behavior remain unchanged.
+- **Verification:** Local syntax/static checks and focused mobile/desktop browser checks passed for favourite add/remove, persisted markers, theme switching, recipient/sender/edited-message preservation, responsive layout, PNG export, and offline startup. Public-release checks remain pending.
+
 ## 9. Current Task
 
-- **Approved Current Task:** Task 011 — Select the next R1–R18 improvement
+- **Approved Current Task:** Task 011 — Persisted theme favourites (R1)
 - **Active Permission Level:** REPORT-ONLY between tasks; standing owner authorization permits the next specific approved task and its commit, push, and deployment without another permission prompt
-- **Status:** Task 010 complete; ready to select the next approved requirement
+- **Status:** Implementation complete; verification and release in progress
 - **Authorization boundary:** The agent may start and release the next specific approved task under the standing owner authorization. Branch changes, destructive Git/filesystem actions, unrelated scope expansion, and disposal of existing work remain unauthorized.
 
 No additional requirement is authorized. The R1–R18 requirements remain product direction, not blanket implementation permission.

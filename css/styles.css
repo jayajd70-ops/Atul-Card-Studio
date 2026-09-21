@@ -574,9 +574,11 @@ output { font-variant-numeric: tabular-nums; color: var(--gold-300); }
 }
 .swatch-preview { width: 100%; height: 40px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); }
 .swatch-name { font-size: 10.5px; text-align: center; color: var(--paper-200); }
+.swatch-favourite { position: absolute; top: 5px; right: 7px; color: var(--gold-200); font-size: 14px; line-height: 1; text-shadow: 0 1px 4px rgba(0,0,0,0.65); }
 .swatch[aria-checked="true"] { border-color: var(--gold-300); box-shadow: 0 0 0 2px rgba(232,199,119,0.35); background: rgba(232,199,119,0.08); }
 .swatch[aria-checked="true"] .swatch-name { color: var(--gold-200); }
 .swatch:focus-visible { outline: 2px solid var(--gold-300); outline-offset: 2px; }
+.theme-favourite-field { align-items: flex-start; }
 
 .option-list { display: flex; flex-direction: column; gap: 8px; }
 .option-item {
