@@ -369,6 +369,8 @@ Every AI assistant interaction operates under one of four explicit permission le
 3. **COMMIT:** Staging only the specific authorized files and creating a local git commit with an approved commit message. **No pushing or deploying.**
 4. **PUSH / DEPLOY:** Pushing verified local commits to `origin/main` and monitoring/verifying production deployment (e.g., GitHub Pages release).
 
+**Standing owner authorization — 20 September 2026:** The agent may start the next specific task selected from the approved requirements and, after its required checks pass, commit, push to `origin/main`, deploy, and verify production without asking for separate session-start or release permission. The agent must still document the task, impact, smallest safe plan, changes, and verification. This standing authorization does not permit destructive Git/filesystem actions, unrelated scope expansion, bypassing failed checks, or implementing an ambiguous product decision.
+
 ### 4.2 Mandatory Stop-and-Report Conditions
 
 An AI assistant must immediately **STOP** and report to the user without making changes, committing, or proceeding if any of the following occur:
@@ -385,12 +387,12 @@ For every proposed implementation task, follow this sequence:
 2. **Report existing:** State what already exists, what was verified working, what is partial, and what is missing. Distinguish evidence from assumptions.
 3. **Impact check:** Identify affected state, rendering, preview/export, mobile/desktop UI, saved data, offline/cache behavior, and related requirements. Note regression and migration risks.
 4. **Smallest safe plan:** Propose the narrowest change that satisfies the approved task while preserving the baseline. Do not perform unrelated cleanup, redesign, dependency replacement, repository restructuring, or branding changes.
-5. **User approval:** Wait for approval of the specific plan before modifying code. Approval of one task does not authorize other requirements.
+5. **Authorization check:** For work covered by the standing owner authorization, record the specific task and smallest safe plan, then proceed without another permission prompt. Otherwise, wait for approval of the specific plan before modifying code.
 6. **Implement:** Make only approved changes. Preserve user data, existing functionality, and established project identity. Do not rebuild from scratch.
 7. **Test:** Test the changed behavior with normal, boundary, error, and unsupported-device/fallback cases relevant to the task.
 8. **Regression test:** Re-test protected related behavior, state preservation, mobile and desktop behavior, preview/export consistency, save/reopen, and offline operation where affected.
 9. **Report:** Provide changed files, behavior before/after, tests and exact results, unresolved risks, and anything not tested. Never call untested behavior successful.
-10. **Suggested Git commit message:** Propose a concise commit message, but do not commit, push, merge, deploy, or alter Git history unless the Current Task explicitly authorizes it.
+10. **Git and release:** Use a concise commit message. Under the standing owner authorization, commit, push to `origin/main`, deploy, and verify production after all required checks pass. Do not merge unrelated branches or alter Git history.
 
 When requirements conflict or inspection contradicts this document, stop after reporting the evidence and request a decision. Never silently reinterpret the specification.
 
@@ -498,19 +500,20 @@ Task 003 implementation and release were explicitly authorized. The Current Task
 
 - **Approved Task:** Task 004 — Occasion-specific decorations for all 10 greeting types
 - **Baseline:** `main` at commit `93a74e8`
-- **Status:** Implementation and local verification complete; release `1.6.0` authorized, live verification pending
+- **Status:** Complete, committed, pushed, deployed, and verified
+- **Completed commit:** `e71183e` — `feat: add occasion-specific decorations`
 - **Release:** Application, manifest, service worker, and cache version `1.6.0`; schema v4
 - **Schema:** Advanced from v3 to v4 for independent per-occasion decoration state
 - **Behavior:** Every personal occasion receives an appropriate recommended badge/accent set and restores its own editable decorations. Condolence retains its existing restrained built-in designs, suppresses stamp editing, and preserves the prior personal-occasion decorations.
 - **Compatibility:** Existing global stamps migrate to the active personal occasion, or Birthday when Condolence was suppressing them. Birthday, Condolence, Task 003 messages, photo/layout state, Vault, backup/import, duplicate, preview, and export behavior remain preserved.
-- **Verification:** Syntax/static checks, Task 002A regression, Task 003 occasion/message regression, and focused Task 004 decoration-state checks passed locally.
+- **Verification:** Syntax/static checks, Task 002A regression, Task 003 occasion/message regression, focused Task 004 decoration-state checks, public HTTPS assets/behavior, and offline PWA startup passed.
 
 ## 9. Current Task
 
-- **Approved Current Task:** Task 004 — Occasion-specific decorations for all 10 greeting types
-- **Active Permission Level:** IMPLEMENT
-- **Status:** Implementation and local verification complete; commit, push, and deployment authorized
-- **Authorization boundary:** COMMIT, PUSH, and DEPLOY are authorized for Task 004 only. Branch changes, reset, restore, clean, and disposal of existing work remain unauthorized.
+- **Approved Current Task:** None
+- **Active Permission Level:** REPORT-ONLY between tasks; standing authorization applies when the next specific task is recorded
+- **Status:** Task 004 complete; ready to select the next approved requirement
+- **Authorization boundary:** The agent may start and release the next specific approved task under the standing owner authorization. Branch changes, destructive Git/filesystem actions, unrelated scope expansion, and disposal of existing work remain unauthorized.
 
 No additional requirement is authorized. The R1–R18 requirements remain product direction, not blanket implementation permission.
 
