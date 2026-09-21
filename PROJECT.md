@@ -578,18 +578,18 @@ Task 003 implementation and release were explicitly authorized. The Current Task
 
 - **Approved Task:** Task 011 — Persisted theme favourites (R1)
 - **Baseline:** `main` at commit `08b599b`
-- **Status:** Implementation complete; release verification pending
-- **Completed commit:** Pending
+- **Status:** Complete, committed, pushed, deployed, and verified
+- **Completed commit:** `c54ebb4` — `feat: retain favourite themes`
 - **Release:** Application, manifest, service worker, and cache version `1.13.0`; schema remains v5
 - **Behavior:** Lets people retain preferred built-in themes locally. A visible star marks each favourite, and the selected theme can be added or removed without changing card data.
 - **Compatibility:** Theme rendering, card state, save/reopen, backup/import, previews, exports, occasion isolation, photo priority, manual centerpiece choices, and offline behavior remain unchanged.
-- **Verification:** Local syntax/static checks and focused mobile/desktop browser checks passed for favourite add/remove, persisted markers, theme switching, recipient/sender/edited-message preservation, responsive layout, PNG export, and offline startup. Public-release checks remain pending.
+- **Verification:** Local syntax/static checks and focused mobile/desktop browser checks passed for favourite add/remove, persisted markers, theme switching, recipient/sender/edited-message preservation, responsive layout, PNG export, and offline startup. GitHub Pages run `35657587977` succeeded; live HTTPS version/assets, favourite persistence, service-worker control, and offline restart passed.
 
 ## 9. Current Task
 
-- **Approved Current Task:** Task 011 — Persisted theme favourites (R1)
+- **Approved Current Task:** Task 012 — Select the next R1–R18 improvement
 - **Active Permission Level:** REPORT-ONLY between tasks; standing owner authorization permits the next specific approved task and its commit, push, and deployment without another permission prompt
-- **Status:** Implementation complete; verification and release in progress
+- **Status:** Task 011 complete; ready to select the next approved requirement
 - **Authorization boundary:** The agent may start and release the next specific approved task under the standing owner authorization. Branch changes, destructive Git/filesystem actions, unrelated scope expansion, and disposal of existing work remain unauthorized.
 
 No additional requirement is authorized. The R1–R18 requirements remain product direction, not blanket implementation permission.
