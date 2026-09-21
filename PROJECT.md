@@ -512,18 +512,19 @@ Task 003 implementation and release were explicitly authorized. The Current Task
 
 - **Approved Task:** Task 005 — Automatic and editable card date (R17)
 - **Baseline:** `main` at commit `6ccff0e`
-- **Status:** Implementation and local verification complete; release `1.7.0` authorized under standing owner authorization
+- **Status:** Complete, committed, pushed, deployed, and verified
+- **Completed commit:** `b69a9b2` — `feat: add editable card date`
 - **Release:** Application, manifest, service worker, and cache version `1.7.0`; schema v5
 - **Behavior:** New cards initialize with the user’s actual local date, support another selected date, provide Show/Hide control, render an `en-IN` long-form date consistently in preview/export, and preserve the value through occasion/design changes and save/reopen.
 - **Compatibility:** Existing saved cards migrate with their creation date stored but hidden, preserving their previous appearance.
-- **Verification:** Current-date initialization, editing, Show/Hide, occasion round-trip, rendering, save/reopen, Task 002A regression, Task 003 occasion/message regression, and Task 004 decoration-state regression passed locally.
+- **Verification:** Current-date initialization, editing, Show/Hide, occasion round-trip, rendering, save/reopen, public HTTPS behavior, Task 002A regression, Task 003 occasion/message regression, Task 004 decoration-state regression, and offline PWA startup passed.
 
 ## 9. Current Task
 
-- **Approved Current Task:** Task 005 — Automatic and editable card date (R17)
-- **Active Permission Level:** IMPLEMENT + COMMIT + PUSH / DEPLOY under standing owner authorization
-- **Status:** Implementation and local verification complete; release in progress
-- **Authorization boundary:** Commit, push, deploy, and public verification are authorized for Task 005. Branch changes, destructive Git/filesystem actions, unrelated scope expansion, and disposal of existing work remain unauthorized.
+- **Approved Current Task:** None
+- **Active Permission Level:** REPORT-ONLY between tasks; standing authorization applies when the next specific task is recorded
+- **Status:** Task 005 complete; ready to select the next approved requirement
+- **Authorization boundary:** The agent may start and release the next specific approved task under the standing owner authorization. Branch changes, destructive Git/filesystem actions, unrelated scope expansion, and disposal of existing work remain unauthorized.
 
 No additional requirement is authorized. The R1–R18 requirements remain product direction, not blanket implementation permission.
 
