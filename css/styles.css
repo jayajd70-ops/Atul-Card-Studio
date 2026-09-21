@@ -686,6 +686,10 @@ fieldset[disabled] button { cursor: not-allowed; }
   min-height: 44px;
 }
 .stamp-gallery-item:hover { border-color: var(--border-glass-strong); }
+.stamp-gallery-item.is-recommended {
+  border-color: rgba(232, 199, 119, 0.55);
+  background: rgba(232, 199, 119, 0.08);
+}
 .stamp-gallery-item canvas { width: 46px; height: 46px; }
 .stamp-gallery-item span { font-size: 9px; text-align: center; color: var(--paper-200); line-height: 1.2; }
 

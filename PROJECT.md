@@ -494,14 +494,25 @@ Task 002A is complete. Its implementation, commit, push, deployment, and availab
 
 Task 003 implementation and release were explicitly authorized. The Current Task returns to report-only after publication verification.
 
+### Task 004 Implementation Record
+
+- **Approved Task:** Task 004 — Occasion-specific decorations for all 10 greeting types
+- **Baseline:** `main` at commit `93a74e8`
+- **Status:** Implementation and local verification complete; release `1.6.0` authorized, live verification pending
+- **Release:** Application, manifest, service worker, and cache version `1.6.0`; schema v4
+- **Schema:** Advanced from v3 to v4 for independent per-occasion decoration state
+- **Behavior:** Every personal occasion receives an appropriate recommended badge/accent set and restores its own editable decorations. Condolence retains its existing restrained built-in designs, suppresses stamp editing, and preserves the prior personal-occasion decorations.
+- **Compatibility:** Existing global stamps migrate to the active personal occasion, or Birthday when Condolence was suppressing them. Birthday, Condolence, Task 003 messages, photo/layout state, Vault, backup/import, duplicate, preview, and export behavior remain preserved.
+- **Verification:** Syntax/static checks, Task 002A regression, Task 003 occasion/message regression, and focused Task 004 decoration-state checks passed locally.
+
 ## 9. Current Task
 
-- **Approved Current Task:** None
-- **Active Permission Level:** REPORT-ONLY
-- **Status:** Specification and gap-analysis stage
-- **Authorization boundary:** An agent may inspect the repository, verify behavior, and report findings. No code, asset, configuration, documentation, commit, push, deployment, branch, reset, restore, clean, or disposal change is authorized until a specific new Current Task and smallest safe plan are approved.
+- **Approved Current Task:** Task 004 — Occasion-specific decorations for all 10 greeting types
+- **Active Permission Level:** IMPLEMENT
+- **Status:** Implementation and local verification complete; commit, push, and deployment authorized
+- **Authorization boundary:** COMMIT, PUSH, and DEPLOY are authorized for Task 004 only. Branch changes, reset, restore, clean, and disposal of existing work remain unauthorized.
 
-No implementation task is currently authorized. The R1–R18 requirements remain product direction, not blanket implementation permission.
+No additional requirement is authorized. The R1–R18 requirements remain product direction, not blanket implementation permission.
 
 ### Historical Task 002A Acceptance Criteria
 

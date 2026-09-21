@@ -957,6 +957,24 @@ const StampCollections = (() => {
       draw: (ctx, s, o) => drawTextBadge(ctx, s, { ...o, text: "Celebrating You" }) },
     { id: "made-for-you", name: "Made Especially For You", category: "badge", defaultLayer: "top",
       draw: (ctx, s, o) => drawTextBadge(ctx, s, { ...o, text: "Made Especially For You" }) },
+    { id: "happy-birthday", name: "Happy Birthday", category: "occasion", defaultLayer: "top",
+      draw: (ctx, s, o) => drawTextBadge(ctx, s, { ...o, text: "Happy Birthday" }) },
+    { id: "happy-anniversary", name: "Happy Anniversary", category: "occasion", defaultLayer: "top",
+      draw: (ctx, s, o) => drawTextBadge(ctx, s, { ...o, text: "Happy Anniversary" }) },
+    { id: "congratulations-badge", name: "Congratulations", category: "occasion", defaultLayer: "top",
+      draw: (ctx, s, o) => drawTextBadge(ctx, s, { ...o, text: "Congratulations" }) },
+    { id: "welcome-baby", name: "Welcome Baby", category: "occasion", defaultLayer: "top",
+      draw: (ctx, s, o) => drawTextBadge(ctx, s, { ...o, text: "Welcome Baby" }) },
+    { id: "new-home-badge", name: "New Home", category: "occasion", defaultLayer: "top",
+      draw: (ctx, s, o) => drawTextBadge(ctx, s, { ...o, text: "New Home" }) },
+    { id: "proud-graduate", name: "Proud Graduate", category: "occasion", defaultLayer: "top",
+      draw: (ctx, s, o) => drawTextBadge(ctx, s, { ...o, text: "Proud Graduate" }) },
+    { id: "happy-retirement", name: "Happy Retirement", category: "occasion", defaultLayer: "top",
+      draw: (ctx, s, o) => drawTextBadge(ctx, s, { ...o, text: "Happy Retirement" }) },
+    { id: "get-well-soon", name: "Get Well Soon", category: "occasion", defaultLayer: "top",
+      draw: (ctx, s, o) => drawTextBadge(ctx, s, { ...o, text: "Get Well Soon" }) },
+    { id: "thank-you-badge", name: "Thank You", category: "occasion", defaultLayer: "top",
+      draw: (ctx, s, o) => drawTextBadge(ctx, s, { ...o, text: "Thank You" }) },
     { id: "wax-seal", name: "Wax Seal", category: "seal", defaultLayer: "foreground", draw: drawWaxSeal },
     { id: "gold-medallion", name: "Gold Medallion", category: "medallion", defaultLayer: "foreground", draw: drawMedallion },
     { id: "ribbon-badge", name: "Ribbon Badge", category: "ribbon", defaultLayer: "foreground", draw: drawRibbonBadge },
@@ -1069,9 +1087,9 @@ const ThemeRegistry = (() => {
 // Application version. Shown in the header, stamped onto exported
 // backups, and kept in step with SW_VERSION in sw.js so a released
 // shell and the code inside it always report the same number.
-const APP_VERSION = "1.5.0";
+const APP_VERSION = "1.6.0";
 
-const CURRENT_SCHEMA_VERSION = 3;
+const CURRENT_SCHEMA_VERSION = 4;
 
 function createDefaultProject(overrides) {
   const now = Date.now();
@@ -1088,6 +1106,7 @@ function createDefaultProject(overrides) {
         birthday: { greeting: "", autoGreetingEnabled: false, emotion: "heartfelt", messageMode: "manual", relationship: "" },
         condolence: { greeting: "", autoGreetingEnabled: false, emotion: "heartfelt", messageMode: "manual", relationship: "" },
       },
+      stampsByOccasion: {},
     },
     recipient: { name: "", relationship: "" },
     sender: { name: "" },
@@ -1157,46 +1176,47 @@ const OccasionRegistry = (() => {
         milestone: "champagne-gala",
       },
       fallbackCenterpiece: "velvet-roses",
+      recommendedStampIds: ["happy-birthday", "ribbon-badge", "celebrating-you"],
     },
     {
       id: "anniversary", label: "Anniversary", hint: "Warm wishes for a shared journey",
       isSensitive: false, allowPhoto: true, allowedCenterpieces: ["auto", "velvet-roses", "silk-gift-box", "champagne-gala", "theme-aura"],
-      emotions: PERSONAL_EMOTIONS,
+      emotions: PERSONAL_EMOTIONS, recommendedStampIds: ["happy-anniversary", "with-love", "floral-ornament"],
     },
     {
       id: "congratulations", label: "Congratulations", hint: "Celebrate an achievement or good news",
       isSensitive: false, allowPhoto: true, allowedCenterpieces: ["auto", "silk-gift-box", "champagne-gala", "theme-aura"],
-      emotions: PERSONAL_EMOTIONS,
+      emotions: PERSONAL_EMOTIONS, recommendedStampIds: ["congratulations-badge", "ribbon-badge", "crest"],
     },
     {
       id: "new-baby", label: "New Baby", hint: "Welcome and blessings for a growing family",
       isSensitive: false, allowPhoto: true, allowedCenterpieces: ["auto", "velvet-roses", "silk-gift-box", "theme-aura"],
-      emotions: PERSONAL_EMOTIONS,
+      emotions: PERSONAL_EMOTIONS, recommendedStampIds: ["welcome-baby", "celestial-ornament", "made-for-you"],
     },
     {
       id: "new-home", label: "New Home", hint: "Good wishes for a new beginning at home",
       isSensitive: false, allowPhoto: true, allowedCenterpieces: ["auto", "silk-gift-box", "theme-aura"],
-      emotions: PERSONAL_EMOTIONS,
+      emotions: PERSONAL_EMOTIONS, recommendedStampIds: ["new-home-badge", "crest", "floral-ornament"],
     },
     {
       id: "graduation", label: "Graduation", hint: "Pride and encouragement for a milestone",
       isSensitive: false, allowPhoto: true, allowedCenterpieces: ["auto", "champagne-gala", "silk-gift-box", "theme-aura"],
-      emotions: PERSONAL_EMOTIONS,
+      emotions: PERSONAL_EMOTIONS, recommendedStampIds: ["proud-graduate", "ribbon-badge", "gold-medallion"],
     },
     {
       id: "retirement", label: "Retirement", hint: "Warm wishes for a new chapter",
       isSensitive: false, allowPhoto: true, allowedCenterpieces: ["auto", "velvet-roses", "silk-gift-box", "theme-aura"],
-      emotions: PERSONAL_EMOTIONS,
+      emotions: PERSONAL_EMOTIONS, recommendedStampIds: ["happy-retirement", "gold-medallion", "floral-ornament"],
     },
     {
       id: "get-well", label: "Get Well", hint: "Thoughtful wishes for recovery and good health",
       isSensitive: false, allowPhoto: true, allowedCenterpieces: ["auto", "velvet-roses", "theme-aura"],
-      emotions: PERSONAL_EMOTIONS,
+      emotions: PERSONAL_EMOTIONS, recommendedStampIds: ["get-well-soon", "floral-ornament", "celestial-ornament"],
     },
     {
       id: "friendship-thanks", label: "Friendship / Thanks", hint: "Appreciation for friendship and kindness",
       isSensitive: false, allowPhoto: true, allowedCenterpieces: ["auto", "velvet-roses", "silk-gift-box", "theme-aura"],
-      emotions: PERSONAL_EMOTIONS,
+      emotions: PERSONAL_EMOTIONS, recommendedStampIds: ["thank-you-badge", "with-love", "floral-ornament"],
     },
     {
       id: "condolence",
@@ -1210,6 +1230,7 @@ const OccasionRegistry = (() => {
         { id: "reverent", label: "Reverent", hint: "Honoring their memory" },
         { id: "professional", label: "Professional", hint: "Dignified and respectful" },
       ],
+      recommendedStampIds: [],
     },
   ];
 
@@ -1295,11 +1316,12 @@ const OccasionRegistry = (() => {
   function normalizeOccasion(id) { return isValid(id) ? id : "birthday"; }
   function allowsPhoto(id) { return get(id).allowPhoto !== false; }
   function allowsStamps(id) { return get(id).id !== "condolence"; }
+  function getRecommendedStampIds(id) { return (get(id).recommendedStampIds || []).slice(); }
   function getDesign(occasionId, emotion) {
     if (normalizeOccasion(occasionId) !== "condolence") return null;
     return CONDOLENCE_DESIGNS[emotion] || CONDOLENCE_DESIGNS.heartfelt;
   }
-  return { list, get, isValid, normalizeOccasion, allowsPhoto, allowsStamps, getDesign };
+  return { list, get, isValid, normalizeOccasion, allowsPhoto, allowsStamps, getRecommendedStampIds, getDesign };
 })();
 
 /* =========================================================================
@@ -1705,15 +1727,76 @@ function ensureOccasionContentStates(project) {
   return states;
 }
 
+function cloneStamps(stamps) {
+  return Array.isArray(stamps) ? stamps.map((stamp) => ({ ...stamp })) : [];
+}
+
+function createRecommendedOccasionStamps(occasionId) {
+  if (!OccasionRegistry.allowsStamps(occasionId)) return [];
+  const recommended = OccasionRegistry.getRecommendedStampIds(occasionId);
+  return recommended.slice(0, 2).map((assetId, index) => {
+    const def = StampCollections.getDef(assetId);
+    return {
+      id: Utils.uuid(),
+      assetId,
+      x: index === 0 ? 0.5 : 0.16,
+      y: index === 0 ? 0.12 : 0.17,
+      scale: index === 0 ? 0.78 : 0.52,
+      rotation: 0,
+      opacity: index === 0 ? 0.92 : 0.78,
+      layer: def.defaultLayer || "foreground",
+    };
+  });
+}
+
+function ensureOccasionStampStates(project) {
+  project.occasion = project.occasion && typeof project.occasion === "object"
+    ? project.occasion
+    : { id: "birthday", subOccasion: null };
+  const activeId = OccasionRegistry.normalizeOccasion(project.occasion.id);
+  const hasStateObject = project.occasion.stampsByOccasion
+    && typeof project.occasion.stampsByOccasion === "object";
+  const states = hasStateObject ? project.occasion.stampsByOccasion : {};
+  const hadStates = hasStateObject && Object.keys(states).length > 0;
+  const legacyStamps = cloneStamps(project.stamps);
+
+  if (!hadStates && legacyStamps.length) {
+    const legacyOccasionId = activeId === "condolence" ? "birthday" : activeId;
+    states[legacyOccasionId] = legacyStamps;
+  }
+
+  OccasionRegistry.list().forEach((occasion) => {
+    if (!Object.prototype.hasOwnProperty.call(states, occasion.id)) {
+      states[occasion.id] = createRecommendedOccasionStamps(occasion.id);
+    } else {
+      states[occasion.id] = cloneStamps(states[occasion.id]).slice(0, 40);
+    }
+  });
+
+  if (activeId !== "condolence") {
+    if (hadStates) states[activeId] = cloneStamps(project.stamps);
+    project.stamps = cloneStamps(states[activeId]);
+  }
+  project.occasion.stampsByOccasion = states;
+  return states;
+}
+
 function switchProjectOccasion(project, targetOccasionId) {
   const targetId = OccasionRegistry.normalizeOccasion(targetOccasionId);
   const currentId = OccasionRegistry.normalizeOccasion(project.occasion && project.occasion.id);
   const states = ensureOccasionContentStates(project);
+  const stampStates = ensureOccasionStampStates(project);
   states[currentId] = snapshotOccasionContent(project.content, currentId, project.recipient.relationship);
+  if (currentId !== "condolence") {
+    stampStates[currentId] = cloneStamps(project.stamps);
+  }
   project.occasion.id = targetId;
   project.occasion.subOccasion = null;
   project.content = snapshotOccasionContent(states[targetId], targetId, "");
   project.recipient.relationship = project.content.relationship;
+  if (targetId !== "condolence") {
+    project.stamps = cloneStamps(stampStates[targetId]);
+  }
 }
 
 const StateStore = (() => {
@@ -1881,6 +1964,7 @@ const Migrations = (() => {
     record.content = record.content || {};
     record.content.emotion = GreetingGenerator.normalizeEmotion(record.content.emotion, record.occasion.id);
     ensureOccasionContentStates(record);
+    ensureOccasionStampStates(record);
 
     if (record.layout && record.layout.textShiftX == null) {
       record.layout.textShiftX = 0;
@@ -1891,6 +1975,12 @@ const Migrations = (() => {
     // is suppressed rather than rewritten while Condolence is active.
     if (v < 3) {
       v = 3;
+    }
+    // v3 -> v4: each occasion keeps its own editable stamp collection.
+    // Legacy global stamps are retained for the active personal occasion,
+    // or Birthday when a saved Condolence card was suppressing them.
+    if (v < 4) {
+      v = 4;
     }
     record.version = v;
     record.typography = record.typography || {};
@@ -4883,7 +4973,20 @@ const ProjectVault = (() => {
       const newAssetId = await duplicateAsset(copy.audio.assetId);
       if (newAssetId) copy.audio.assetId = newAssetId;
     }
-    copy.stamps = (copy.stamps || []).map((s) => ({ ...s, id: Utils.uuid() }));
+    if (copy.occasion && copy.occasion.stampsByOccasion) {
+      Object.keys(copy.occasion.stampsByOccasion).forEach((occasionId) => {
+        copy.occasion.stampsByOccasion[occasionId] = cloneStamps(copy.occasion.stampsByOccasion[occasionId])
+          .map((stamp) => ({ ...stamp, id: Utils.uuid() }));
+      });
+      const activeId = OccasionRegistry.normalizeOccasion(copy.occasion.id);
+      if (activeId !== "condolence") {
+        copy.stamps = cloneStamps(copy.occasion.stampsByOccasion[activeId]);
+      } else {
+        copy.stamps = cloneStamps(copy.stamps).map((stamp) => ({ ...stamp, id: Utils.uuid() }));
+      }
+    } else {
+      copy.stamps = cloneStamps(copy.stamps).map((stamp) => ({ ...stamp, id: Utils.uuid() }));
+    }
 
     await saveProject(copy);
     return copy;
@@ -5045,6 +5148,17 @@ const ProjectVault = (() => {
     }
     if (Array.isArray(project.stamps)) {
       project.stamps = project.stamps.map((s) => ({ ...s, id: Utils.uuid() })).slice(0, 40);
+    }
+    if (project.occasion && project.occasion.stampsByOccasion) {
+      Object.keys(project.occasion.stampsByOccasion).forEach((occasionId) => {
+        project.occasion.stampsByOccasion[occasionId] = cloneStamps(project.occasion.stampsByOccasion[occasionId])
+          .map((stamp) => ({ ...stamp, id: Utils.uuid() }))
+          .slice(0, 40);
+      });
+      const activeId = OccasionRegistry.normalizeOccasion(project.occasion.id);
+      if (activeId !== "condolence") {
+        project.stamps = cloneStamps(project.occasion.stampsByOccasion[activeId]);
+      }
     }
 
     await saveProject(project);
@@ -5533,21 +5647,33 @@ const App = (() => {
   function populateStampGallery() {
     const gallery = dom.stampGallery;
     gallery.innerHTML = "";
-    StampCollections.list().forEach((def) => {
+    const project = StateStore.getProject();
+    const occasionId = (project.occasion && project.occasion.id) || "birthday";
+    const recommendedIds = OccasionRegistry.getRecommendedStampIds(occasionId);
+    const definitions = StampCollections.list().slice().sort((a, b) => {
+      const ai = recommendedIds.indexOf(a.id);
+      const bi = recommendedIds.indexOf(b.id);
+      if (ai === -1 && bi === -1) return 0;
+      if (ai === -1) return 1;
+      if (bi === -1) return -1;
+      return ai - bi;
+    });
+    definitions.forEach((def) => {
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "stamp-gallery-item";
       btn.setAttribute("role", "listitem");
-      const project = StateStore.getProject();
       const theme = ThemeRegistry.getTheme(project.theme.id);
       const preset = FoilPresets.getPreset(theme.foilPresetId);
       const thumb = StampCollections.renderToCanvas(def.id, 92, { preset, monogram: Renderer.getInitials(project) || "A" });
       thumb.setAttribute("aria-hidden", "true");
       const label = document.createElement("span");
-      label.textContent = def.name;
+      const recommended = recommendedIds.includes(def.id);
+      label.textContent = recommended ? "Recommended · " + def.name : def.name;
+      btn.classList.toggle("is-recommended", recommended);
       btn.appendChild(thumb);
       btn.appendChild(label);
-      btn.setAttribute("aria-label", "Add " + def.name + " stamp");
+      btn.setAttribute("aria-label", (recommended ? "Recommended for this occasion. " : "") + "Add " + def.name + " decoration");
       btn.addEventListener("click", () => addStamp(def));
       gallery.appendChild(btn);
     });
@@ -6826,11 +6952,15 @@ const App = (() => {
     });
 
     let lastThemeForGallery = null;
+    let lastOccasionForGallery = null;
     function populateStampGalleryThumbsIfThemeChanged(reason) {
-      if (reason === "theme-change" || reason === "init") {
-        const themeId = StateStore.getProject().theme.id;
-        if (themeId !== lastThemeForGallery) {
+      if (reason === "theme-change" || reason === "occasion-change" || reason === "init") {
+        const project = StateStore.getProject();
+        const themeId = project.theme.id;
+        const occasionId = (project.occasion && project.occasion.id) || "birthday";
+        if (themeId !== lastThemeForGallery || occasionId !== lastOccasionForGallery) {
           lastThemeForGallery = themeId;
+          lastOccasionForGallery = occasionId;
           populateStampGallery();
         }
       }
