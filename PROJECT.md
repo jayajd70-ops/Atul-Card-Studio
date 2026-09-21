@@ -545,18 +545,18 @@ Task 003 implementation and release were explicitly authorized. The Current Task
 
 - **Approved Task:** Task 008 — Occasion cake fallbacks for Birthday and Anniversary
 - **Baseline:** `main` at commit `8837508`
-- **Status:** Implementation complete; release verification pending
-- **Completed commit:** Pending
+- **Status:** Complete, committed, pushed, deployed, and verified
+- **Completed commit:** `c62688f` — `feat: add occasion cake centerpieces`
 - **Release:** Application, manifest, service worker, and cache version `1.10.0`; schema remains v5
 - **Behavior:** When no user photo is uploaded, Auto uses a realistic ivory floral cake marked `Happy Birthday` for Birthday cards and a coordinated cake marked `Happy Anniversary` for Anniversary cards. Burgundy lettering with champagne-gold highlights remains legible across light and dark themes. Uploaded photos and explicitly selected alternative centerpieces retain priority.
 - **Compatibility:** Existing photos, manual centerpiece choices, occasion state isolation, saved projects, exports, and offline behavior remain preserved.
-- **Verification:** Pending focused rendering, theme-contrast, regression, offline-shell, and public-release checks.
+- **Verification:** Syntax/static checks, automatic-centerpiece resolution, Royal Burgundy, Imperial Emerald, and Pearl Marble visual checks, occasion/decorations/date/mobile-navigation regressions, service-worker precaching, live asset delivery, live rendering, and live occasion-state regression passed.
 
 ## 9. Current Task
 
-- **Approved Current Task:** Task 008 — Occasion cake fallbacks for Birthday and Anniversary
+- **Approved Current Task:** Task 009 — Select the next R1–R18 improvement
 - **Active Permission Level:** REPORT-ONLY between tasks; standing owner authorization permits the next specific approved task and its commit, push, and deployment without another permission prompt
-- **Status:** Implementation complete; verification and release in progress
+- **Status:** New task section opened; no feature implementation is in progress
 - **Authorization boundary:** The agent may start and release the next specific approved task under the standing owner authorization. Branch changes, destructive Git/filesystem actions, unrelated scope expansion, and disposal of existing work remain unauthorized.
 
 No additional requirement is authorized. The R1–R18 requirements remain product direction, not blanket implementation permission.
