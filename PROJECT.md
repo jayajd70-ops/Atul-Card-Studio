@@ -587,12 +587,23 @@ Task 003 implementation and release were explicitly authorized. The Current Task
 
 ## 9. Current Task
 
-- **Approved Current Task:** Task 013 — Select the next R1–R18 improvement
+- **Approved Current Task:** Task 014 — Select the next R1–R18 improvement
 - **Active Permission Level:** REPORT-ONLY between tasks; standing owner authorization permits the next specific approved task and its commit, push, and deployment without another permission prompt
-- **Status:** Task 012 complete; ready to select the next approved requirement
+- **Status:** Task 013 complete; ready to select the next approved requirement
 - **Authorization boundary:** The agent may start and release the next specific approved task under the standing owner authorization. Branch changes, destructive Git/filesystem actions, unrelated scope expansion, and disposal of existing work remain unauthorized.
 
 No additional requirement is authorized. The R1–R18 requirements remain product direction, not blanket implementation permission.
+
+### Task 013 Implementation Record
+
+- **Approved Task:** Task 013 — Prioritize Photo and Layout editor tabs
+- **Baseline:** `main` at commit `c787410`
+- **Status:** Complete, committed, pushed, deployed, and verified
+- **Completed commit:** `65732e7` — `feat: prioritize photo and layout tabs`
+- **Release:** Application, manifest, service worker, and cache version `1.15.0`; schema remains v5
+- **Behavior:** The primary editor workflow is now Content → Photo → Theme → Layout. The selected tab scrolls fully into view, so Layout is no longer partially obscured by the horizontally scrollable menu. Type, Foil, Finishing, and Audio remain available after the primary tabs.
+- **Compatibility:** No card data, occasion state, uploaded-photo handling, centerpiece selection, rendering, export, or offline storage changed.
+- **Verification:** Syntax and whitespace checks passed. Desktop and narrow-mobile browser checks passed for tab order, Next from Content opening Photo, Layout selection, and full Layout visibility. Offline startup passed with the v1.15.0 shell, expected primary-tab order, and service-worker control. GitHub Pages run `35663114218` succeeded; live application and service-worker sources serve v1.15.0.
 
 ### Task 012 Implementation Record
 
