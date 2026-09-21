@@ -535,7 +535,7 @@ Task 003 implementation and release were explicitly authorized. The Current Task
 - **Approved Task:** Task 007 — New Baby visual refinement
 - **Baseline:** `main` at commit `205c5d2`
 - **Status:** Complete, committed, pushed, deployed, and verified
-- **Completed commit:** `PLACEHOLDER_TASK007_COMMIT` — `feat: refine newborn card visuals`
+- **Completed commit:** `35c4c4d` — `feat: refine newborn card visuals`
 - **Release:** Application, manifest, service worker, and cache version `1.9.0`; schema remains v5
 - **Behavior:** Adds a realistic teddy-bear centerpiece, adds a reference-style newborn hands-and-feet centerpiece for Theme Aura, removes the New Baby `MY` monogram, adds `🧿♥️` after the New Baby message, tightens the Grandparents-to-sender spacing, normalizes sender-name ampersand spacing, and increases footer date readability.
 - **Compatibility:** Birthday and other occasion state isolation, existing centerpieces, saved projects, exports, offline caching, and all prior navigation behavior remain preserved.
