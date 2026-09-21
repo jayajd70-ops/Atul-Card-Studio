@@ -587,12 +587,24 @@ Task 003 implementation and release were explicitly authorized. The Current Task
 
 ## 9. Current Task
 
-- **Approved Current Task:** Task 012 — Select the next R1–R18 improvement
+- **Approved Current Task:** Task 013 — Select the next R1–R18 improvement
 - **Active Permission Level:** REPORT-ONLY between tasks; standing owner authorization permits the next specific approved task and its commit, push, and deployment without another permission prompt
-- **Status:** Task 011 complete; ready to select the next approved requirement
+- **Status:** Task 012 complete; ready to select the next approved requirement
 - **Authorization boundary:** The agent may start and release the next specific approved task under the standing owner authorization. Branch changes, destructive Git/filesystem actions, unrelated scope expansion, and disposal of existing work remain unauthorized.
 
 No additional requirement is authorized. The R1–R18 requirements remain product direction, not blanket implementation permission.
+
+### Task 012 Implementation Record
+
+- **Approved Task:** Task 012 — Correct automatic occasion designs and frames
+- **Baseline:** `main` at commit `c3ac622`
+- **Status:** Complete, committed, pushed, deployed, and verified
+- **Completed commit:** `8f51298` — `feat: correct automatic occasion designs`
+- **Release:** Application, manifest, service worker, and cache version `1.14.0`; schema remains v5
+- **Behavior:** Congratulations, New Home, Graduation, Retirement, Get Well, and Friendship / Thanks each use a dedicated automatic centerpiece and an occasion-aware two-corner frame. These occasions no longer inherit generic birthday-party balloons, cake, gifts, or romantic roses. Birthday, Anniversary, New Baby, and Condolence retain their established designs.
+- **Compatibility:** Existing cards and schema remain unchanged. Uploaded photos retain visual priority; previously allowed manual centerpiece choices remain available; occasion isolation, saved projects, exports, and offline behavior remain preserved.
+- **Assets:** Six transparent local PNGs — laurel, home welcome, graduation diploma, retirement compass, get-well comfort, and thanks note — are bundled and precached for offline use.
+- **Verification:** Syntax and whitespace checks passed; every affected automatic resolver returned the correct asset and loaded it locally; Get Well and Graduation were visually reviewed; all six assets were confirmed in the v1.14.0 offline cache and offline startup passed. GitHub Pages run `35662322138` succeeded; public HTTPS version, six live assets, six automatic selections, service-worker control, zero page errors, and live Get Well rendering passed.
 
 ### Historical Task 002A Acceptance Criteria
 
