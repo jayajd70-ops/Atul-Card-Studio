@@ -589,7 +589,7 @@ Task 003 implementation and release were explicitly authorized. The Current Task
 
 - **Approved Current Task:** Task 017 — On-demand festival artwork caching (R1/R10)
 - **Active Permission Level:** IMPLEMENT / COMMIT / PUSH / DEPLOY under standing owner authorization
-- **Status:** Implementation and verification complete; publication pending
+- **Status:** Complete, committed, pushed, deployed, and verified
 - **Approved scope:** Remove the twenty-two large festival artworks from mandatory application-shell precaching while retaining automatic same-origin runtime caching after each artwork's first online use.
 - **Authorization boundary:** Preserve all festival categories/designs/messages, existing card and occasion state, uploaded-photo priority, manual centerpiece choices, schema v6, local assets, first-use rendering while online, repeat-use offline availability, and the core offline editor shell. Image conversion and other cache changes remain later tasks.
 
@@ -597,12 +597,13 @@ Task 003 implementation and release were explicitly authorized. The Current Task
 
 - **Approved Task:** Task 017 — On-demand festival artwork caching
 - **Baseline:** `main` at commit `bfab873`
-- **Status:** Implementation and verification complete; commit, push, deployment, and live verification pending
+- **Status:** Complete, committed, pushed, deployed, and verified
+- **Completed commit:** `bc47402` — `perf: cache festival artwork on demand`
 - **Release:** Application, manifest, service worker, and cache version `1.19.0`; schema remains v6
 - **Behavior:** The twenty-two festival artworks are no longer part of the mandatory application-shell download. Opening a festival online loads its selected local artwork and stores it through the existing same-origin runtime cache, making that artwork available on later offline visits.
 - **Measured impact:** Mandatory precaching falls from 75 entries / 93,787,171 bytes (89.45 MiB) to 53 entries / 33,550,328 bytes (32.00 MiB), saving 60,236,843 bytes (57.45 MiB) on a fresh installation.
 - **Compatibility:** All twenty-two festival assets and design selectors remain unchanged. Card schema/data, occasion isolation, uploaded-photo priority, manual centerpiece choices, festival messages, rendering, export, and the core offline editor shell remain unchanged.
-- **Verification:** JavaScript and service-worker syntax, whitespace, aligned release versions, unchanged schema v6, all 53 precache paths present, zero festival artwork paths in the eager list, and all 22 registry artwork paths present passed. A service-worker simulation passed for 53-entry installation, zero eager festival downloads, first online artwork fetch, and repeat offline cache use. Chrome passed v1.19.0 startup, three-design Navratri selection, online artwork load, confirmed runtime-cache storage, and offline reload retaining Navratri with all three design choices.
+- **Verification:** JavaScript and service-worker syntax, whitespace, aligned release versions, unchanged schema v6, all 53 precache paths present, zero festival artwork paths in the eager list, and all 22 registry artwork paths present passed. A service-worker simulation passed for 53-entry installation, zero eager festival downloads, first online artwork fetch, and repeat offline cache use. Chrome passed v1.19.0 startup, three-design Navratri selection, online artwork load, confirmed runtime-cache storage, and offline reload retaining Navratri with all three design choices. GitHub Pages run [`35786680283`](https://github.com/jayajd70-ops/Atul-Card-Studio/actions/runs/35786680283) succeeded; live application, manifest, and service worker versions align at 1.19.0, the eager festival list is empty, the awaited runtime-cache write is live, and the tested Navratri artwork returns HTTP 200.
 
 ### Task 013 Implementation Record
 
