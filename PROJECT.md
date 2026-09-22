@@ -587,11 +587,11 @@ Task 003 implementation and release were explicitly authorized. The Current Task
 
 ## 9. Current Task
 
-- **Approved Current Task:** Task 014 — Festival Card section and expanded Indian festival library (R1, R5, R7, R10, R16)
+- **Approved Current Task:** Task 015 — Indian-context Birthday message correction (R5)
 - **Active Permission Level:** IMPLEMENT / COMMIT / PUSH / DEPLOY under standing owner authorization
-- **Status:** Complete, committed, pushed, deployed, and verified
-- **Approved scope:** A unified Festival section with local artwork, occasion-specific English messages, photo-free festival presentation, per-festival design persistence, and selected offline assets. Holika Dahan, Hanuman Jayanti, Guru Purnima, and Bhai Dooj each have one approved template; Gujarati messages remain a later task.
-- **Authorization boundary:** Preserve existing card data, personal occasion behavior, uploaded-photo priority, manual centerpiece choices, and offline operation. Do not add Gujarati-language content in this task.
+- **Status:** Implementation and local verification complete; release in progress
+- **Approved scope:** Replace Birthday drafts that conflict with the permanent Indian-context message rule, while retaining all five Birthday tones and editable/manual behavior.
+- **Authorization boundary:** Preserve stored user messages, occasion isolation, rendering, photo and centerpiece behavior, save/reopen, export, and offline operation. Relationship-aware expansion for other occasions and Gujarati festival messages remain later tasks.
 
 ### Task 013 Implementation Record
 
@@ -615,6 +615,16 @@ Task 003 implementation and release were explicitly authorized. The Current Task
 - **Compatibility:** Each festival retains its own selected design and message. Existing saved cards migrate from schema v5 without changing their personal content. Birthday photo data, manual centerpiece choices, occasion state isolation, save/reopen, export, and offline behavior remain within the shared studio workflow.
 - **Assets:** Twenty-two selected festival artworks are bundled and precached for first-use offline operation; unused source alternatives remain available outside the release folder.
 - **Verification:** JavaScript syntax and whitespace checks, registry/message/no-photo checks, v5 migration, selected-asset existence, and Birthday → Holika Dahan → Birthday → Holika Dahan state regression passed. Desktop shell rendering was visually reviewed. GitHub Pages run `35767074368` succeeded; the public application, manifest, and service worker serve v1.16.0, and all 22 selected festival assets were verified over HTTPS. Browser interaction, PNG export, save/reopen, and offline startup remain untested in this release.
+
+### Task 015 Implementation Record
+
+- **Approved Task:** Task 015 — Indian-context Birthday message correction
+- **Baseline:** `main` at commit `de8380a`
+- **Status:** Local implementation verified; commit, push, and live deployment verification pending
+- **Release:** Application, manifest, service worker, and cache version `1.17.0`; schema remains v6
+- **Behavior:** Replaces prohibited Western Birthday clichés with warm, secular wording appropriate for Indian family, friendship, elder, and professional contexts. Heartfelt, Poetic, Professional, Playful, and Milestone tones remain available; generated text remains editable.
+- **Compatibility:** Stored or manually edited messages are not rewritten. Birthday card data, photos, manual centerpiece choices, occasion isolation, save/reopen, export, festival cards, and offline operation remain unchanged.
+- **Verification:** JavaScript and service-worker syntax, whitespace, 30-draft count, editor-length limit, prohibited-phrase scan, all five tone generation, recipient-name insertion, manual-message preservation, version alignment, and unchanged schema checks passed.
 
 ### Task 012 Implementation Record
 

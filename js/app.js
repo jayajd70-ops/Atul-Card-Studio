@@ -1129,7 +1129,7 @@ const ThemePreferences = (() => {
 // Application version. Shown in the header, stamped onto exported
 // backups, and kept in step with SW_VERSION in sw.js so a released
 // shell and the code inside it always report the same number.
-const APP_VERSION = "1.16.0";
+const APP_VERSION = "1.17.0";
 
 const CURRENT_SCHEMA_VERSION = 6;
 
@@ -1514,20 +1514,20 @@ const GreetingGenerator = (() => {
   const POOLS = {
     birthday: {
       heartfelt: [
-        "{name}, you are loved more than words can hold. May this year bring you every good thing your heart has been quietly hoping for.",
-        "Thank you for being exactly who you are, {name}. The world is warmer because you are in it. Happy birthday.",
-        "Some people make life feel like home. You are one of them, {name}. Wishing you a birthday as kind as you have always been.",
-        "{name}, here is to another year of you — your laugh, your patience, your impossible generosity. You are quietly treasured.",
-        "However this year has treated you, {name}, know that you are cherished today and every day after it. Happy birthday.",
-        "There is no one quite like you, {name}. May this birthday remind you how much light you bring to the people around you.",
+        "Happy birthday, {name}. May the year ahead bring you good health, peace of mind, and many happy moments with those you love.",
+        "{name}, your kindness and steady support mean more than words can express. Wishing you a birthday filled with affection and happiness.",
+        "Warm birthday wishes, {name}. May you always be surrounded by the respect, care, and goodwill you so generously share with others.",
+        "{name}, may this birthday begin a year of contentment, good health, and meaningful time with family and friends.",
+        "Happy birthday, {name}. You are deeply valued, and I hope the coming year brings you the happiness you truly deserve.",
+        "On your birthday, {name}, wishing you strength for every challenge, joy in every success, and warmth in every relationship.",
       ],
       poetic: [
-        "May your year unfold like morning light on still water, {name} — slow, golden, and entirely your own.",
-        "{name}, may you gather this year the way one gathers roses: gently, gratefully, and with room left for the wild ones.",
-        "Another orbit around the sun, {name}, and still the sky makes room for you. Happy birthday.",
-        "Let the candles be small suns tonight, {name}, and every wish a seed that knows precisely where to grow.",
-        "{name}, may the days ahead read like a good poem — unhurried, luminous, and ending somewhere kinder than they began.",
-        "Some souls arrive like music. Yours did, {name}. May this year be the long, lovely rest of the song.",
+        "May each morning of the coming year bring fresh hope, {name}, and each evening leave your heart peaceful and grateful.",
+        "{name}, may your path be bright with purpose, your home warm with affection, and your days rich with beautiful memories.",
+        "Like a lamp that quietly brightens every corner, {name}, may your kindness continue to bring comfort and happiness to those around you.",
+        "May the year ahead unfold gently for you, {name}, with good health, sincere relationships, and dreams steadily taking shape.",
+        "{name}, may every season ahead carry its own happiness and every new beginning lead you towards fulfilment.",
+        "On your birthday, {name}, may life offer you calm mornings, hopeful journeys, and countless reasons to feel grateful.",
       ],
       professional: [
         "Wishing you a very happy birthday, {name}. Thank you for the care and excellence you bring to everything you take on.",
@@ -1538,20 +1538,20 @@ const GreetingGenerator = (() => {
         "Many happy returns, {name}. Thank you for your dedication; may this next year be your most accomplished yet.",
       ],
       playful: [
-        "Happy birthday, {name}! Cake for breakfast is not just allowed today, it is basically mandatory.",
-        "{name}, you are not older — you are a limited edition that keeps appreciating in value. Happy birthday!",
-        "Another year, another excellent excuse for cake. Well played, {name}. Happy birthday!",
-        "Warning: {name} is now one year more fabulous. Handle with confetti. Happy birthday!",
-        "Happy birthday, {name}! Blow out those candles quickly — at this rate it is becoming a fire hazard.",
-        "{name}, they say the more birthdays you have, the longer you live. Keep collecting them. Happy birthday!",
+        "Happy birthday, {name}! May your phone stay busy with warm wishes and your day be full of favourite people and favourite food.",
+        "{name}, today everyone has to agree with you—it is your birthday after all! Wishing you a wonderfully cheerful day.",
+        "Happy birthday, {name}! May the celebrations be joyful, the food delicious, and the photographs good enough to keep.",
+        "{name}, another year wiser—and still young enough to enjoy being the centre of attention today. Happy birthday!",
+        "Happy birthday, {name}! May your day bring plenty of laughter, affectionate teasing, and memories worth sharing again.",
+        "{name}, wishing you a birthday with fewer responsibilities, more happy surprises, and a generous second serving of dessert.",
       ],
       milestone: [
-        "{name}, this is not just a birthday — it is a landmark. Look how far you have come, and how much road is still ahead.",
-        "Here is to a milestone worth celebrating properly, {name}. May this chapter be the finest one yet.",
-        "{name}, some birthdays deserve more than a candle. This one deserves a toast — to everything you have built.",
-        "A remarkable year for a remarkable person. Congratulations and happy birthday, {name} — this milestone suits you.",
-        "{name}, today marks a real milestone. Celebrate loudly, rest deeply, and take every ounce of the pride you earned.",
-        "To {name}, on a birthday that counts: may the years ahead be as full, as bold and as brilliant as those behind you.",
+        "{name}, this milestone birthday honours a life enriched by experience, relationships, and many achievements. Warmest wishes for the years ahead.",
+        "Happy milestone birthday, {name}. May you look back with pride and move forward with good health, confidence, and happiness.",
+        "{name}, today celebrates not only your age, but also the respect, memories, and affection you have gathered through the years.",
+        "Warm congratulations on this special birthday, {name}. May the next chapter bring renewed purpose and many fulfilling moments.",
+        "{name}, your journey has touched many lives. Wishing you a milestone birthday filled with appreciation, dignity, and joy.",
+        "On this important birthday, {name}, may the years ahead be peaceful, active, and blessed with the company of those who value you most.",
       ],
     },
     anniversary: buildPersonalPool("anniversary", [
