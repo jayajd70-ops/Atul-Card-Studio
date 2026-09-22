@@ -587,11 +587,21 @@ Task 003 implementation and release were explicitly authorized. The Current Task
 
 ## 9. Current Task
 
-- **Approved Current Task:** Task 017 — On-demand festival artwork caching (R1/R10)
+- **Approved Current Task:** Task 018 — Get Well cross-occasion output safety (R5)
 - **Active Permission Level:** IMPLEMENT / COMMIT / PUSH / DEPLOY under standing owner authorization
-- **Status:** Complete, committed, pushed, deployed, and verified
-- **Approved scope:** Remove the twenty-two large festival artworks from mandatory application-shell precaching while retaining automatic same-origin runtime caching after each artwork's first online use.
-- **Authorization boundary:** Preserve all festival categories/designs/messages, existing card and occasion state, uploaded-photo priority, manual centerpiece choices, schema v6, local assets, first-use rendering while online, repeat-use offline availability, and the core offline editor shell. Image conversion and other cache changes remain later tasks.
+- **Status:** Implementation and verification complete; publication pending
+- **Approved scope:** Prevent unmistakable Birthday, Anniversary, wedding, and named-festival wording from appearing in Get Well previews or leaving through PNG, share, or Digital Card output, while preserving the entered text for correction.
+- **Authorization boundary:** Preserve valid recovery messages, all Get Well tones, manual editing, Condolence safety behavior, card data, occasion isolation, uploaded-photo priority, manual centerpiece choices, schema v6, rendering, save/reopen, export dimensions, and offline operation.
+
+### Task 018 Implementation Record
+
+- **Approved Task:** Task 018 — Get Well cross-occasion output safety
+- **Baseline:** `main` at commit `17ceda3`
+- **Status:** Implementation and verification complete; commit, push, deployment, and live verification pending
+- **Release:** Application, manifest, service worker, and cache version `1.20.0`; schema remains v6
+- **Behavior:** Get Well now has an occasion-specific safety rule that rejects unmistakable Birthday, Anniversary, named-festival, wedding/marriage, and party wording. Incompatible text remains stored and editable, but is omitted from preview and blocked from PNG, share, and Digital Card output until corrected. The warning and output error identify Get Well rather than Condolence.
+- **Compatibility:** All eight built-in Get Well drafts remain valid. Ordinary recovery wording using phrases such as `new year`, `congratulations on progress`, or `celebrate your recovery` remains allowed. Existing Condolence rules/messages, other occasion messages, card data, occasion isolation, photos, centerpieces, save/reopen, export dimensions, and schema v6 remain unchanged.
+- **Verification:** JavaScript and service-worker syntax and whitespace passed. Focused safety tests passed five valid Get Well phrases, six incompatible cross-occasion phrases, all eight built-in Get Well drafts, existing valid/invalid Condolence cases, an unaffected Birthday case, and occasion-specific warning/output errors. Chrome passed invalid Anniversary wording preservation, visible warning and ARIA invalid state, output blocking, Birthday → Get Well state round-trip, correction flow, exact 1200×1760 safe export rendering, v1.20.0 service-worker control, and offline Get Well reopen with its corrected message preserved.
 
 ### Task 017 Implementation Record
 

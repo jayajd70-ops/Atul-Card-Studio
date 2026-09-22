@@ -1129,7 +1129,7 @@ const ThemePreferences = (() => {
 // Application version. Shown in the header, stamped onto exported
 // backups, and kept in step with SW_VERSION in sw.js so a released
 // shell and the code inside it always report the same number.
-const APP_VERSION = "1.19.0";
+const APP_VERSION = "1.20.0";
 
 const CURRENT_SCHEMA_VERSION = 6;
 
@@ -1314,7 +1314,7 @@ const OccasionRegistry = (() => {
     },
     {
       id: "get-well", label: "Get Well", hint: "Thoughtful wishes for recovery and good health",
-      isSensitive: false, allowPhoto: true, allowedCenterpieces: ["auto", "get-well-comfort", "velvet-roses", "theme-aura"],
+      isSensitive: true, allowPhoto: true, allowedCenterpieces: ["auto", "get-well-comfort", "velvet-roses", "theme-aura"],
       defaultCenterpieceMap: { heartfelt: "get-well-comfort", poetic: "get-well-comfort", professional: "get-well-comfort", playful: "get-well-comfort" },
       fallbackCenterpiece: "get-well-comfort",
       emotions: PERSONAL_EMOTIONS, recommendedStampIds: ["get-well-soon", "floral-ornament", "celestial-ornament"],
@@ -1853,19 +1853,38 @@ const GreetingGenerator = (() => {
     romantic: "heartfelt",
   };
 
-  // Defensive blocklist for sensitive occasions (secondary defense to occasion-scoped pools).
-  const SENSITIVE_FORBIDDEN_PATTERNS = [
-    /\b(happy|birthday|celebrat(e|ion|ing|es|ory)|cake|candles?|balloons?|champagne|congratulat(e|ion|ions|ing|ory)|cheers|party|milestone|happy to hear|many happy returns)\b/i,
-    /\bwish(?:ing)?\b[^.!?]{0,80}\bjoy\b[^.!?]{0,80}\bspecial day\b/i,
-    /\bwonderful day\b[^.!?]{0,80}\b(?:sweets?|gifts?)\b/i,
-  ];
+  // Occasion-specific output guards are a secondary defense to the scoped
+  // message pools. They preserve edited text, but keep unmistakably wrong
+  // occasion wording out of previews, exports, shares, and digital packages.
+  const OUTPUT_SAFETY_RULES = {
+    condolence: {
+      patterns: [
+        /\b(happy|birthday|celebrat(e|ion|ing|es|ory)|cake|candles?|balloons?|champagne|congratulat(e|ion|ions|ing|ory)|cheers|party|milestone|happy to hear|many happy returns)\b/i,
+        /\bwish(?:ing)?\b[^.!?]{0,80}\bjoy\b[^.!?]{0,80}\bspecial day\b/i,
+        /\bwonderful day\b[^.!?]{0,80}\b(?:sweets?|gifts?)\b/i,
+      ],
+      warning: "Celebratory wording is not allowed on a Condolence card. Your text is preserved, but it will not appear in preview or export until corrected.",
+      outputError: "Correct the celebratory wording before exporting or sharing this Condolence card.",
+    },
+    "get-well": {
+      patterns: [
+        /\b(?:birthday|anniversary|diwali|christmas|holi|navratri|raksha bandhan|janmashtami|eid(?:\s+ul-fitr)?|dussehra)\b/i,
+        /\bhappy\s+new year\b/i,
+        /\b(?:wedding|marriage|many happy returns|cake|candles?|balloons?|champagne|party)\b/i,
+      ],
+      warning: "Wording for another occasion is not allowed on a Get Well card. Your text is preserved, but it will not appear in preview or export until corrected.",
+      outputError: "Correct the cross-occasion wording before exporting or sharing this Get Well card.",
+    },
+  };
+
+  function getSafetyRule(occasionId) {
+    const occ = OccasionRegistry.get(occasionId);
+    return occ.isSensitive ? OUTPUT_SAFETY_RULES[occ.id] || null : null;
+  }
 
   function validateSafety(occasionId, text) {
-    const occ = OccasionRegistry.get(occasionId);
-    if (occ.isSensitive && SENSITIVE_FORBIDDEN_PATTERNS.some((pattern) => pattern.test(text || ""))) {
-      return false;
-    }
-    return true;
+    const rule = getSafetyRule(occasionId);
+    return !rule || !rule.patterns.some((pattern) => pattern.test(text || ""));
   }
 
   function list(occasionId) {
@@ -1996,7 +2015,15 @@ const GreetingGenerator = (() => {
   function validateProjectGreeting(project) {
     const occasionId = (project.occasion && project.occasion.id) || "birthday";
     const text = resolveProjectGreeting(project);
-    return { safe: validateSafety(occasionId, text), text, occasionId };
+    const safe = validateSafety(occasionId, text);
+    const rule = safe ? null : getSafetyRule(occasionId);
+    return {
+      safe,
+      text,
+      occasionId,
+      warning: rule ? rule.warning : "",
+      outputError: rule ? rule.outputError : "",
+    };
   }
 
   return {
@@ -5723,7 +5750,7 @@ const ExportModule = (() => {
   function assertSafeForOutput(project) {
     const validation = GreetingGenerator.validateProjectGreeting(project);
     if (!validation.safe) {
-      throw new Error("Correct the celebratory wording before exporting or sharing this Condolence card.");
+      throw new Error(validation.outputError || "Correct the greeting before exporting or sharing this card.");
     }
   }
 
@@ -6439,12 +6466,10 @@ const App = (() => {
   function syncGreetingSafety(project) {
     if (!dom.greetingSafetyWarning) return;
     const result = GreetingGenerator.validateProjectGreeting(project);
-    const blocked = result.occasionId === "condolence" && !result.safe;
+    const blocked = !result.safe;
     dom.greetingText.setAttribute("aria-invalid", String(blocked));
     dom.greetingSafetyWarning.hidden = !blocked;
-    dom.greetingSafetyWarning.textContent = blocked
-      ? "Celebratory wording is not allowed on a Condolence card. Your text is preserved, but it will not appear in preview or export until corrected."
-      : "";
+    dom.greetingSafetyWarning.textContent = blocked ? result.warning : "";
     if (dom.useEditedMessageBtn) {
       const edited = project.content.messageMode === "edited";
       dom.useEditedMessageBtn.disabled = !edited;
