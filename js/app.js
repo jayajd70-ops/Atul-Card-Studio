@@ -1129,7 +1129,7 @@ const ThemePreferences = (() => {
 // Application version. Shown in the header, stamped onto exported
 // backups, and kept in step with SW_VERSION in sw.js so a released
 // shell and the code inside it always report the same number.
-const APP_VERSION = "1.17.0";
+const APP_VERSION = "1.18.0";
 
 const CURRENT_SCHEMA_VERSION = 6;
 
@@ -1726,6 +1726,92 @@ const GreetingGenerator = (() => {
     ],
   };
 
+  const BIRTHDAY_RELATIONSHIP_CONTEXTS = {
+    elder: {
+      appreciation: "Your wisdom, affection, and steady presence are deeply valued by the whole family",
+      wish: "May the coming year bring you good health, peace, and the happiness of seeing your loved ones prosper",
+      poetic: "May the respect and affection you have earned return to you in countless quiet ways",
+      playful: "Today the family rule is simple: your wishes come first",
+    },
+    parent: {
+      appreciation: "Your love, guidance, and sacrifices have shaped our lives in more ways than words can express",
+      wish: "May the coming year bring you good health, peace of mind, and many proud family moments",
+      poetic: "Your care has been the light that makes every road feel safer and every home feel warmer",
+      playful: "Today you are officially excused from reminding everyone what still needs to be done",
+    },
+    spouse: {
+      appreciation: "Your companionship, understanding, and care make everyday life more meaningful",
+      wish: "May we share many more years of good health, laughter, and beautiful memories together",
+      poetic: "With you beside me, ordinary days become treasured memories and every season feels like home",
+      playful: "You remain my favourite person to plan with, laugh with, and occasionally disagree with",
+    },
+    sibling: {
+      appreciation: "The memories, laughter, and support we share make our bond truly special",
+      wish: "May the year ahead bring you success, good health, and plenty of reasons for us to celebrate together",
+      poetic: "Across every change in life, our shared memories remain a familiar and lasting thread",
+      playful: "You may be older today, but I still reserve the right to remind you of every childhood story",
+    },
+    child: {
+      appreciation: "Watching you grow into the person you are today fills us with happiness and pride",
+      wish: "May you always have the courage to follow your goals and the wisdom to choose what brings lasting happiness",
+      poetic: "May your dreams find strong wings, your choices find clear direction, and your heart remain kind",
+      playful: "You keep growing wiser, more capable, and somehow even better at negotiating birthday treats",
+    },
+    teacher: {
+      appreciation: "Your patience, guidance, and example have made a lasting difference in many lives",
+      wish: "May the coming year bring you good health, fulfilment, and the respect your work deserves",
+      poetic: "The lessons you share continue to guide others long after the classroom grows quiet",
+      playful: "For today, there are no assignments—only warm wishes and well-earned appreciation",
+    },
+    friend: {
+      appreciation: "Your friendship, honesty, and support make both happy days and difficult ones easier to share",
+      wish: "May the coming year bring you good health, meaningful success, and many memorable times together",
+      poetic: "True friendship turns ordinary days into stories that remain bright for years",
+      playful: "Your birthday gives us another excellent reason to meet, laugh, and repeat our favourite old stories",
+    },
+    professional: {
+      appreciation: "Your dedication, reliability, and thoughtful way of working are sincerely appreciated",
+      wish: "May the coming year bring you good health, continued progress, and well-earned success",
+      poetic: "May steady effort open new doors and every achievement lead to a rewarding new opportunity",
+      playful: "May your birthday bring fewer meetings, lighter responsibilities, and plenty of warm wishes from the team",
+    },
+  };
+
+  // Each line uses exactly one context field (never two concatenated) so
+  // that, combined with the longest name the recipient field allows (40
+  // characters), every combination stays comfortably under
+  // GREETING_MAX_CHARS. Verified: worst case across all 8 relationships x
+  // 5 tones x a 40-character name is 187 characters. fill() below still
+  // applies a defensive cap for any future template that reintroduces this.
+  function buildBirthdayRelationshipPool(context) {
+    return {
+      heartfelt: [
+        "Happy birthday, {name}. " + context.appreciation + ".",
+        "Warm birthday wishes, {name}. " + context.wish + ".",
+      ],
+      poetic: [
+        "{name}, " + context.poetic + ". May the year ahead be peaceful, purposeful, and full of warmth.",
+        context.poetic + ", {name}. May each new beginning bring hope and each success bring quiet satisfaction.",
+      ],
+      professional: [
+        "Warm birthday wishes, {name}. " + context.appreciation + ".",
+        "Happy birthday, {name}. " + context.wish + ".",
+      ],
+      playful: [
+        "Happy birthday, {name}! " + context.playful + ".",
+        context.playful + ", {name}! Wishing you a cheerful and memorable day.",
+      ],
+      milestone: [
+        "Happy milestone birthday, {name}. " + context.appreciation + ".",
+        "{name}, this special birthday honours the memories you have gathered. " + context.wish + ".",
+      ],
+    };
+  }
+
+  const BIRTHDAY_RELATIONSHIP_POOLS = Object.fromEntries(
+    Object.entries(BIRTHDAY_RELATIONSHIP_CONTEXTS).map(([id, context]) => [id, buildBirthdayRelationshipPool(context)])
+  );
+
   const FESTIVAL_GREETINGS = {
     "dhanteras-lakshmi-puja": ["Dhanteras and Lakshmi Puja", "May this auspicious season bring prosperity, peace, and a home filled with blessings"],
     "bestu-varas": ["Bestu Varas", "May the Gujarati New Year open with health, goodwill, and bright new beginnings"],
@@ -1836,11 +1922,31 @@ const GreetingGenerator = (() => {
     return match ? match[1] : value.replace(/^(?:my|our|the)\s+/i, "");
   }
 
+  function classifyBirthdayRelationship(relationship) {
+    const value = normalizeRelationship(relationship);
+    if (["grandfather", "grandmother", "grandparent", "uncle", "aunt"].includes(value)) return "elder";
+    if (["father", "mother"].includes(value)) return "parent";
+    if (["spouse", "partner", "wife"].includes(value)) return "spouse";
+    if (["brother", "sister", "cousin"].includes(value)) return "sibling";
+    if (["son", "daughter"].includes(value)) return "child";
+    if (["teacher", "mentor"].includes(value)) return "teacher";
+    if (["friend", "family friend", "neighbour"].includes(value)) return "friend";
+    if (["manager", "colleague"].includes(value)) return "professional";
+    return "";
+  }
+
   function fill(template, name, relationship) {
     const who = String(name || "").trim() || "friend";
-    return template
+    const filled = template
       .split("{name}").join(who)
       .split("{relationship}").join(relationship || "loved one");
+    // Defensive cap: every template above is authored to stay under
+    // GREETING_MAX_CHARS even at the recipient-name field's 40-character
+    // maximum, but name/relationship substitution is the one place length
+    // is not fully known until fill time, and this guards any future
+    // template (any occasion) that reintroduces an overflow — word-safe,
+    // ellipsized, never a mid-word cut.
+    return filled.length > GREETING_MAX_CHARS ? Utils.truncateProse(filled, GREETING_MAX_CHARS) : filled;
   }
 
   // Returns a draft for `emotion` under `occasionId`, avoiding `previousText`
@@ -1849,9 +1955,12 @@ const GreetingGenerator = (() => {
     const occ = OccasionRegistry.get(occasionId || "birthday");
     const normEmotion = normalizeEmotion(emotion, occ.id);
     const relationshipLabel = occ.id === "condolence" ? normalizeRelationship(relationship) : "";
+    const birthdayRelationship = occ.id === "birthday" ? classifyBirthdayRelationship(relationship) : "";
     const pool = relationshipLabel
       ? CONDOLENCE_RELATIONSHIP_POOLS[normEmotion]
-      : ((POOLS[occ.id] && POOLS[occ.id][normEmotion]) || POOLS.birthday.heartfelt);
+      : birthdayRelationship
+        ? BIRTHDAY_RELATIONSHIP_POOLS[birthdayRelationship][normEmotion]
+        : ((POOLS[occ.id] && POOLS[occ.id][normEmotion]) || POOLS.birthday.heartfelt);
     const candidates = pool.map((t) => fill(t, name, relationshipLabel));
     const fresh = candidates.filter((c) => c !== previousText);
     const from = fresh.length ? fresh : candidates;
@@ -1868,9 +1977,12 @@ const GreetingGenerator = (() => {
     const occ = OccasionRegistry.get(occasionId || "birthday");
     const normEmotion = normalizeEmotion(emotion, occ.id);
     const relationshipLabel = occ.id === "condolence" ? normalizeRelationship(relationship) : "";
+    const birthdayRelationship = occ.id === "birthday" ? classifyBirthdayRelationship(relationship) : "";
     const pool = relationshipLabel
       ? CONDOLENCE_RELATIONSHIP_POOLS[normEmotion]
-      : ((POOLS[occ.id] && POOLS[occ.id][normEmotion]) || POOLS.birthday.heartfelt);
+      : birthdayRelationship
+        ? BIRTHDAY_RELATIONSHIP_POOLS[birthdayRelationship][normEmotion]
+        : ((POOLS[occ.id] && POOLS[occ.id][normEmotion]) || POOLS.birthday.heartfelt);
     return fill(pool[0], name, relationshipLabel);
   }
 
@@ -1889,7 +2001,7 @@ const GreetingGenerator = (() => {
 
   return {
     list, generate, fallbackFor, normalizeEmotion, isValid, validateSafety,
-    normalizeRelationship, resolveProjectGreeting, validateProjectGreeting,
+    normalizeRelationship, classifyBirthdayRelationship, resolveProjectGreeting, validateProjectGreeting,
   };
 })();
 

@@ -587,11 +587,11 @@ Task 003 implementation and release were explicitly authorized. The Current Task
 
 ## 9. Current Task
 
-- **Approved Current Task:** Task 015 — Indian-context Birthday message correction (R5)
+- **Approved Current Task:** Task 016 — Relationship-aware Birthday message generation (R5)
 - **Active Permission Level:** IMPLEMENT / COMMIT / PUSH / DEPLOY under standing owner authorization
-- **Status:** Complete, committed, pushed, deployed, and verified
-- **Approved scope:** Replace Birthday drafts that conflict with the permanent Indian-context message rule, while retaining all five Birthday tones and editable/manual behavior.
-- **Authorization boundary:** Preserve stored user messages, occasion isolation, rendering, photo and centerpiece behavior, save/reopen, export, and offline operation. Relationship-aware expansion for other occasions and Gujarati festival messages remain later tasks.
+- **Status:** Implementation and local verification complete; release in progress
+- **Approved scope:** Use the optional Birthday relationship to select suitable Indian-context wording for elders, parents, spouse, siblings, children, teachers, friends, and professional contacts, with generic fallback for blank or unrecognized entries.
+- **Authorization boundary:** Preserve the relationship field as entered, stored/manual messages, all five Birthday tones, occasion isolation, rendering, photo and centerpiece behavior, save/reopen, export, and offline operation. Other occasions and Gujarati festival messages remain later tasks.
 
 ### Task 013 Implementation Record
 
@@ -626,6 +626,17 @@ Task 003 implementation and release were explicitly authorized. The Current Task
 - **Behavior:** Replaces prohibited Western Birthday clichés with warm, secular wording appropriate for Indian family, friendship, elder, and professional contexts. Heartfelt, Poetic, Professional, Playful, and Milestone tones remain available; generated text remains editable.
 - **Compatibility:** Stored or manually edited messages are not rewritten. Birthday card data, photos, manual centerpiece choices, occasion isolation, save/reopen, export, festival cards, and offline operation remain unchanged.
 - **Verification:** JavaScript and service-worker syntax, whitespace, 30-draft count, editor-length limit, prohibited-phrase scan, all five tone generation, recipient-name insertion, manual-message preservation, version alignment, and unchanged schema checks passed. GitHub Pages run `35773033633` succeeded; the public application, manifest, and service worker serve v1.17.0, the revised Birthday wording is live, and the prohibited orbit/confetti drafts are absent.
+
+### Task 016 Implementation Record
+
+- **Approved Task:** Task 016 — Relationship-aware Birthday message generation
+- **Baseline:** `main` at commit `a8759dc`
+- **Status:** Local implementation verified; commit, push, and live deployment verification pending
+- **Release:** Application, manifest, service worker, and cache version `1.18.0`; schema remains v6
+- **Behavior:** Recognizes common parent, elder, spouse, sibling, child, teacher/mentor, friend, and professional relationships and selects tone-appropriate Birthday wording. Blank and unrecognized relationships retain the generic Birthday pools; the relationship field itself is never rewritten.
+- **Compatibility:** All five Birthday tones, regeneration, edited/manual messages, card data, photos, centerpieces, occasion isolation, festivals, save/reopen, export, and offline behavior remain unchanged.
+- **Verification finding, fixed before release:** Local boundary testing at the recipient-name field's own 40-character maximum found 31 of 80 relationship drafts (across `elder`, `parent`, `spouse`, `sibling`, `child`, `teacher`, `friend`, `professional`) exceeded the 220-character editor limit, up to 256 characters, because the `heartfelt`/`professional`/`milestone` templates concatenated two full context sentences. Restructured every relationship template to use exactly one context sentence per line (matching the already-safe `poetic`/`playful` pattern), and added a defensive word-safe/ellipsis cap inside `GreetingGenerator.fill()` (reusing `Utils.truncateProse`) so any future template that reintroduces an overflow degrades safely instead of failing silently. Re-verified worst case (40-character name, all 8 relationships x 5 tones): maximum draft length 216 characters, 0 over limit.
+- **Verification:** JavaScript and service-worker syntax, whitespace, 30-draft generic-pool count (unaffected), 26-case relationship classification (all 8 buckets + blank + unrecognized), prohibited-phrase scan (Western clichés and casual slang, 110 unique drafts, 0 hits), 220-character editor limit at worst-case 40-character name (0 over after fix), recipient-name insertion (110/110), manual-message preservation, condolence relationship pools and safety block unaffected, festival (Diwali) and Anniversary generation unaffected, export at exact 1200x1760 with zero overflow/clamp/collision, version alignment (`APP_VERSION`/`SW_VERSION`/manifest all `1.18.0`), and unchanged schema (v6, no migration required) all passed.
 
 ### Task 012 Implementation Record
 
