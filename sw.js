@@ -10,7 +10,7 @@
 // Kept in step with APP_VERSION in js/app.js: bumping either one must
 // bump the other, since the cache name is what forces clients onto a
 // freshly released shell.
-const SW_VERSION = "v1.15.0";
+const SW_VERSION = "v1.16.0";
 const SHELL_CACHE = "atul-shell-" + SW_VERSION;
 
 // Everything needed to open and use the editor while offline. User photos
@@ -43,6 +43,29 @@ const SHELL_ASSETS = [
   "./assets/centerpieces/retirement-compass.png",
   "./assets/centerpieces/get-well-comfort.png",
   "./assets/centerpieces/thanks-note.png",
+  "./assets/centerpieces/diwali-diyas.png",
+  "./assets/festival-designs/diwali-01.png",
+  "./assets/festival-designs/dhanteras-lakshmi-puja-02-lakshmiji.png",
+  "./assets/festival-designs/bestu-varas-01.png",
+  "./assets/festival-designs/uttarayan-01.png",
+  "./assets/festival-designs/navratri-03-goddess-durga.png",
+  "./assets/festival-designs/holi-01.png",
+  "./assets/festival-designs/raksha-bandhan-01.png",
+  "./assets/festival-designs/janmashtami-04-lord-krishna.png",
+  "./assets/festival-designs/rath-yatra-04-jagannath.png",
+  "./assets/festival-designs/ganesh-chaturthi-02-emerald-blessings.png",
+  "./assets/festival-designs/shivratri-03-lord-shiva.png",
+  "./assets/festival-designs/dussehra-01.png",
+  "./assets/festival-designs/independence-day-01.png",
+  "./assets/festival-designs/republic-day-01.png",
+  "./assets/festival-designs/eid-ul-fitr-01.png",
+  "./assets/festival-designs/christmas-01.png",
+  "./assets/festival-designs/new-year-01.png",
+  "./assets/festival-designs/ram-navami-02-lord-rama.png",
+  "./assets/festival-designs/holika-dahan-01.png",
+  "./assets/festival-designs/hanuman-jayanti-01.png",
+  "./assets/festival-designs/guru-purnima-01.png",
+  "./assets/festival-designs/bhai-dooj-01.png",
   "./assets/centerpieces/champagne-gala.png",
   "./assets/centerpieces/white-lilies.png",
   "./assets/decorations/white-lilies-corner.png",

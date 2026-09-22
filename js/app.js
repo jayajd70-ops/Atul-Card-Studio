@@ -1129,9 +1129,9 @@ const ThemePreferences = (() => {
 // Application version. Shown in the header, stamped onto exported
 // backups, and kept in step with SW_VERSION in sw.js so a released
 // shell and the code inside it always report the same number.
-const APP_VERSION = "1.15.0";
+const APP_VERSION = "1.16.0";
 
-const CURRENT_SCHEMA_VERSION = 5;
+const CURRENT_SCHEMA_VERSION = 6;
 
 function localDateISO(timestamp) {
   const date = new Date(Number.isFinite(Number(timestamp)) ? Number(timestamp) : Date.now());
@@ -1210,6 +1210,36 @@ const OccasionRegistry = (() => {
     { id: "professional", label: "Professional", hint: "Warm but workplace-safe" },
     { id: "playful", label: "Playful", hint: "Light and cheerful" },
   ];
+  const FESTIVAL_OCCASIONS = [
+    ["diwali", "Diwali", "Warm wishes for the festival of lights", "diwali-diyas"],
+    ["dhanteras-lakshmi-puja", "Dhanteras / Lakshmi Puja", "Auspicious wishes for prosperity", "diwali-diyas"],
+    ["bestu-varas", "Bestu Varas / Gujarati New Year", "Fresh beginnings for the Gujarati New Year", "diwali-diyas"],
+    ["uttarayan", "Uttarayan / Makar Sankranti", "Bright skies and joyful kites", "theme-aura"],
+    ["navratri", "Navratri", "Nine nights of devotion and celebration", "theme-aura"],
+    ["holi", "Holi / Dhuleti", "A colourful celebration of togetherness", "theme-aura"],
+    ["raksha-bandhan", "Raksha Bandhan", "A celebration of sibling love", "theme-aura"],
+    ["janmashtami", "Janmashtami", "Joyful blessings of Shri Krishna", "theme-aura"],
+    ["rath-yatra", "Rath Yatra", "Blessings for the sacred journey", "theme-aura"],
+    ["ganesh-chaturthi", "Ganesh Chaturthi", "Blessings for wisdom and new beginnings", "theme-aura"],
+    ["shivratri", "Mahashivratri", "A serene night of devotion", "theme-aura"],
+    ["dussehra", "Dussehra", "A celebration of courage and goodness", "theme-aura"],
+    ["independence-day", "Independence Day", "Pride in our freedom and unity", "theme-aura"],
+    ["republic-day", "Republic Day", "Honouring India’s democratic spirit", "theme-aura"],
+    ["eid-ul-fitr", "Eid ul-Fitr", "Warm wishes of peace and gratitude", "theme-aura"],
+    ["christmas", "Christmas", "Peace, joy and warm Christmas wishes", "theme-aura"],
+    ["new-year", "New Year", "Bright wishes for the year ahead", "theme-aura"],
+    ["ram-navami", "Ram Navami", "Blessings of courage, peace and righteousness", "theme-aura"],
+    ["holika-dahan", "Holika Dahan", "A sacred evening of light and renewal", "theme-aura"],
+    ["hanuman-jayanti", "Hanuman Jayanti", "Blessings of strength, devotion and courage", "theme-aura"],
+    ["guru-purnima", "Guru Purnima", "Gratitude for teachers and guiding wisdom", "theme-aura"],
+    ["bhai-dooj", "Bhai Dooj", "A warm celebration of sibling care", "theme-aura"],
+  ].map(([id, label, hint, centerpieceId]) => ({
+    id, label, hint, category: "festival", isFestival: true, isSensitive: false, allowPhoto: false,
+    allowedCenterpieces: ["auto", centerpieceId, "theme-aura"],
+    defaultCenterpieceMap: { heartfelt: centerpieceId, poetic: centerpieceId, professional: centerpieceId, playful: centerpieceId },
+    fallbackCenterpiece: centerpieceId, emotions: PERSONAL_EMOTIONS,
+    recommendedStampIds: ["gold-medallion", "floral-ornament", "celestial-ornament"],
+  }));
   const OCCASIONS = [
     {
       id: "birthday",
@@ -1296,6 +1326,7 @@ const OccasionRegistry = (() => {
       fallbackCenterpiece: "thanks-note",
       emotions: PERSONAL_EMOTIONS, recommendedStampIds: ["thank-you-badge", "with-love", "floral-ornament"],
     },
+    ...FESTIVAL_OCCASIONS,
     {
       id: "condolence",
       label: "Condolence / Sympathy",
@@ -1400,6 +1431,65 @@ const OccasionRegistry = (() => {
     return CONDOLENCE_DESIGNS[emotion] || CONDOLENCE_DESIGNS.heartfelt;
   }
   return { list, get, isValid, normalizeOccasion, allowsPhoto, allowsStamps, getRecommendedStampIds, getDesign };
+})();
+
+/* =========================================================================
+   SECTION: FestivalDesignRegistry
+   Festival art remains local to the app. Personalisation lives in the
+   shared card model; selecting a festival design only changes presentation.
+   ========================================================================= */
+const FestivalDesignRegistry = (() => {
+  const sources = {
+    diwali: "assets/festival-designs/diwali-01.png",
+    "dhanteras-lakshmi-puja": "assets/festival-designs/dhanteras-lakshmi-puja-02-lakshmiji.png",
+    "bestu-varas": "assets/festival-designs/bestu-varas-01.png",
+    uttarayan: "assets/festival-designs/uttarayan-01.png",
+    navratri: "assets/festival-designs/navratri-03-goddess-durga.png",
+    holi: "assets/festival-designs/holi-01.png",
+    "raksha-bandhan": "assets/festival-designs/raksha-bandhan-01.png",
+    janmashtami: "assets/festival-designs/janmashtami-04-lord-krishna.png",
+    "rath-yatra": "assets/festival-designs/rath-yatra-04-jagannath.png",
+    "ganesh-chaturthi": "assets/festival-designs/ganesh-chaturthi-02-emerald-blessings.png",
+    shivratri: "assets/festival-designs/shivratri-03-lord-shiva.png",
+    dussehra: "assets/festival-designs/dussehra-01.png",
+    "independence-day": "assets/festival-designs/independence-day-01.png",
+    "republic-day": "assets/festival-designs/republic-day-01.png",
+    "eid-ul-fitr": "assets/festival-designs/eid-ul-fitr-01.png",
+    christmas: "assets/festival-designs/christmas-01.png",
+    "new-year": "assets/festival-designs/new-year-01.png",
+    "ram-navami": "assets/festival-designs/ram-navami-02-lord-rama.png",
+    "holika-dahan": "assets/festival-designs/holika-dahan-01.png",
+    "hanuman-jayanti": "assets/festival-designs/hanuman-jayanti-01.png",
+    "guru-purnima": "assets/festival-designs/guru-purnima-01.png",
+    "bhai-dooj": "assets/festival-designs/bhai-dooj-01.png",
+  };
+  const singleTemplate = new Set(["holika-dahan", "hanuman-jayanti", "guru-purnima", "bhai-dooj"]);
+  const styles = [
+    { id: "classic", label: "Classic", hint: "Traditional full-art composition", overlay: "warm" },
+    { id: "radiant", label: "Radiant", hint: "Brighter message panel", overlay: "light" },
+    { id: "midnight", label: "Midnight", hint: "Dramatic, high-contrast finish", overlay: "dark" },
+  ];
+  const designs = Object.fromEntries(Object.entries(sources).map(([occasionId, asset]) => [
+    occasionId,
+    (singleTemplate.has(occasionId) ? styles.slice(0, 1) : styles).map((style) => ({
+      ...style, id: occasionId + "-" + style.id, asset,
+    })),
+  ]));
+  const imageCache = new Map();
+  function list(occasionId) { return (designs[occasionId] || []).map((design) => ({ ...design })); }
+  function get(occasionId, designId) {
+    const available = designs[occasionId] || [];
+    return available.find((design) => design.id === designId) || available[0] || null;
+  }
+  function isFestival(occasionId) { return Object.prototype.hasOwnProperty.call(designs, occasionId); }
+  function resolveImage(design) {
+    if (!design || !design.asset) return Promise.resolve(null);
+    if (!imageCache.has(design.asset)) {
+      imageCache.set(design.asset, Utils.loadImage(design.asset).catch(() => null));
+    }
+    return imageCache.get(design.asset);
+  }
+  return { list, get, isFestival, resolveImage };
 })();
 
 /* =========================================================================
@@ -1568,6 +1658,19 @@ const GreetingGenerator = (() => {
       "Thank you, {name}! Good friends like you make every ordinary day better.",
       "{name}, friendship points are officially yours in abundance. Thank you for being wonderful!",
     ]),
+    diwali: buildPersonalPool("Diwali", [
+      "Wishing you and your family a joyful Diwali, {name}. May your home be filled with warmth, peace, and togetherness.",
+      "May the lights of Diwali bring hope, happiness, and many cherished moments to your home, {name}.",
+    ], [
+      "May every diya bring a gentle glow to your days, {name}, and may this Diwali fill your home with warmth and good cheer.",
+      "Wishing you a Diwali of golden light, grateful hearts, and beautiful moments with those you hold dear, {name}.",
+    ], [
+      "Warm Diwali wishes to you and your family, {name}. May the festival bring peace, prosperity, and continued success.",
+      "Wishing you a bright and meaningful Diwali, {name}. May the season bring renewed energy and happiness.",
+    ], [
+      "Happy Diwali, {name}! Wishing you bright diyas, warm family time, and a home full of happy moments.",
+      "Wishing you a joyful Diwali, {name}! May the lights be bright and the sweets be plentiful.",
+    ]),
     condolence: {
       heartfelt: [
         "{name}, our thoughts and heartfelt sympathies are with you and your family during this time of sorrow. Wishing you strength and solace.",
@@ -1622,6 +1725,38 @@ const GreetingGenerator = (() => {
       "On behalf of all of us, {name}, we extend our respectful sympathies on the loss of your {relationship}. Wishing your family strength and support.",
     ],
   };
+
+  const FESTIVAL_GREETINGS = {
+    "dhanteras-lakshmi-puja": ["Dhanteras and Lakshmi Puja", "May this auspicious season bring prosperity, peace, and a home filled with blessings"],
+    "bestu-varas": ["Bestu Varas", "May the Gujarati New Year open with health, goodwill, and bright new beginnings"],
+    uttarayan: ["Uttarayan", "May your days rise as high and bright as the kites in a joyful January sky"],
+    navratri: ["Navratri", "May these nine nights bring devotion, energy, and beautiful moments with loved ones"],
+    holi: ["Holi", "May this festival of colours fill your days with friendship, laughter, and fresh hope"],
+    "raksha-bandhan": ["Raksha Bandhan", "May the bond of care and trust between siblings grow stronger with every year"],
+    janmashtami: ["Janmashtami", "May the music, joy, and blessings of Janmashtami fill your home with peace"],
+    "rath-yatra": ["Rath Yatra", "May this sacred journey bring grace, togetherness, and blessings to your family"],
+    "ganesh-chaturthi": ["Ganesh Chaturthi", "May Lord Ganesha bless every new beginning with wisdom, grace, and success"],
+    shivratri: ["Mahashivratri", "May this sacred night bring inner peace, strength, and the blessings of Lord Shiva"],
+    dussehra: ["Dussehra", "May the spirit of courage and goodness guide every step ahead"],
+    "independence-day": ["Independence Day", "May our shared freedom and unity continue to inspire hope and purpose"],
+    "republic-day": ["Republic Day", "May India’s democratic spirit fill us with pride, unity, and responsibility"],
+    "eid-ul-fitr": ["Eid ul-Fitr", "May Eid bring peace, gratitude, and warm moments shared with family and friends"],
+    christmas: ["Christmas", "May Christmas bring peace, kindness, and a home full of warm light"],
+    "new-year": ["New Year", "May the year ahead bring renewed hope, good health, and many joyful beginnings"],
+    "ram-navami": ["Ram Navami", "May the blessings of Ram Navami bring courage, peace, and righteousness to your home"],
+    "holika-dahan": ["Holika Dahan", "May the sacred fire of Holika Dahan bring renewed hope, harmony, and light to your home"],
+    "hanuman-jayanti": ["Hanuman Jayanti", "May Lord Hanuman bless you with strength, devotion, and courage in every step ahead"],
+    "guru-purnima": ["Guru Purnima", "May the wisdom and guidance of your teachers continue to light your path"],
+    "bhai-dooj": ["Bhai Dooj", "May the bond of affection and care between siblings grow stronger with every year"],
+  };
+  Object.entries(FESTIVAL_GREETINGS).forEach(([id, [label, wish]]) => {
+    POOLS[id] = buildPersonalPool(label,
+      [`{name}, ${wish}. Warm wishes to you and your family.`],
+      [`{name}, ${wish}. May every day ahead carry a gentle, hopeful light.`],
+      [`Warm ${label} wishes, {name}. ${wish}.`],
+      [`Happy ${label}, {name}! ${wish}.`]
+    );
+  });
 
   // Old schema (v1) tone ids mapped onto the five supported birthday emotions.
   const LEGACY_EMOTION_MAP = {
@@ -1765,6 +1900,9 @@ function createOccasionContent(occasionId, relationship) {
     emotion: GreetingGenerator.normalizeEmotion("heartfelt", occasionId),
     messageMode: "manual",
     relationship: String(relationship || ""),
+    festivalDesignId: FestivalDesignRegistry.isFestival(occasionId)
+      ? ((FestivalDesignRegistry.get(occasionId) || {}).id || "")
+      : "",
   };
 }
 
@@ -1780,6 +1918,9 @@ function snapshotOccasionContent(content, occasionId, relationship) {
     relationship: Object.prototype.hasOwnProperty.call(source, "relationship")
       ? String(source.relationship || "")
       : String(relationship || ""),
+    festivalDesignId: FestivalDesignRegistry.isFestival(occasionId)
+      ? (FestivalDesignRegistry.get(occasionId, source.festivalDesignId) || {}).id || ""
+      : "",
   };
 }
 
@@ -1802,6 +1943,7 @@ function ensureOccasionContentStates(project) {
   project.content = snapshotOccasionContent(project.content, activeId, activeRelationship);
   states[activeId] = snapshotOccasionContent(project.content, activeId, activeRelationship);
   project.occasion.contentByOccasion = states;
+  project.occasion.subOccasion = states[activeId].festivalDesignId || null;
   return states;
 }
 
@@ -1869,7 +2011,7 @@ function switchProjectOccasion(project, targetOccasionId) {
     stampStates[currentId] = cloneStamps(project.stamps);
   }
   project.occasion.id = targetId;
-  project.occasion.subOccasion = null;
+  project.occasion.subOccasion = states[targetId].festivalDesignId || null;
   project.content = snapshotOccasionContent(states[targetId], targetId, "");
   project.recipient.relationship = project.content.relationship;
   if (targetId !== "condolence") {
@@ -2065,6 +2207,13 @@ const Migrations = (() => {
     if (v < 5) {
       record.cardDate = { value: localDateISO(record.createdAt || Date.now()), visible: false };
       v = 5;
+    }
+    // v5 -> v6: each festival stores its selected visual treatment inside
+    // its already isolated occasion content. Existing cards receive the
+    // default festival treatment only when a festival is selected.
+    if (v < 6) {
+      ensureOccasionContentStates(record);
+      v = 6;
     }
     if (!record.cardDate || typeof record.cardDate !== "object") {
       record.cardDate = { value: localDateISO(record.createdAt || Date.now()), visible: false };
@@ -2393,6 +2542,7 @@ const CenterpieceAssetResolver = (() => {
     "congratulations-laurel": "assets/centerpieces/", "new-home-welcome": "assets/centerpieces/",
     "graduation-diploma": "assets/centerpieces/", "retirement-compass": "assets/centerpieces/",
     "get-well-comfort": "assets/centerpieces/", "thanks-note": "assets/centerpieces/",
+    "diwali-diyas": "assets/centerpieces/",
     "white-lilies": "assets/centerpieces/", "white-lilies-corner": "assets/decorations/",
     "sage-foliage-corner": "assets/decorations/", "slate-botanical-corner": "assets/decorations/",
     "navy-botanical-accent": "assets/decorations/",
@@ -2455,6 +2605,7 @@ const Centerpieces = (() => {
     { id: "retirement-compass", label: "Retirement Compass", hint: "Compass, book and a new chapter" },
     { id: "get-well-comfort", label: "Get Well Comfort", hint: "Herbal tea, gentle flowers and care" },
     { id: "thanks-note", label: "Friendship and Thanks", hint: "A personal note of appreciation" },
+    { id: "diwali-diyas", label: "Diwali Diyas", hint: "Brass lamps and fresh marigolds" },
     { id: "theme-aura", label: "Theme Aura", hint: "Abstract monogram glow" },
   ];
 
@@ -3669,7 +3820,26 @@ const Renderer = (() => {
   }
 
   /* ---------------- 1-4: Background, texture, vignette ---------------- */
-  function renderBackground(ctx, theme, quality, project) {
+  async function renderBackground(ctx, theme, quality, project) {
+    const occasionId = (project && project.occasion && project.occasion.id) || "birthday";
+    const festivalDesign = FestivalDesignRegistry.get(occasionId, project && project.content && project.content.festivalDesignId);
+    if (festivalDesign) {
+      const image = await FestivalDesignRegistry.resolveImage(festivalDesign);
+      if (image) {
+        const scale = Math.max(W / image.width, H / image.height);
+        const drawW = image.width * scale;
+        const drawH = image.height * scale;
+        ctx.drawImage(image, (W - drawW) / 2, (H - drawH) / 2, drawW, drawH);
+        const strength = festivalDesign.overlay === "light" ? 0.16 : festivalDesign.overlay === "dark" ? 0.54 : 0.34;
+        const overlay = ctx.createLinearGradient(0, 0, 0, H);
+        overlay.addColorStop(0, "rgba(8,6,12," + (strength * 0.42) + ")");
+        overlay.addColorStop(0.44, "rgba(8,6,12," + strength + ")");
+        overlay.addColorStop(1, "rgba(8,6,12," + Math.min(0.72, strength + 0.18) + ")");
+        ctx.fillStyle = overlay;
+        ctx.fillRect(0, 0, W, H);
+        return;
+      }
+    }
     const design = OccasionRegistry.getDesign(
       project && project.occasion && project.occasion.id,
       project && project.content && project.content.emotion
@@ -4113,6 +4283,7 @@ const Renderer = (() => {
     "retirement": occasionCornerFrame("retirement-compass"),
     "get-well": occasionCornerFrame("get-well-comfort"),
     "friendship-thanks": occasionCornerFrame("thanks-note"),
+    "diwali": occasionCornerFrame("diwali-diyas"),
   };
 
   function getTextProtectionRegions(project) {
@@ -4464,6 +4635,9 @@ const Renderer = (() => {
   }
 
   async function renderPhoto(ctx, project, theme, photoImage, monogram, quality) {
+    if (FestivalDesignRegistry.isFestival(project.occasion && project.occasion.id)) {
+      return;
+    }
     const isCondolence = project.occasion && project.occasion.id === "condolence";
     const emotion = (project.content && project.content.emotion) || "heartfelt";
     const design = OccasionRegistry.getDesign(isCondolence ? "condolence" : "birthday", emotion);
@@ -5006,7 +5180,7 @@ const Renderer = (() => {
     };
 
     ctx.clearRect(0, 0, W, H);
-    renderBackground(ctx, theme, quality, project);
+    await renderBackground(ctx, theme, quality, project);
     await renderThemeBorderDecorations(ctx, project, theme);
     renderLuxuryBorder(ctx, theme, quality, project);
 
@@ -5786,11 +5960,48 @@ const App = (() => {
   function populateOccasionSelect() {
     if (!dom.occasionSelect) return;
     dom.occasionSelect.innerHTML = "";
+    const personal = document.createElement("optgroup");
+    personal.label = "Personal occasions";
+    const festivals = document.createElement("optgroup");
+    festivals.label = "Festivals";
     OccasionRegistry.list().forEach((occ) => {
       const opt = document.createElement("option");
       opt.value = occ.id;
       opt.textContent = occ.label;
-      dom.occasionSelect.appendChild(opt);
+      (occ.isFestival ? festivals : personal).appendChild(opt);
+    });
+    dom.occasionSelect.appendChild(personal);
+    dom.occasionSelect.appendChild(festivals);
+  }
+
+  function syncFestivalDesignControls(project) {
+    if (!dom.festivalDesignField || !dom.festivalDesignList) return;
+    const occasionId = (project.occasion && project.occasion.id) || "birthday";
+    const designs = FestivalDesignRegistry.list(occasionId);
+    dom.festivalDesignField.hidden = !designs.length;
+    dom.festivalDesignList.innerHTML = "";
+    if (!designs.length) return;
+    const selectedId = (FestivalDesignRegistry.get(occasionId, project.content && project.content.festivalDesignId) || {}).id;
+    designs.forEach((design) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "festival-design";
+      button.dataset.festivalDesignId = design.id;
+      button.setAttribute("role", "radio");
+      button.setAttribute("aria-checked", String(design.id === selectedId));
+      const image = document.createElement("img");
+      image.src = design.asset;
+      image.alt = "";
+      image.loading = "lazy";
+      image.style.filter = design.overlay === "light"
+        ? "brightness(1.16) saturate(1.08)"
+        : design.overlay === "dark" ? "brightness(0.64) saturate(0.86)" : "none";
+      const label = document.createElement("span");
+      label.textContent = design.label;
+      const hint = document.createElement("small");
+      hint.textContent = design.hint;
+      button.append(image, label, hint);
+      dom.festivalDesignList.appendChild(button);
     });
   }
 
@@ -6165,6 +6376,24 @@ const App = (() => {
         const p = StateStore.getProject();
         syncControlsFromState(p);
         toast(OccasionRegistry.get(newOccasionId).label + " selected.");
+      });
+    }
+    if (dom.festivalDesignList) {
+      dom.festivalDesignList.addEventListener("click", (e) => {
+        const button = e.target.closest("[data-festival-design-id]");
+        if (!button) return;
+        const designId = button.dataset.festivalDesignId;
+        StateStore.update((p) => {
+          const occasionId = (p.occasion && p.occasion.id) || "birthday";
+          const design = FestivalDesignRegistry.get(occasionId, designId);
+          if (!design) return;
+          p.content.festivalDesignId = design.id;
+          p.occasion.subOccasion = design.id;
+          if (p.occasion.contentByOccasion && p.occasion.contentByOccasion[occasionId]) {
+            p.occasion.contentByOccasion[occasionId].festivalDesignId = design.id;
+          }
+        }, { reason: "festival-design-change" });
+        syncFestivalDesignControls(StateStore.getProject());
       });
     }
     dom.recipientName.addEventListener("input", (e) => {
@@ -6986,7 +7215,16 @@ const App = (() => {
     const allowPhoto = occ.allowPhoto !== false;
     const photo = allowPhoto ? project.photo : null;
 
-    if (dom.photoDisabledNotice) dom.photoDisabledNotice.hidden = allowPhoto;
+    if (dom.photoDisabledNotice) {
+      dom.photoDisabledNotice.hidden = allowPhoto;
+      if (!allowPhoto && FestivalDesignRegistry.isFestival(occasionId)) {
+        dom.photoDisabledNotice.querySelector("strong").textContent = "Festival cards use their selected artwork rather than a personal photo.";
+        dom.photoDisabledNotice.querySelector("p").textContent = "Choose a festival card design in Content. Your greeting, names, and date remain fully editable.";
+      } else if (!allowPhoto) {
+        dom.photoDisabledNotice.querySelector("strong").textContent = "Personal photos are disabled for Condolence / Sympathy cards.";
+        dom.photoDisabledNotice.querySelector("p").textContent = "Condolence cards use restrained tribute centrepieces and elegant typography.";
+      }
+    }
     if (dom.photoUploadField) dom.photoUploadField.hidden = !allowPhoto;
     if (dom.photoShapeFieldset) dom.photoShapeFieldset.hidden = !allowPhoto;
     if (dom.photoCenterpieceFieldset) dom.photoCenterpieceFieldset.hidden = !allowPhoto;
@@ -7055,6 +7293,7 @@ const App = (() => {
     if (dom.occasionSelect) dom.occasionSelect.value = occasionId;
     populateEmotionRow(occasionId);
     syncOccasionEditor(project);
+    syncFestivalDesignControls(project);
 
     if (dom.stampsTab) {
       const stampsWasSelected = dom.stampsTab.getAttribute("aria-selected") === "true";
@@ -7230,6 +7469,7 @@ const App = (() => {
       recipientName: $("#recipient-name"), recipientRelationship: $("#recipient-relationship"),
       recipientRelationshipLabel: $("#recipient-relationship-label"), recipientRelationshipHint: $("#recipient-relationship-hint"),
       occasionSelect: $("#occasion-select"),
+      festivalDesignField: $("#festival-design-field"), festivalDesignList: $("#festival-design-list"),
       senderName: $("#sender-name"), cardDate: $("#card-date"), cardDateVisible: $("#card-date-visible"),
       autoGreetingToggle: $("#auto-greeting-toggle"),
       emotionRow: $("#emotion-row"), greetingText: $("#greeting-text"), greetingCount: $("#greeting-count"),
