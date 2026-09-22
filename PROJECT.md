@@ -589,7 +589,7 @@ Task 003 implementation and release were explicitly authorized. The Current Task
 
 - **Approved Current Task:** Task 015 — Indian-context Birthday message correction (R5)
 - **Active Permission Level:** IMPLEMENT / COMMIT / PUSH / DEPLOY under standing owner authorization
-- **Status:** Implementation and local verification complete; release in progress
+- **Status:** Complete, committed, pushed, deployed, and verified
 - **Approved scope:** Replace Birthday drafts that conflict with the permanent Indian-context message rule, while retaining all five Birthday tones and editable/manual behavior.
 - **Authorization boundary:** Preserve stored user messages, occasion isolation, rendering, photo and centerpiece behavior, save/reopen, export, and offline operation. Relationship-aware expansion for other occasions and Gujarati festival messages remain later tasks.
 
@@ -620,11 +620,12 @@ Task 003 implementation and release were explicitly authorized. The Current Task
 
 - **Approved Task:** Task 015 — Indian-context Birthday message correction
 - **Baseline:** `main` at commit `de8380a`
-- **Status:** Local implementation verified; commit, push, and live deployment verification pending
+- **Status:** Complete, committed, pushed, deployed, and verified
+- **Completed commit:** `b0263fe` — `fix: localize birthday message drafts`
 - **Release:** Application, manifest, service worker, and cache version `1.17.0`; schema remains v6
 - **Behavior:** Replaces prohibited Western Birthday clichés with warm, secular wording appropriate for Indian family, friendship, elder, and professional contexts. Heartfelt, Poetic, Professional, Playful, and Milestone tones remain available; generated text remains editable.
 - **Compatibility:** Stored or manually edited messages are not rewritten. Birthday card data, photos, manual centerpiece choices, occasion isolation, save/reopen, export, festival cards, and offline operation remain unchanged.
-- **Verification:** JavaScript and service-worker syntax, whitespace, 30-draft count, editor-length limit, prohibited-phrase scan, all five tone generation, recipient-name insertion, manual-message preservation, version alignment, and unchanged schema checks passed.
+- **Verification:** JavaScript and service-worker syntax, whitespace, 30-draft count, editor-length limit, prohibited-phrase scan, all five tone generation, recipient-name insertion, manual-message preservation, version alignment, and unchanged schema checks passed. GitHub Pages run `35773033633` succeeded; the public application, manifest, and service worker serve v1.17.0, the revised Birthday wording is live, and the prohibited orbit/confetti drafts are absent.
 
 ### Task 012 Implementation Record
 
