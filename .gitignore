@@ -8,3 +8,11 @@ Thumbs.db
 # Local test/build output (not part of the app itself)
 *.log
 node_modules/
+/test-results/
+/playwright-report/
+/screenshots/
+
+# Local card exports and private backup packages
+/atul-card-*.png
+/atul-card-backup-*.json
+/atul-digital-card-*.json
