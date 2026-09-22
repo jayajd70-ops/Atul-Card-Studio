@@ -589,7 +589,7 @@ Task 003 implementation and release were explicitly authorized. The Current Task
 
 - **Approved Current Task:** Task 014 — Festival Card section and expanded Indian festival library (R1, R5, R7, R10, R16)
 - **Active Permission Level:** IMPLEMENT / COMMIT / PUSH / DEPLOY under standing owner authorization
-- **Status:** Implementation and local verification complete; release in progress
+- **Status:** Complete, committed, pushed, deployed, and verified
 - **Approved scope:** A unified Festival section with local artwork, occasion-specific English messages, photo-free festival presentation, per-festival design persistence, and selected offline assets. Holika Dahan, Hanuman Jayanti, Guru Purnima, and Bhai Dooj each have one approved template; Gujarati messages remain a later task.
 - **Authorization boundary:** Preserve existing card data, personal occasion behavior, uploaded-photo priority, manual centerpiece choices, and offline operation. Do not add Gujarati-language content in this task.
 
@@ -608,12 +608,13 @@ Task 003 implementation and release were explicitly authorized. The Current Task
 
 - **Approved Task:** Task 014 — Festival Card section and expanded Indian festival library
 - **Baseline:** `main` at commit `597466d`
-- **Status:** Local implementation verified; commit, push, and live deployment verification pending
+- **Status:** Complete, committed, pushed, deployed, and verified
+- **Completed commit:** `51a6237` — `feat: add festival card library`
 - **Release:** Application, manifest, service worker, and cache version `1.16.0`; schema v6
 - **Behavior:** Adds a Festival optgroup and shared Festival Card section for Diwali, Dhanteras / Lakshmi Puja, Bestu Varas, Uttarayan, Navratri, Holi, Raksha Bandhan, Janmashtami, Rath Yatra, Ganesh Chaturthi, Mahashivratri, Dussehra, Independence Day, Republic Day, Eid ul-Fitr, Christmas, New Year, Ram Navami, Holika Dahan, Hanuman Jayanti, Guru Purnima, and Bhai Dooj. The original 18 festival categories provide three visual treatments; Holika Dahan, Hanuman Jayanti, Guru Purnima, and Bhai Dooj use one approved template each. Festival cards use local full-card art, retain editable English messages, and do not accept personal photos.
 - **Compatibility:** Each festival retains its own selected design and message. Existing saved cards migrate from schema v5 without changing their personal content. Birthday photo data, manual centerpiece choices, occasion state isolation, save/reopen, export, and offline behavior remain within the shared studio workflow.
 - **Assets:** Twenty-two selected festival artworks are bundled and precached for first-use offline operation; unused source alternatives remain available outside the release folder.
-- **Verification:** JavaScript syntax and whitespace checks, registry/message/no-photo checks, v5 migration, selected-asset existence, and Birthday → Holika Dahan → Birthday → Holika Dahan state regression passed. Desktop shell rendering was visually reviewed. Browser interaction, PNG export, save/reopen, offline startup, and production verification are pending release.
+- **Verification:** JavaScript syntax and whitespace checks, registry/message/no-photo checks, v5 migration, selected-asset existence, and Birthday → Holika Dahan → Birthday → Holika Dahan state regression passed. Desktop shell rendering was visually reviewed. GitHub Pages run `35767074368` succeeded; the public application, manifest, and service worker serve v1.16.0, and all 22 selected festival assets were verified over HTTPS. Browser interaction, PNG export, save/reopen, and offline startup remain untested in this release.
 
 ### Task 012 Implementation Record
 
