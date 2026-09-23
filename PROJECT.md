@@ -587,9 +587,9 @@ Task 003 implementation and release were explicitly authorized. The Current Task
 
 ## 9. Current Task
 
-- **Approved Current Task:** Task 024 — Undo/Redo safety for typed text (R13, R7)
+- **Approved Current Task:** None open. Task 024 (Undo/Redo safety for typed text) is complete. Suggested next task: R5 relationship-aware pools for other occasions where wording needs no invented product data; R4 emoji picker and Congratulations occasion need an owner decision.
 - **Active Permission Level:** IMPLEMENT / COMMIT / PUSH / DEPLOY under standing owner authorization (`PROJECT.md` section 4.1; owner instruction of 23 September 2026)
-- **Status:** Implementation and local verification complete; release in progress
+- **Status:** Complete, committed, pushed, deployed, and verified
 - **Approved scope:** Make edits to Relationship, Sender, Greeting, and selected-decoration sliders create their own Undo/Redo checkpoint when the edit is committed, exactly as Recipient name, the other sliders, and drag gestures already do, so Undo reverts one edit and never erases unrelated typed text.
 - **Authorization boundary:** Add history checkpoints only. Do not change what any field stores, message generation or wording, rendering, photo/Smart Person Focus behavior, schema (stays v6), backup format, the service-worker cache contents, occasion isolation, or any parked idea. R18 Creator Footer remains pending.
 
@@ -607,7 +607,9 @@ Task 003 implementation and release were explicitly authorized. The Current Task
 ### Task 024 Implementation Record
 
 - **Baseline:** `main` at commit `ec5a8b1`
-- **Status:** Implementation and local verification complete; release in progress
+- **Status:** Complete, committed, pushed, deployed, and verified
+- **Completed commit:** `3e01a6f` — `feat: add Undo/Redo checkpoints for typed text and keep Person Focus failure message`
+- **Live verification:** GitHub Pages run [`35926218754`](https://github.com/jayajd70-ops/Atul-Card-Studio/actions/runs/35926218754) succeeded; live manifest, service worker, and app serve 1.24.0. On the live page the new shell cache holds 53 entries, the detector cache was retained, and typing Sender then Greeting followed by one Undo reverted only the Greeting. An existing installation keeps the previous service worker until its tabs close (normal waiting-worker update flow).
 - **Release:** Application, manifest, service worker, and cache version `1.24.0`; schema remains v6
 - **Change:** Relationship, Recipient, Sender, and Greeting fields, and the selected-decoration sliders, now commit one Undo/Redo checkpoint on `change` (`StateStore.update(() => {})`). Nothing they store changed.
 - **Also fixed (Task 023 defect found in testing):** When Smart Person Focus could not start (for example WebAssembly unavailable, or offline before the first detector download), its explanation was erased immediately by the status refresh. It is now kept in a `focusNotice` until the photo changes or a new search starts, with separate online and offline wording.
