@@ -587,11 +587,21 @@ Task 003 implementation and release were explicitly authorized. The Current Task
 
 ## 9. Current Task
 
-- **Approved Current Task:** Task 020 — WebP application-shell artwork optimization (R1/R16)
+- **Approved Current Task:** Task 021 — Centrepiece asset documentation alignment
 - **Active Permission Level:** IMPLEMENT / COMMIT / PUSH / DEPLOY under standing owner authorization
-- **Status:** Complete, committed, pushed, deployed, and verified
-- **Approved scope:** Add quality-90 WebP equivalents for the twenty eagerly cached centerpiece/decoration PNGs, prefer WebP at runtime, and precache only the WebP variants to reduce first-install bandwidth.
-- **Authorization boundary:** Retain every PNG as a compatibility fallback; preserve image dimensions and alpha, all artwork IDs and selections, uploaded-photo priority, manual centerpiece choices, card data, occasion isolation, schema v6, exports, and offline operation. Festival artwork remains on-demand and outside this conversion.
+- **Status:** Implementation and verification complete; publication pending
+- **Approved scope:** Correct `assets/centerpieces/README.md` so its asset count, resolver order, path conventions, and offline-cache description match the released Task 020 implementation.
+- **Authorization boundary:** Documentation only. Do not change application code, images, asset IDs, cache contents, release/cache version 1.21.0, schema v6, rendering, or offline behavior.
+
+### Task 021 Implementation Record
+
+- **Approved Task:** Task 021 — Centrepiece asset documentation alignment
+- **Baseline:** `main` at commit `e63af0d`
+- **Status:** Implementation and verification complete; commit, push, deployment, and live verification pending
+- **Release:** No application release change; application, manifest, service worker, and cache remain at 1.21.0; schema remains v6
+- **Behavior:** The asset README documents the current 16 centrepieces plus four decorations, WebP-first/PNG-fallback resolver order, registry-based path convention, legacy Luxury Balloons ID, and WebP-only mandatory precache.
+- **Compatibility:** Documentation only; application assets, behavior, data, exports, and offline operation remain unchanged.
+- **Verification:** Documentation-to-code checks confirmed resolver order `webp, png`; 16 registered centrepieces plus four decorations; 20 WebP and zero PNG artwork entries in the mandatory cache; explicit README coverage of WebP-first loading, PNG fallback, and PNG exclusion from mandatory precaching; and removal of all stale four-PNG/PNG-first wording. Application, manifest, service worker, and cache remain aligned at 1.21.0. Only `PROJECT.md` and the asset README changed.
 
 ### Task 020 Implementation Record
 

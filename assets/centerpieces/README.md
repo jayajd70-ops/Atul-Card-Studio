@@ -1,21 +1,24 @@
 # Photographic centrepieces
 
-`CenterpieceAssetResolver` in `js/app.js` loads the four transparent PNG
-cutouts in this folder before falling back to deterministic canvas painters.
-The assets were generated specifically for this project with no embedded
-text, logos or watermarks.
+`CenterpieceAssetResolver` in `js/app.js` loads transparent WebP artwork for
+the registered centrepieces and corner decorations, with the original PNGs
+retained as local decode fallbacks. The assets were generated specifically
+for this project with no embedded text, logos or watermarks.
 
 ## What the resolver expects
 
-For each id below, the resolver accepts a transparent-background PNG or WebP
-(the shipped PNG is tried first):
+For every id in the resolver's `ASSET_DIRS` registry, the resolver tries a
+transparent-background WebP first and then the matching PNG:
 
 ```
-assets/centerpieces/belgian-gold-cake.webp   (or .png)
-assets/centerpieces/velvet-roses.webp        (or .png)
-assets/centerpieces/silk-gift-box.webp       (or .png)
-assets/centerpieces/champagne-gala.webp      (or .png; legacy id now displays Luxury Balloons)
+assets/centerpieces/<id>.webp   (then <id>.png)
+assets/decorations/<id>.webp    (then <id>.png)
 ```
+
+The current registry contains 16 centrepieces and four decorations. Keep
+`ASSET_DIRS` in `js/app.js` as the source of truth when adding or removing an
+asset. The legacy `champagne-gala` id remains in use for Luxury Balloons so
+existing saved cards and backups continue to resolve correctly.
 
 Requirements for each file:
 
@@ -40,5 +43,6 @@ Requirements for each file:
 - If the file is missing, corrupt, or fails to decode, the existing
   procedural painter for that id renders instead — nothing else changes,
   and no error reaches the user.
-- All four PNG paths are included in `SHELL_ASSETS` so a first successful
-  installation precaches them for offline use.
+- All 20 WebP paths are included in `SHELL_ASSETS` so a first successful
+  installation precaches the compact primary assets for offline use. The PNG
+  fallbacks remain bundled but are not part of the mandatory precache.
