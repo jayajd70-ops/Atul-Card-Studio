@@ -1082,14 +1082,13 @@ const ThemeRegistry = (() => {
    Local, non-card preferences for retaining familiar themes. These never
    change a CardProject, backup, export, or another device's library.
    ========================================================================= */
-const ThemePreferences = (() => {
-  const SETTINGS_KEY = "theme-preferences";
+function createFavouriteStore(settingsKey, knownIdsFn) {
   let favouriteIds = new Set();
 
   async function init() {
     try {
-      const record = await DB.get("settings", SETTINGS_KEY);
-      const knownIds = new Set(ThemeRegistry.list().map((theme) => theme.id));
+      const record = await DB.get("settings", settingsKey);
+      const knownIds = new Set(knownIdsFn());
       favouriteIds = new Set(
         Array.isArray(record && record.favouriteIds)
           ? record.favouriteIds.filter((id) => knownIds.has(id))
@@ -1100,24 +1099,95 @@ const ThemePreferences = (() => {
     }
   }
 
-  function isFavourite(themeId) { return favouriteIds.has(themeId); }
+  function isFavourite(id) { return favouriteIds.has(id); }
 
-  async function toggle(themeId) {
-    const wasFavourite = favouriteIds.has(themeId);
-    if (wasFavourite) favouriteIds.delete(themeId);
-    else favouriteIds.add(themeId);
+  async function toggle(id) {
+    const wasFavourite = favouriteIds.has(id);
+    if (wasFavourite) favouriteIds.delete(id);
+    else favouriteIds.add(id);
     try {
-      await DB.put("settings", { key: SETTINGS_KEY, favouriteIds: Array.from(favouriteIds) });
+      await DB.put("settings", { key: settingsKey, favouriteIds: Array.from(favouriteIds) });
     } catch (err) {
-      if (wasFavourite) favouriteIds.add(themeId);
-      else favouriteIds.delete(themeId);
+      if (wasFavourite) favouriteIds.add(id);
+      else favouriteIds.delete(id);
       throw err;
     }
-    return favouriteIds.has(themeId);
+    return favouriteIds.has(id);
   }
 
   return { init, isFavourite, toggle };
+}
+
+const ThemePreferences = createFavouriteStore("theme-preferences", () => ThemeRegistry.list().map((theme) => theme.id));
+
+/* =========================================================================
+   SECTION: DesignLibrary (R1)
+   A small curated set of reusable design presets. A preset is data only: it
+   names an existing theme, foil palette/finish and font pairing that work
+   well together, and says which occasions it suits. Applying one changes
+   presentation fields only (theme, foil palette/finish/intensity, font
+   pairing and mood); it never touches names, message, date, photo, photo
+   transforms, focus data, centrepiece choice, stamps or per-occasion state.
+   Nothing about a preset is persisted on the card, so there is no schema
+   change: the current preset is recognised by matching these fields, and
+   favourites are local preferences like theme favourites.
+   ========================================================================= */
+const DesignLibrary = (() => {
+  const PRESETS = [
+    { id: "royal-gold", name: "Royal Gold", themeId: "midnight-obsidian", foilPresetId: "gold", foilMode: "foil", foilIntensity: 78, pairingId: "cinzel-source-sans", mood: "regal", suits: ["birthday", "anniversary", "congratulations"] },
+    { id: "pearl-heirloom", name: "Pearl Heirloom", themeId: "pearl-marble", foilPresetId: "gold", foilMode: "foil", foilIntensity: 70, pairingId: "cormorant-inter", mood: "classic", suits: ["anniversary", "birthday", "friendship-thanks"] },
+    { id: "emerald-elegance", name: "Emerald Elegance", themeId: "imperial-emerald", foilPresetId: "emerald", foilMode: "foil", foilIntensity: 72, pairingId: "playfair-montserrat", mood: "editorial", suits: ["birthday", "graduation", "new-home"] },
+    { id: "burgundy-romance", name: "Burgundy Romance", themeId: "royal-burgundy", foilPresetId: "rose-gold", foilMode: "foil", foilIntensity: 72, pairingId: "baskerville-manrope", mood: "romantic", suits: ["anniversary", "birthday"] },
+    { id: "sapphire-modern", name: "Sapphire Modern", themeId: "velvet-sapphire", foilPresetId: "platinum", foilMode: "foil", foilIntensity: 70, pairingId: "dmserif-worksans", mood: "modern-luxury", suits: ["congratulations", "graduation", "retirement"] },
+    { id: "tuscan-warmth", name: "Tuscan Warmth", themeId: "amber-tuscan", foilPresetId: "champagne", foilMode: "foil", foilIntensity: 68, pairingId: "cormorant-inter", mood: "classic", suits: ["new-home", "friendship-thanks", "birthday", "festival"] },
+    { id: "blush-rose-gold", name: "Blush Rose Gold", themeId: "pearl-marble", foilPresetId: "rose-gold", foilMode: "emboss", foilIntensity: 66, pairingId: "baskerville-manrope", mood: "romantic", suits: ["new-baby", "anniversary", "birthday"] },
+    { id: "midnight-platinum", name: "Midnight Platinum", themeId: "midnight-obsidian", foilPresetId: "platinum", foilMode: "foil", foilIntensity: 70, pairingId: "playfair-montserrat", mood: "editorial", suits: ["retirement", "congratulations", "graduation"] },
+    { id: "festive-ember", name: "Festive Ember", themeId: "royal-burgundy", foilPresetId: "gold", foilMode: "foil", foilIntensity: 78, pairingId: "cinzel-source-sans", mood: "regal", suits: ["festival", "birthday", "anniversary"] },
+    { id: "soft-care", name: "Soft Care", themeId: "pearl-marble", foilPresetId: "champagne", foilMode: "deboss", foilIntensity: 60, pairingId: "cormorant-inter", mood: "classic", suits: ["get-well", "friendship-thanks", "new-baby"] },
+  ];
+
+  function list() { return PRESETS; }
+  function get(id) { return PRESETS.find((preset) => preset.id === id) || null; }
+
+  // Restricted contexts keep their own reviewed design; the library is
+  // unavailable there rather than allowed to restyle them.
+  function isAvailableFor(occasionId) { return occasionId !== "condolence"; }
+
+  function suitsOccasion(preset, occasionId) {
+    if (preset.suits.includes(occasionId)) return true;
+    return preset.suits.includes("festival") && FestivalDesignRegistry.isFestival(occasionId);
+  }
+
+  function suitabilityLabel(preset) {
+    const names = preset.suits.map((id) => {
+      if (id === "festival") return "Festivals";
+      return OccasionRegistry.isValid(id) ? OccasionRegistry.get(id).label : id;
+    });
+    return "Suits " + names.join(", ");
+  }
+
+  // Presentation-only change applied to a project object (used by both the
+  // live editor and by preview thumbnails on a throwaway clone).
+  function applyToProject(project, preset) {
+    project.theme = { id: preset.themeId };
+    project.foil.presetId = preset.foilPresetId;
+    project.foil.mode = preset.foilMode;
+    project.foil.intensity = preset.foilIntensity;
+    project.typography.pairingId = preset.pairingId;
+    project.typography.mood = preset.mood;
+  }
+
+  function isActive(project, preset) {
+    return project.theme.id === preset.themeId
+      && project.foil.presetId === preset.foilPresetId
+      && project.foil.mode === preset.foilMode
+      && project.typography.pairingId === preset.pairingId;
+  }
+
+  return { list, get, isAvailableFor, suitsOccasion, suitabilityLabel, applyToProject, isActive };
 })();
+
+const DesignPreferences = createFavouriteStore("design-preferences", () => DesignLibrary.list().map((preset) => preset.id));
 
 /* =========================================================================
    SECTION: StateStore
@@ -1129,7 +1199,7 @@ const ThemePreferences = (() => {
 // Application version. Shown in the header, stamped onto exported
 // backups, and kept in step with SW_VERSION in sw.js so a released
 // shell and the code inside it always report the same number.
-const APP_VERSION = "1.24.0";
+const APP_VERSION = "1.25.0";
 
 const CURRENT_SCHEMA_VERSION = 6;
 
@@ -6379,6 +6449,7 @@ const App = (() => {
     });
     tab.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "smooth" });
     updateEditorNavigation();
+    if (tab.id === "tab-theme") refreshDesignPreviews();
   }
 
   /* ---------------- Populate registries into DOM ---------------- */
@@ -6488,6 +6559,140 @@ const App = (() => {
     dom.photoShapeGroup.querySelectorAll("[data-shape]").forEach((el) => {
       el.setAttribute("aria-checked", String(el.dataset.shape === shape));
     });
+  }
+
+  /* ---------------- Design library (R1) ---------------- */
+  let designFavouritesOnly = false;
+  let designOccasionShown = null;
+  let designPreviewToken = 0;
+  let designPreviewSignature = "";
+  const DESIGN_PREVIEW_W = 208;
+  const DESIGN_PREVIEW_H = 305;
+
+  function currentOccasionId(project) {
+    return (project && project.occasion && project.occasion.id) || "birthday";
+  }
+
+  function populateDesignGrid() {
+    const grid = dom.designGrid;
+    if (!grid) return;
+    const project = StateStore.getProject();
+    const occasionId = currentOccasionId(project);
+    designOccasionShown = occasionId;
+    grid.innerHTML = "";
+    let presets = DesignLibrary.list().slice().sort((a, b) =>
+      Number(DesignLibrary.suitsOccasion(b, occasionId)) - Number(DesignLibrary.suitsOccasion(a, occasionId)));
+    if (designFavouritesOnly) presets = presets.filter((preset) => DesignPreferences.isFavourite(preset.id));
+    dom.designEmpty.hidden = !(designFavouritesOnly && presets.length === 0);
+    presets.forEach((preset) => {
+      const card = document.createElement("div");
+      card.className = "design-card";
+      const choice = document.createElement("button");
+      choice.type = "button";
+      choice.className = "design-choice";
+      choice.setAttribute("role", "radio");
+      choice.setAttribute("aria-checked", "false");
+      choice.dataset.designId = preset.id;
+      const isFavourite = DesignPreferences.isFavourite(preset.id);
+      const suited = DesignLibrary.suitsOccasion(preset, occasionId);
+      choice.setAttribute("aria-label", preset.name + ". " + DesignLibrary.suitabilityLabel(preset) + (suited ? ". Suits this occasion" : "") + (isFavourite ? ". Favourite" : ""));
+      const thumb = document.createElement("canvas");
+      thumb.width = DESIGN_PREVIEW_W;
+      thumb.height = DESIGN_PREVIEW_H;
+      thumb.setAttribute("aria-hidden", "true");
+      const name = document.createElement("span");
+      name.className = "design-name";
+      name.textContent = preset.name;
+      const suits = document.createElement("span");
+      suits.className = "design-suits";
+      suits.textContent = DesignLibrary.suitabilityLabel(preset);
+      choice.appendChild(thumb);
+      choice.appendChild(name);
+      choice.appendChild(suits);
+      if (suited) {
+        const badge = document.createElement("span");
+        badge.className = "design-badge";
+        badge.textContent = "Suits this occasion";
+        choice.appendChild(badge);
+      }
+      choice.addEventListener("click", () => {
+        StateStore.update((p) => DesignLibrary.applyToProject(p, preset), { reason: "theme-change" });
+        toast("Design set to " + preset.name);
+      });
+      const fav = document.createElement("button");
+      fav.type = "button";
+      fav.className = "design-fav";
+      fav.setAttribute("aria-pressed", String(isFavourite));
+      fav.setAttribute("aria-label", (isFavourite ? "Remove " : "Add ") + preset.name + (isFavourite ? " from favourite designs" : " to favourite designs"));
+      fav.textContent = isFavourite ? "\u2605" : "\u2606";
+      fav.addEventListener("click", async () => {
+        try {
+          const now = await DesignPreferences.toggle(preset.id);
+          populateDesignGrid();
+          syncDesignLibrary(StateStore.getProject());
+          toast(now ? preset.name + " added to favourite designs." : preset.name + " removed from favourite designs.");
+        } catch (err) {
+          toast("Could not update favourite designs.", true);
+        }
+      });
+      card.appendChild(choice);
+      card.appendChild(fav);
+      grid.appendChild(card);
+    });
+    designPreviewSignature = "";
+    refreshDesignPreviews();
+  }
+
+  function syncDesignLibrary(project) {
+    if (!dom.designGrid || !project) return;
+    const occasionId = currentOccasionId(project);
+    if (occasionId !== designOccasionShown) populateDesignGrid();
+    const available = DesignLibrary.isAvailableFor(occasionId);
+    dom.designFieldset.disabled = !available;
+    dom.designHint.textContent = available
+      ? "Ready-made looks that coordinate theme, foil and fonts. Choosing one never changes your names, message, date or photo."
+      : "Condolence cards keep their own restrained, reviewed design, so the design library is not available here.";
+    dom.designGrid.querySelectorAll(".design-choice").forEach((el) => {
+      const preset = DesignLibrary.get(el.dataset.designId);
+      el.setAttribute("aria-checked", String(!!preset && available && DesignLibrary.isActive(project, preset)));
+    });
+    dom.designFavouritesFilter.setAttribute("aria-pressed", String(designFavouritesOnly));
+    dom.designFavouritesFilter.textContent = designFavouritesOnly ? "Show all designs" : "Show favourites only";
+    refreshDesignPreviews();
+  }
+
+  // Thumbnails are real renders of the current card in each design, drawn
+  // small and one at a time so the editor stays responsive. Skipped while the
+  // Theme tab is closed, and while nothing but the design itself changed.
+  async function refreshDesignPreviews() {
+    const panel = $("#panel-theme");
+    if (!dom.designGrid || !panel || panel.hidden) return;
+    const project = StateStore.getProject();
+    if (!project || !DesignLibrary.isAvailableFor(currentOccasionId(project))) return;
+    const signature = JSON.stringify([
+      project.occasion, project.recipient, project.sender, project.content, project.cardDate,
+      project.photo, project.layout, project.stamps, project.typography.recipientSize,
+      project.typography.greetingSize, project.typography.senderSize,
+    ]);
+    if (signature === designPreviewSignature) return;
+    designPreviewSignature = signature;
+    const token = ++designPreviewToken;
+    const tiles = Array.from(dom.designGrid.querySelectorAll(".design-choice"));
+    for (const el of tiles) {
+      if (token !== designPreviewToken) return;
+      const preset = DesignLibrary.get(el.dataset.designId);
+      const canvas = el.querySelector("canvas");
+      if (!preset || !canvas) continue;
+      try {
+        const clone = Utils.clone(project);
+        DesignLibrary.applyToProject(clone, preset);
+        const ctx = canvas.getContext("2d");
+        ctx.setTransform(DESIGN_PREVIEW_W / Renderer.W, 0, 0, DESIGN_PREVIEW_H / Renderer.H, 0, 0);
+        await Renderer.renderCard(ctx, clone, AssetResolver, { quality: "preview" });
+      } catch (err) {
+        // A failed thumbnail leaves the tile blank; the design still applies.
+      }
+    }
   }
 
   function populateThemeGrid() {
@@ -6938,6 +7143,11 @@ const App = (() => {
   }
 
   function bindThemeTab() {
+    dom.designFavouritesFilter.addEventListener("click", () => {
+      designFavouritesOnly = !designFavouritesOnly;
+      populateDesignGrid();
+      syncDesignLibrary(StateStore.getProject());
+    });
     dom.themeFavouriteBtn.addEventListener("click", async () => {
       const project = StateStore.getProject();
       if (!project) return;
@@ -7886,6 +8096,7 @@ const App = (() => {
       el.setAttribute("aria-checked", String(el.dataset.themeId === project.theme.id));
     });
     syncThemeFavouriteControls(project);
+    syncDesignLibrary(project);
     document.querySelectorAll("#foil-grid .swatch").forEach((el) => {
       el.setAttribute("aria-checked", String(el.dataset.foilId === project.foil.presetId));
     });
@@ -8043,6 +8254,8 @@ const App = (() => {
       emotionRow: $("#emotion-row"), greetingText: $("#greeting-text"), greetingCount: $("#greeting-count"),
       greetingSafetyWarning: $("#greeting-safety-warning"), useEditedMessageBtn: $("#use-edited-message-btn"),
 
+      designGrid: $("#design-grid"), designFieldset: $("#design-library-fieldset"), designHint: $("#design-library-hint"),
+      designEmpty: $("#design-empty"), designFavouritesFilter: $("#design-favourites-filter"),
       themeGrid: $("#theme-grid"), themeFavouriteBtn: $("#theme-favourite-btn"), themeFavouriteHint: $("#theme-favourite-hint"),
 
       moodSelect: $("#mood-select"), pairingList: $("#pairing-list"),
@@ -8102,8 +8315,10 @@ const App = (() => {
     dom.appVersion.textContent = "v" + APP_VERSION;
     initTabs();
     await ThemePreferences.init();
+    await DesignPreferences.init();
     populateOccasionSelect();
     populateThemeGrid();
+    populateDesignGrid();
     populateFoilGrid();
     populatePairingList();
     populateEmotionRow();

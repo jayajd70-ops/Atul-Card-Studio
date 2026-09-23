@@ -587,22 +587,29 @@ Task 003 implementation and release were explicitly authorized. The Current Task
 
 ## 9. Current Task
 
-- **Approved Current Task:** None open. Task 024 (Undo/Redo safety for typed text) is complete. Suggested next task: R5 relationship-aware pools for other occasions where wording needs no invented product data; R4 emoji picker and Congratulations occasion need an owner decision.
-- **Active Permission Level:** IMPLEMENT / COMMIT / PUSH / DEPLOY under standing owner authorization (`PROJECT.md` section 4.1; owner instruction of 23 September 2026)
-- **Status:** Complete, committed, pushed, deployed, and verified
-- **Approved scope:** Make edits to Relationship, Sender, Greeting, and selected-decoration sliders create their own Undo/Redo checkpoint when the edit is committed, exactly as Recipient name, the other sliders, and drag gestures already do, so Undo reverts one edit and never erases unrelated typed text.
-- **Authorization boundary:** Add history checkpoints only. Do not change what any field stores, message generation or wording, rendering, photo/Smart Person Focus behavior, schema (stays v6), backup format, the service-worker cache contents, occasion isolation, or any parked idea. R18 Creator Footer remains pending.
+- **Approved Current Task:** Task 025 — Curated Design Library (R1)
+- **Active Permission Level:** IMPLEMENT / COMMIT / PUSH / DEPLOY under standing owner authorization (`PROJECT.md` section 4.1; owner instruction of 23 September 2026). Owner scope for this series: R1, R2 and R4 only, as three small tasks (025 R1, 026 R2, 027 R4). R5, R15 and R18 are out of scope.
+- **Status:** Implementation and local verification complete; release in progress
 
-### Task 024 Impact Record
+### Task 025 Impact Record
 
-- **Baseline:** `main` at commit `ec5a8b1`; working tree clean; aligned with `origin/main`; live site serves v1.23.0.
-- **Evidence (reproduced in Chrome on v1.23.0):** After typing Recipient, Greeting, and Sender, one Undo reset all three to empty. After typing a Sender and then moving the Recipient-size slider, one Undo removed the Sender. Typing only a Greeting left Undo disabled. Cause: Relationship, Sender, and Greeting update state with `skipHistory: true` and, unlike Recipient name and the sliders, never commit a checkpoint on `change`, so the next checkpoint's predecessor snapshot lacks the typed text and Undo restores that older snapshot.
-- **Requirement:** R13 (Undo/Redo should cover text changes) and R7 (do not destroy the user's work).
-- **State/data impact:** None persisted; only in-memory history entries. Autosave already runs on every update.
-- **UI/layout impact:** None.
-- **Preview/export impact:** None.
-- **Regression risks:** Extra history entries per commit (bounded by the existing 50-entry limit), Undo/Redo restoring field values through `syncControlsFromState`, interaction with message-mode and occasion isolation, and the Greeting Generator/Use-edited-message buttons that already commit history.
-- **Smallest safe plan:** Add `change` handlers that call `StateStore.update(() => {})` for Relationship, Sender, Greeting, and the selected-decoration sliders; verify Undo/Redo of each, cross-field independence, occasion round-trip, save/reopen, backup round-trip, and export; release as 1.24.0.
+- **Baseline:** `main` at commit `1ed2339`; clean; aligned with `origin/main`; live site serves v1.24.0.
+- **Existing behavior found:** Six colour themes with local favourites (`ThemePreferences`), separate foil, font-pairing and mood controls, one border/corner style for personal occasions, and fully separate designs for Condolence and festivals. No coordinated "design" concept and no previews of the finished card.
+- **Requirement:** R1 (browse and preview designs, occasion suitability, retain preferred designs locally and offline, small curated set, no downloads).
+- **State/data impact:** None persisted on the card. A preset writes only existing fields: theme id, foil palette/finish/intensity, font pairing and mood. The active preset is recognised by matching those fields, so schema stays v6 and backups are unchanged. Favourites are a local preference (`design-preferences` in the `settings` store), like theme favourites.
+- **UI/layout impact:** New "Design library" group at the top of the Theme tab with previews, names, suitability text, a "Suits this occasion" mark, a per-design favourite star (44 px target) and a favourites-only filter. Unavailable for Condolence, which keeps its reviewed design.
+- **Preview/export impact:** Thumbnails are real renders of the current card using the existing renderer at a small size; the renderer itself is unchanged.
+- **Regression risks:** Overwriting user content (checked), Undo/Redo, occasion isolation, thumbnail render cost, tab layout on narrow screens.
+- **Smallest safe plan:** Data-only `DesignLibrary` of ten presets built from existing themes, foils and pairings; a shared `createFavouriteStore` (theme favourites now use it, behavior identical); UI as above; release 1.25.0 with no new assets.
+
+### Task 025 Implementation Record
+
+- **Baseline:** `main` at commit `1ed2339`
+- **Status:** Implementation and local verification complete; release in progress
+- **Release:** Application, manifest, service worker, and cache version `1.25.0`; schema remains v6; no new assets, so the 53-entry shell precache is unchanged
+- **Behavior:** Ten curated designs (Royal Gold, Pearl Heirloom, Emerald Elegance, Burgundy Romance, Sapphire Modern, Tuscan Warmth, Blush Rose Gold, Midnight Platinum, Festive Ember, Soft Care), each with a live thumbnail of the current card, a name, suitability text, and a local favourite star. Designs that suit the current occasion sort first and carry a "Suits this occasion" mark. Selecting one is a single Undo step.
+- **Verified locally (Chrome, PASS):** All ten thumbnails render (about 6 s total in the hidden pane, sequential, cancelled when the card changes); applying a design leaves recipient, sender, message, photo zoom/pan, photo shape and centrepiece choice unchanged; Undo restores the previous design; favourite persists across reload and the favourites-only filter works; Condolence disables the library with an explanation and shows no active design; festival (Diwali) and Get Well reorder by suitability; the chosen design survives reload; no horizontal page overflow at 375 px; favourite target 44 x 44 px; PNG export is exactly 1200 x 1760.
+- **NOT TESTED:** Backup round-trip run separately (no persisted field or format changed; existing theme/foil/typography fields only); real offline restart and live service-worker behavior until the live check below; touch gestures on a physical phone.
 
 ### Task 024 Implementation Record
 

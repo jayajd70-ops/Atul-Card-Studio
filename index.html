@@ -184,8 +184,17 @@
 
         <!-- THEME -->
         <div class="tabpanel" id="panel-theme" role="tabpanel" aria-labelledby="tab-theme" hidden>
+          <fieldset class="field" id="design-library-fieldset">
+            <legend>Design library</legend>
+            <p class="field-hint" id="design-library-hint">Ready-made looks that coordinate theme, foil and fonts. Choosing one never changes your names, message, date or photo.</p>
+            <div class="design-toolbar">
+              <button id="design-favourites-filter" class="btn btn-ghost btn-small" type="button" aria-pressed="false">Show favourites only</button>
+            </div>
+            <div id="design-grid" class="design-grid" role="radiogroup" aria-label="Card design presets"></div>
+            <p id="design-empty" class="field-hint" hidden>No favourite designs yet. Tap the star on a design to keep it here.</p>
+          </fieldset>
           <fieldset class="field">
-            <legend>Theme</legend>
+            <legend>Colour theme</legend>
             <div id="theme-grid" class="swatch-grid" role="radiogroup" aria-label="Card theme"></div>
           </fieldset>
           <div class="field theme-favourite-field">

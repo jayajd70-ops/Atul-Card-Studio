@@ -10,7 +10,7 @@
 // Kept in step with APP_VERSION in js/app.js: bumping either one must
 // bump the other, since the cache name is what forces clients onto a
 // freshly released shell.
-const SW_VERSION = "v1.24.0";
+const SW_VERSION = "v1.25.0";
 const SHELL_CACHE = "atul-shell-" + SW_VERSION;
 
 // Smart Person Focus detector (MediaPipe runtime + BlazeFace model, ~12 MB).
