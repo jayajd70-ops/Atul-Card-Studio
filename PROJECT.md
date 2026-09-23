@@ -589,7 +589,7 @@ Task 003 implementation and release were explicitly authorized. The Current Task
 
 - **Approved Current Task:** Task 020 — WebP application-shell artwork optimization (R1/R16)
 - **Active Permission Level:** IMPLEMENT / COMMIT / PUSH / DEPLOY under standing owner authorization
-- **Status:** Implementation and verification complete; publication pending
+- **Status:** Complete, committed, pushed, deployed, and verified
 - **Approved scope:** Add quality-90 WebP equivalents for the twenty eagerly cached centerpiece/decoration PNGs, prefer WebP at runtime, and precache only the WebP variants to reduce first-install bandwidth.
 - **Authorization boundary:** Retain every PNG as a compatibility fallback; preserve image dimensions and alpha, all artwork IDs and selections, uploaded-photo priority, manual centerpiece choices, card data, occasion isolation, schema v6, exports, and offline operation. Festival artwork remains on-demand and outside this conversion.
 
@@ -597,12 +597,13 @@ Task 003 implementation and release were explicitly authorized. The Current Task
 
 - **Approved Task:** Task 020 — WebP application-shell artwork optimization
 - **Baseline:** `main` at commit `6d5a50e`
-- **Status:** Implementation and verification complete; commit, push, deployment, and live verification pending
+- **Status:** Complete, committed, pushed, deployed, and verified
+- **Completed commit:** `ca72a08` — `perf: optimize cached artwork as WebP`
 - **Release:** Application, manifest, service worker, and cache version `1.21.0`; schema remains v6
 - **Behavior:** Twenty quality-90 WebP centerpiece/decoration assets become the runtime and offline-cache primary formats. Original PNG files remain bundled as decode fallbacks, while only the smaller WebP variants are mandatory on first installation.
 - **Compatibility:** Asset IDs, dimensions, alpha transparency, automatic occasion choices, manual centerpiece choices, uploaded-photo priority, card data, occasion isolation, festival runtime caching, rendering, exports, and offline behavior are preserved.
 - **Measured impact:** The twenty mandatory artwork files fall from 32,216,140 bytes (30.72 MiB) as PNG to 6,556,682 bytes (6.25 MiB) as WebP, a 79.6% reduction. The complete mandatory shell falls from 33,550,328 bytes (32.00 MiB) to 7,892,082 bytes (7.53 MiB), saving 25,658,246 bytes (24.47 MiB) per fresh installation.
-- **Verification:** All 20 PNG/WebP pairs retain identical dimensions and exact alpha values; worst visible-pixel PSNR is 34.42 dB, and visual inspection of the worst measured centerpiece plus a detailed corner decoration found no material regression. JavaScript/service-worker syntax, whitespace, aligned v1.21.0 versions, unchanged schema v6, 53 existing precache paths, 20 WebP entries, zero centerpiece/decoration PNG entries, zero eager festival entries, and zero missing paths passed. Chrome decoded and selected WebP for all 20 resolver IDs. Exact 1200×1760 exports passed for automatic Birthday, Get Well, and Condolence cards plus a manual Velvet Roses choice. The manual choice, WebP source, export dimensions, service-worker control, and card state remained correct after offline reload.
+- **Verification:** All 20 PNG/WebP pairs retain identical dimensions and exact alpha values; worst visible-pixel PSNR is 34.42 dB, and visual inspection of the worst measured centerpiece plus a detailed corner decoration found no material regression. JavaScript/service-worker syntax, whitespace, aligned v1.21.0 versions, unchanged schema v6, 53 existing precache paths, 20 WebP entries, zero centerpiece/decoration PNG entries, zero eager festival entries, and zero missing paths passed. Chrome decoded and selected WebP for all 20 resolver IDs. Exact 1200×1760 exports passed for automatic Birthday, Get Well, and Condolence cards plus a manual Velvet Roses choice. The manual choice, WebP source, export dimensions, service-worker control, and card state remained correct after offline reload. GitHub Pages run [`35884348847`](https://github.com/jayajd70-ops/Atul-Card-Studio/actions/runs/35884348847) succeeded; live application, manifest, and service worker serve v1.21.0, every WebP returns HTTP 200 with exact deployed bytes and `image/webp`, and live Chrome confirmed all 20 assets decode from the WebP-only mandatory cache.
 
 ### Task 019 Implementation Record
 
