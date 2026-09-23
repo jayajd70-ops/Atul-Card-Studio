@@ -587,9 +587,9 @@ Task 003 implementation and release were explicitly authorized. The Current Task
 
 ## 9. Current Task
 
-- **Approved Current Task:** Task 026 — Border style families (R2)
+- **Approved Current Task:** Task 026 (R2) complete; Task 027 (R4) is next
 - **Active Permission Level:** IMPLEMENT / COMMIT / PUSH / DEPLOY under standing owner authorization (`PROJECT.md` section 4.1; owner instruction of 23 September 2026). Owner scope for this series: R1, R2 and R4 only (Task 025 R1 done, 026 R2, 027 R4). R5, R15 and R18 are out of scope.
-- **Status:** Implementation and local verification complete; release in progress
+- **Status:** Complete, committed, pushed, deployed, and verified
 
 ### Task 026 Impact Record
 
@@ -605,7 +605,9 @@ Task 003 implementation and release were explicitly authorized. The Current Task
 ### Task 026 Implementation Record
 
 - **Baseline:** `main` at commit `7a771f8`
-- **Status:** Implementation and local verification complete; release in progress
+- **Status:** Complete, committed, pushed, deployed, and verified
+- **Completed commit:** `1b5b83e` — `feat: add border style families with design-preset frames (R2)`
+- **Live verification:** GitHub Pages run [`35929348958`](https://github.com/jayajd70-ops/Atul-Card-Studio/actions/runs/35929348958) succeeded; live manifest, service worker and app serve 1.26.0. After the waiting worker was activated the caches were exactly the detector cache plus `atul-shell-v1.26.0` with 53 entries. On the live HTTPS page under service-worker control, the Border style group lists 5 options, choosing Regal Rule is applied, choosing the Soft Care design switches the border to Soft Round, all ten design tiles render, and `js/app.js` is served from the cache. Real airplane-mode restart NOT TESTED (embedded browser cannot toggle offline).
 - **Release:** Application, manifest, service worker, and cache version `1.26.0`; schema remains v6; no new assets (53-entry shell precache unchanged)
 - **Verified locally (Chrome, PASS):** All five frames render distinctly on a birthday card without touching text or centrepiece (visually inspected); frame choice is one Undo step; choosing a design preset applies its frame and Undo restores the earlier one; Condolence disables the group and keeps its own border; Diwali keeps the chosen frame; a photo card also renders with the Tailored frame; migration maps a missing, null or unknown frame to Classic and keeps a valid one (Node run of the real migration code); backup export contains `frameStyle` and re-opening the imported backup restores the frame; PNG export is exactly 1200 x 1760.
 - **NOT TESTED:** Frames on every festival artwork and with a photo card in each frame (only birthday without photo, one photo card with the Tailored frame, and a festival switch were exercised); narrow-phone visual of the new group after this change; real offline restart and live service-worker behavior until the live check below.
