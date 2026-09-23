@@ -1129,7 +1129,7 @@ const ThemePreferences = (() => {
 // Application version. Shown in the header, stamped onto exported
 // backups, and kept in step with SW_VERSION in sw.js so a released
 // shell and the code inside it always report the same number.
-const APP_VERSION = "1.20.0";
+const APP_VERSION = "1.21.0";
 
 const CURRENT_SCHEMA_VERSION = 6;
 
@@ -2663,7 +2663,7 @@ const LayoutEngine = (() => {
 /* =========================================================================
    SECTION: CenterpieceAssetResolver
    Optional photographic centrepieces. If a transparent PNG/WebP exists at
-   assets/centerpieces/<id>.{webp,png} for one of the four named
+   assets/centerpieces/<id>.{webp,png} for a supported named
    centrepieces, Centerpieces.paint() draws it instead of the procedural
    painter below. Ships safely with zero files present: every probe
    failure (404, decode error) is cached as "no asset" so the procedural
@@ -2671,8 +2671,9 @@ const LayoutEngine = (() => {
    are ever requested — this only ever looks at the local /assets folder.
    ========================================================================= */
 const CenterpieceAssetResolver = (() => {
-  // PNG is the primary format for centerpieces and decorative assets.
-  const EXTENSIONS = ["png", "webp"];
+  // WebP is the compact primary format; PNG remains a local compatibility
+  // fallback so a failed WebP decode never removes established artwork.
+  const EXTENSIONS = ["webp", "png"];
   const ASSET_DIRS = {
     "belgian-gold-cake": "assets/centerpieces/", "velvet-roses": "assets/centerpieces/",
     "silk-gift-box": "assets/centerpieces/", "champagne-gala": "assets/centerpieces/",

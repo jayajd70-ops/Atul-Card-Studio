@@ -10,7 +10,7 @@
 // Kept in step with APP_VERSION in js/app.js: bumping either one must
 // bump the other, since the cache name is what forces clients onto a
 // freshly released shell.
-const SW_VERSION = "v1.20.0";
+const SW_VERSION = "v1.21.0";
 const SHELL_CACHE = "atul-shell-" + SW_VERSION;
 
 // Everything needed to open and use the editor while offline. User photos
@@ -30,26 +30,26 @@ const SHELL_ASSETS = [
   "./icons/apple-touch-icon.png",
   "./icons/favicon-32.png",
   "./icons/favicon-16.png",
-  "./assets/centerpieces/belgian-gold-cake.png",
-  "./assets/centerpieces/velvet-roses.png",
-  "./assets/centerpieces/silk-gift-box.png",
-  "./assets/centerpieces/baby-teddy.png",
-  "./assets/centerpieces/newborn-hand-feet.png",
-  "./assets/centerpieces/birthday-floral-cake.png",
-  "./assets/centerpieces/anniversary-floral-cake.png",
-  "./assets/centerpieces/congratulations-laurel.png",
-  "./assets/centerpieces/new-home-welcome.png",
-  "./assets/centerpieces/graduation-diploma.png",
-  "./assets/centerpieces/retirement-compass.png",
-  "./assets/centerpieces/get-well-comfort.png",
-  "./assets/centerpieces/thanks-note.png",
-  "./assets/centerpieces/diwali-diyas.png",
-  "./assets/centerpieces/champagne-gala.png",
-  "./assets/centerpieces/white-lilies.png",
-  "./assets/decorations/white-lilies-corner.png",
-  "./assets/decorations/sage-foliage-corner.png",
-  "./assets/decorations/slate-botanical-corner.png",
-  "./assets/decorations/navy-botanical-accent.png",
+  "./assets/centerpieces/belgian-gold-cake.webp",
+  "./assets/centerpieces/velvet-roses.webp",
+  "./assets/centerpieces/silk-gift-box.webp",
+  "./assets/centerpieces/baby-teddy.webp",
+  "./assets/centerpieces/newborn-hand-feet.webp",
+  "./assets/centerpieces/birthday-floral-cake.webp",
+  "./assets/centerpieces/anniversary-floral-cake.webp",
+  "./assets/centerpieces/congratulations-laurel.webp",
+  "./assets/centerpieces/new-home-welcome.webp",
+  "./assets/centerpieces/graduation-diploma.webp",
+  "./assets/centerpieces/retirement-compass.webp",
+  "./assets/centerpieces/get-well-comfort.webp",
+  "./assets/centerpieces/thanks-note.webp",
+  "./assets/centerpieces/diwali-diyas.webp",
+  "./assets/centerpieces/champagne-gala.webp",
+  "./assets/centerpieces/white-lilies.webp",
+  "./assets/decorations/white-lilies-corner.webp",
+  "./assets/decorations/sage-foliage-corner.webp",
+  "./assets/decorations/slate-botanical-corner.webp",
+  "./assets/decorations/navy-botanical-accent.webp",
 
   // Self-hosted web fonts. These are precached rather than runtime-cached so
   // the very first load works with no network at all: the canvas renderer
