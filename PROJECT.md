@@ -589,7 +589,7 @@ Task 003 implementation and release were explicitly authorized. The Current Task
 
 - **Approved Current Task:** Task 021 — Centrepiece asset documentation alignment
 - **Active Permission Level:** IMPLEMENT / COMMIT / PUSH / DEPLOY under standing owner authorization
-- **Status:** Implementation and verification complete; publication pending
+- **Status:** Complete, committed, pushed, deployed, and verified
 - **Approved scope:** Correct `assets/centerpieces/README.md` so its asset count, resolver order, path conventions, and offline-cache description match the released Task 020 implementation.
 - **Authorization boundary:** Documentation only. Do not change application code, images, asset IDs, cache contents, release/cache version 1.21.0, schema v6, rendering, or offline behavior.
 
@@ -597,11 +597,12 @@ Task 003 implementation and release were explicitly authorized. The Current Task
 
 - **Approved Task:** Task 021 — Centrepiece asset documentation alignment
 - **Baseline:** `main` at commit `e63af0d`
-- **Status:** Implementation and verification complete; commit, push, deployment, and live verification pending
+- **Status:** Complete, committed, pushed, deployed, and verified
+- **Completed commit:** `d63cc26` — `docs: align centerpiece asset guidance`
 - **Release:** No application release change; application, manifest, service worker, and cache remain at 1.21.0; schema remains v6
 - **Behavior:** The asset README documents the current 16 centrepieces plus four decorations, WebP-first/PNG-fallback resolver order, registry-based path convention, legacy Luxury Balloons ID, and WebP-only mandatory precache.
 - **Compatibility:** Documentation only; application assets, behavior, data, exports, and offline operation remain unchanged.
-- **Verification:** Documentation-to-code checks confirmed resolver order `webp, png`; 16 registered centrepieces plus four decorations; 20 WebP and zero PNG artwork entries in the mandatory cache; explicit README coverage of WebP-first loading, PNG fallback, and PNG exclusion from mandatory precaching; and removal of all stale four-PNG/PNG-first wording. Application, manifest, service worker, and cache remain aligned at 1.21.0. Only `PROJECT.md` and the asset README changed.
+- **Verification:** Documentation-to-code checks confirmed resolver order `webp, png`; 16 registered centrepieces plus four decorations; 20 WebP and zero PNG artwork entries in the mandatory cache; explicit README coverage of WebP-first loading, PNG fallback, and PNG exclusion from mandatory precaching; and removal of all stale four-PNG/PNG-first wording. Application, manifest, service worker, and cache remain aligned at 1.21.0. Only `PROJECT.md` and the asset README changed. GitHub Pages run [`35885539106`](https://github.com/jayajd70-ops/Atul-Card-Studio/actions/runs/35885539106) succeeded; the deployed README contains the corrected resolver/count/cache statements, the stale four-PNG statement is absent, and the live app/service worker remain at 1.21.0.
 
 ### Task 020 Implementation Record
 
