@@ -1129,7 +1129,7 @@ const ThemePreferences = (() => {
 // Application version. Shown in the header, stamped onto exported
 // backups, and kept in step with SW_VERSION in sw.js so a released
 // shell and the code inside it always report the same number.
-const APP_VERSION = "1.23.0";
+const APP_VERSION = "1.24.0";
 
 const CURRENT_SCHEMA_VERSION = 6;
 
@@ -6246,6 +6246,9 @@ const App = (() => {
   // discarded as soon as the photo is replaced, removed, or undone away.
   let focusSession = null; // { assetId, faces, image }
   let focusBusy = false;
+  // A failure message for the photo it was raised on; survives the status
+  // refresh in syncPersonFocus so the user actually sees why detection failed.
+  let focusNotice = null; // { assetId, text }
   let hasUnsavedChanges = false;
 
   /* ---------------- Toasts / live region ---------------- */
@@ -6819,7 +6822,12 @@ const App = (() => {
     dom.recipientName.addEventListener("input", (e) => {
       StateStore.update((p) => { p.recipient.name = Utils.sanitizeText(e.target.value, 40); }, { skipHistory: true });
     });
-    dom.recipientName.addEventListener("change", () => StateStore.update(() => {}, { skipAutosave: false }));
+    // Typing updates state on every keystroke without history; the edit is
+    // committed as ONE Undo/Redo checkpoint when the field is committed
+    // (blur/Enter). Without this checkpoint the next Undo restores an older
+    // snapshot that lacks the typed text and silently erases it.
+    const commitTextEdit = () => StateStore.update(() => {}, { skipAutosave: false });
+    dom.recipientName.addEventListener("change", commitTextEdit);
     dom.recipientRelationship.addEventListener("input", (e) => {
       StateStore.update((p) => {
         const relationship = Utils.sanitizeText(e.target.value, 40);
@@ -6827,9 +6835,11 @@ const App = (() => {
         p.content.relationship = relationship;
       }, { skipHistory: true });
     });
+    dom.recipientRelationship.addEventListener("change", commitTextEdit);
     dom.senderName.addEventListener("input", (e) => {
       StateStore.update((p) => { p.sender.name = Utils.sanitizeText(e.target.value, 40); }, { skipHistory: true });
     });
+    dom.senderName.addEventListener("change", commitTextEdit);
     dom.cardDate.addEventListener("change", (e) => {
       StateStore.update((p) => {
         if (!p.cardDate) p.cardDate = { value: localDateISO(), visible: false };
@@ -6884,6 +6894,7 @@ const App = (() => {
         p.content.messageMode = "edited";
       }, { skipHistory: true });
     });
+    dom.greetingText.addEventListener("change", commitTextEdit);
     dom.useEditedMessageBtn.addEventListener("click", () => {
       const exactText = dom.greetingText.value;
       StateStore.update((p) => {
@@ -7005,6 +7016,7 @@ const App = (() => {
       if (focusBusy || !project.photo || !OccasionRegistry.allowsPhoto(occasionId)) return;
       const assetId = project.photo.assetId;
       focusBusy = true;
+      focusNotice = null;
       dom.findPeopleBtn.disabled = true;
       dom.personFocusStatus.textContent = "Loading the on-device detector… The first use downloads about 12 MB; after that it also works offline.";
       try {
@@ -7022,9 +7034,13 @@ const App = (() => {
           : "No faces were found. Frame the photo manually below.";
       } catch (err) {
         console.warn("Smart Person Focus could not run.", err);
-        dom.personFocusStatus.textContent = navigator.onLine
-          ? "Smart Person Focus could not start on this device. You can still frame the photo manually below."
-          : "Smart Person Focus needs one online visit to download its detector. Manual framing below still works offline.";
+        focusNotice = {
+          assetId,
+          text: navigator.onLine
+            ? "Smart Person Focus could not start on this device or browser. You can still frame the photo manually below."
+            : "Smart Person Focus needs one online visit to download its detector. Manual framing below still works offline.",
+        };
+        dom.personFocusStatus.textContent = focusNotice.text;
       } finally {
         focusBusy = false;
         syncPersonFocus(StateStore.getProject());
@@ -7202,6 +7218,8 @@ const App = (() => {
         el.addEventListener("click", () => handleStampAction(action));
       } else {
         el.addEventListener("input", () => handleStampSlider(action, parseFloat(el.value)));
+        // One checkpoint per drag of the slider, like every other slider.
+        el.addEventListener("change", () => StateStore.update(() => {}));
       }
     });
   }
@@ -7748,10 +7766,13 @@ const App = (() => {
       const face = focusSession && focusSession.faces[Number(btn.dataset.faceIndex)];
       btn.setAttribute("aria-pressed", String(!!(face && chosen && PersonFocus.sameFace(face.box, chosen))));
     });
+    if (focusNotice && (!project.photo || project.photo.assetId !== focusNotice.assetId)) focusNotice = null;
     if (!focusSession && !focusBusy) {
-      dom.personFocusStatus.textContent = chosen
-        ? "A focused person is saved for this photo. Tap Find people to change it."
-        : "";
+      dom.personFocusStatus.textContent = focusNotice
+        ? focusNotice.text
+        : chosen
+          ? "A focused person is saved for this photo. Tap Find people to change it."
+          : "";
     }
   }
 

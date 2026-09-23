@@ -587,12 +587,55 @@ Task 003 implementation and release were explicitly authorized. The Current Task
 
 ## 9. Current Task
 
-- **Approved Current Task:** Task 023 — R15 Smart Person Focus
-- **Active Permission Level:** IMPLEMENT / COMMIT / PUSH / DEPLOY, explicitly authorized by the owner on 23 September 2026
-- **Status:** Complete, committed, pushed, deployed, and verified
-- **Approved scope:** Optional, explicitly user-triggered local face detection on the current personal photo; deterministic enlarged face choices; explicit user selection (never automatic, even for one face); non-destructive Auto-Fit/Auto-Center that writes only the existing zoom/pan values as one Undo/Redo transaction; manual correction afterward; persistence of the selected person; stale-detection cleanup after photo replacement/removal; preview/export parity; offline support after first use.
-- **Smallest safe plan:** Bundle MediaPipe Tasks Vision 1.0.1 (Apache-2.0, Google, actively maintained) with the BlazeFace short-range model under `vendor/mediapipe/tasks-vision-1.0.1/`. The previously considered `@vladmandic/face-api` was rejected because its repository is archived (last push 5 February 2025). The detector is loaded by dynamic `import()` only when the user taps Find people in photo, then stored in its own runtime cache (`atul-detector-mediapipe-1.0.1-blazeface-short-1`) that survives app releases. Detection scans the full-resolution photo in fixed tile passes, merges by consensus, orders faces left-to-right then top-to-bottom, and shows numbered enlarged crops as buttons. Selecting one applies the inverse of `renderPhoto` math in one `StateStore.update()`. Only the chosen normalized face box is stored as optional `photo.focus`; no schema change. Release as 1.23.0.
-- **Authorization boundary:** Do not change the renderer transform math, existing sliders/gestures, card schema version, occasion isolation, uploaded-photo priority, manual centerpiece choices, festival or Condolence no-photo behavior, or mandatory precache contents. No CDN or cloud calls, no browser-only `FaceDetector`, no face recognition/identity, background extraction, or photo enhancement. R18 Creator Footer remains pending.
+- **Approved Current Task:** Task 024 — Undo/Redo safety for typed text (R13, R7)
+- **Active Permission Level:** IMPLEMENT / COMMIT / PUSH / DEPLOY under standing owner authorization (`PROJECT.md` section 4.1; owner instruction of 23 September 2026)
+- **Status:** Implementation and local verification complete; release in progress
+- **Approved scope:** Make edits to Relationship, Sender, Greeting, and selected-decoration sliders create their own Undo/Redo checkpoint when the edit is committed, exactly as Recipient name, the other sliders, and drag gestures already do, so Undo reverts one edit and never erases unrelated typed text.
+- **Authorization boundary:** Add history checkpoints only. Do not change what any field stores, message generation or wording, rendering, photo/Smart Person Focus behavior, schema (stays v6), backup format, the service-worker cache contents, occasion isolation, or any parked idea. R18 Creator Footer remains pending.
+
+### Task 024 Impact Record
+
+- **Baseline:** `main` at commit `ec5a8b1`; working tree clean; aligned with `origin/main`; live site serves v1.23.0.
+- **Evidence (reproduced in Chrome on v1.23.0):** After typing Recipient, Greeting, and Sender, one Undo reset all three to empty. After typing a Sender and then moving the Recipient-size slider, one Undo removed the Sender. Typing only a Greeting left Undo disabled. Cause: Relationship, Sender, and Greeting update state with `skipHistory: true` and, unlike Recipient name and the sliders, never commit a checkpoint on `change`, so the next checkpoint's predecessor snapshot lacks the typed text and Undo restores that older snapshot.
+- **Requirement:** R13 (Undo/Redo should cover text changes) and R7 (do not destroy the user's work).
+- **State/data impact:** None persisted; only in-memory history entries. Autosave already runs on every update.
+- **UI/layout impact:** None.
+- **Preview/export impact:** None.
+- **Regression risks:** Extra history entries per commit (bounded by the existing 50-entry limit), Undo/Redo restoring field values through `syncControlsFromState`, interaction with message-mode and occasion isolation, and the Greeting Generator/Use-edited-message buttons that already commit history.
+- **Smallest safe plan:** Add `change` handlers that call `StateStore.update(() => {})` for Relationship, Sender, Greeting, and the selected-decoration sliders; verify Undo/Redo of each, cross-field independence, occasion round-trip, save/reopen, backup round-trip, and export; release as 1.24.0.
+
+### Task 024 Implementation Record
+
+- **Baseline:** `main` at commit `ec5a8b1`
+- **Status:** Implementation and local verification complete; release in progress
+- **Release:** Application, manifest, service worker, and cache version `1.24.0`; schema remains v6
+- **Change:** Relationship, Recipient, Sender, and Greeting fields, and the selected-decoration sliders, now commit one Undo/Redo checkpoint on `change` (`StateStore.update(() => {})`). Nothing they store changed.
+- **Also fixed (Task 023 defect found in testing):** When Smart Person Focus could not start (for example WebAssembly unavailable, or offline before the first detector download), its explanation was erased immediately by the status refresh. It is now kept in a `focusNotice` until the photo changes or a new search starts, with separate online and offline wording.
+- **Verified locally (Chrome):** Undo/Redo per edit for each field; cross-field independence (Undo no longer clears unrelated typed text); real-keyboard flow; occasion switch, save/reopen, backup round-trip, and export unchanged; stamp slider checkpoints; Find people failure message stays visible with the button re-enabled and the photo/transform intact (WebAssembly forced undefined).
+- **Not tested:** Real airplane-mode offline restart (the embedded browser cannot register service workers on localhost or toggle offline); real-person detection on the live HTTPS page.
+
+### R1–R18 Status Matrix (as of Task 024)
+
+| Req | Status | Evidence / exact remaining gap |
+|---|---|---|
+| R1 Design library | Partial | Registry-driven templates/themes/festival art exist; broad visual expansion and design acquisition are parked. |
+| R2 Templates/borders/decorations | Partial | Working set shipped; further expansion parked. |
+| R3 Coordinated theme/typography | Complete | Font pairings and foil presets coordinated per theme. |
+| R4 Decorations and emoji | Partial | Stamp collections shipped; emoji picker needs a product decision. |
+| R5 Occasion-aware messages | Partial | Relationship-aware anniversary messages, tone, 220-char cap and sensitive-occasion guards exist; relationship-aware pools for other occasions and idiom wording remain. |
+| R6 Photo adjustment/crop | Complete | Zoom/pan/reset, preview/export parity. |
+| R7 Persistent state | Complete | Autosave, save/reopen, backup/import (Task 024 closes the Undo text gap). |
+| R8 Composition fine-tune | Complete | Layout sliders with history. |
+| R9 Mobile navigation | Complete | Bottom tabs, safe scrolling. |
+| R10 Occasions/festivals | Complete | Occasion isolation; festival cards no-photo. |
+| R11 Photo input/placement | Complete | Upload, adjust, placement. |
+| R12 Remove/replace/no-photo | Complete | Verified in prior tasks. |
+| R13 Undo/Redo | Complete | Text and slider checkpoints as of Task 024. |
+| R14 Responsive workspace | Complete | Desktop and mobile layouts verified. |
+| R15 Smart Person Focus | Complete, with untested limits | Local MediaPipe BlazeFace, on-demand, cached; real airplane-mode restart not tested. |
+| R16 Self-hosted fonts/assets | Complete | Fonts and assets precached; no CDNs. |
+| R17 Automatic/editable date | Complete | Verified in prior tasks. |
+| R18 Creator footer | Pending | Deliberately not implemented. |
 
 ### Task 023 Impact Record
 
