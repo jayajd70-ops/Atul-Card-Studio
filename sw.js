@@ -10,8 +10,16 @@
 // Kept in step with APP_VERSION in js/app.js: bumping either one must
 // bump the other, since the cache name is what forces clients onto a
 // freshly released shell.
-const SW_VERSION = "v1.22.0";
+const SW_VERSION = "v1.23.0";
 const SHELL_CACHE = "atul-shell-" + SW_VERSION;
+
+// Smart Person Focus detector (MediaPipe runtime + BlazeFace model, ~12 MB).
+// Never precached: fetched only after the user taps "Find people in photo".
+// Kept in its own cache named after the vendored detector version rather than
+// the app version, so an ordinary app release does not force a fresh ~12 MB
+// download; the cache is replaced only when the vendored detector changes.
+const DETECTOR_PATH = "/vendor/mediapipe/tasks-vision-1.0.1/";
+const DETECTOR_CACHE = "atul-detector-mediapipe-1.0.1-blazeface-short-1";
 
 // Everything needed to open and use the editor while offline. User photos
 // remain private in IndexedDB; these bundled photographic centrepieces are
@@ -102,7 +110,7 @@ self.addEventListener("activate", (event) => {
       const keys = await caches.keys();
       await Promise.all(
         keys
-          .filter((key) => key !== SHELL_CACHE)
+          .filter((key) => key !== SHELL_CACHE && key !== DETECTOR_CACHE)
           .map((key) => caches.delete(key))
       );
       await self.clients.claim();
@@ -138,6 +146,26 @@ self.addEventListener("fetch", (event) => {
   if (request.method !== "GET") return;
   const url = new URL(request.url);
   if (isPrivateMediaRequest(url)) return;
+
+  if (isShellRequest(url) && url.pathname.includes(DETECTOR_PATH)) {
+    // Detector files are immutable for a given vendored version, so serve
+    // cache-first and fall back to the network once, storing the result.
+    event.respondWith(
+      (async () => {
+        const cache = await caches.open(DETECTOR_CACHE);
+        const cached = await cache.match(request, { ignoreSearch: true });
+        if (cached) return cached;
+        try {
+          const response = await fetch(request);
+          if (response && response.ok) await cache.put(request, response.clone());
+          return response;
+        } catch (err) {
+          return new Response("Smart Person Focus detector is not available offline yet.", { status: 503 });
+        }
+      })()
+    );
+    return;
+  }
 
   if (isShellRequest(url)) {
     // Stale-while-revalidate for the versioned app shell: instant loads

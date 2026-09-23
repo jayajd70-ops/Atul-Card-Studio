@@ -7,6 +7,10 @@
 <meta name="description" content="A private digital atelier for crafting luxury birthday and sympathy cards with cinematic typography, hand-placed seals, and an optional voice greeting." />
 <meta name="theme-color" content="#d4af37" />
 <meta name="color-scheme" content="dark" />
+<!-- The app never connects to other origins. This also blocks the usage
+     metrics that the bundled MediaPipe detector would otherwise send to
+     Google (see vendor/mediapipe/tasks-vision-1.0.1/README.md). -->
+<meta http-equiv="Content-Security-Policy" content="connect-src 'self' blob: data:" />
 <link rel="manifest" href="manifest.json" />
 <link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png" />
 <link rel="icon" href="icons/favicon-16.png" sizes="16x16" type="image/png" />
@@ -278,6 +282,13 @@
             </label>
             <p class="field-hint">Use your camera on a compatible device, or upload a JPG, PNG or WEBP. The original is kept untouched; only your zoom, pan and rotation are stored.</p>
           </div>
+          <fieldset class="field" id="person-focus-fieldset" disabled>
+            <legend>Smart Person Focus <span class="field-optional">(optional)</span></legend>
+            <p class="field-hint">For a couple or group photo: find the people in it, then choose who this card is for. Detection runs only on this device. You can skip this and frame the photo manually below.</p>
+            <button id="find-people-btn" class="btn btn-ghost btn-block" type="button">Find people in photo</button>
+            <p id="person-focus-status" class="field-hint" role="status" aria-live="polite"></p>
+            <div id="person-focus-choices" class="person-choices" role="group" aria-label="Detected people" hidden></div>
+          </fieldset>
           <fieldset class="field" id="photo-transform-fieldset" disabled>
             <legend>Transform engine</legend>
             <div class="field">

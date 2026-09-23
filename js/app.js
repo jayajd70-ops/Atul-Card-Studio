@@ -1129,7 +1129,7 @@ const ThemePreferences = (() => {
 // Application version. Shown in the header, stamped onto exported
 // backups, and kept in step with SW_VERSION in sw.js so a released
 // shell and the code inside it always report the same number.
-const APP_VERSION = "1.22.0";
+const APP_VERSION = "1.23.0";
 
 const CURRENT_SCHEMA_VERSION = 6;
 
@@ -5812,6 +5812,212 @@ const ProjectVault = (() => {
 })();
 
 /* =========================================================================
+   SECTION: PersonFocus (R15 Smart Person Focus)
+   Optional, user-triggered on-device face detection for couple and group
+   photos. The MediaPipe Face Detector (BlazeFace short-range) is vendored
+   under vendor/mediapipe and loaded by dynamic import only when the user
+   asks for it, so it adds nothing to startup or the mandatory precache.
+   Detection never chooses a person: it returns deterministic candidates and
+   the user picks one. Auto-Fit writes only the existing zoom/pan values (the
+   exact inverse of Renderer.renderPhoto), so preview and export stay
+   identical and every manual control keeps working afterwards.
+   ========================================================================= */
+const PersonFocus = (() => {
+  const DETECTOR_BASE = "vendor/mediapipe/tasks-vision-1.0.1/";
+  const MAX_FACES = 40;
+  // Face-box size as a share of the mask, chosen so a head-and-shoulders
+  // portrait fills the medallion without cropping the chin or hairline.
+  const FACE_FRACTION = 0.34;
+  let detectorPromise = null;
+
+  function assetUrl(path) {
+    return new URL(DETECTOR_BASE + path, document.baseURI).href;
+  }
+
+  function loadDetector() {
+    if (!detectorPromise) {
+      detectorPromise = (async () => {
+        const vision = await import(assetUrl("vision_bundle.mjs"));
+        // FilesetResolver probes WebAssembly SIMD support and then loads the
+        // SIMD or no-SIMD build from this same local folder.
+        const fileset = await vision.FilesetResolver.forVisionTasks(assetUrl("wasm").replace(/\/$/, ""));
+        return vision.FaceDetector.createFromOptions(fileset, {
+          baseOptions: { modelAssetPath: assetUrl("models/blaze_face_short_range.tflite"), delegate: "CPU" },
+          runningMode: "IMAGE",
+          minDetectionConfidence: 0.5,
+          minSuppressionThreshold: 0.3,
+        });
+      })().catch((err) => {
+        detectorPromise = null; // allow a retry, e.g. after reconnecting
+        throw err;
+      });
+    }
+    return detectorPromise;
+  }
+
+  function iou(a, b) {
+    const x1 = Math.max(a.x, b.x), y1 = Math.max(a.y, b.y);
+    const x2 = Math.min(a.x + a.w, b.x + b.w), y2 = Math.min(a.y + a.h, b.y + b.h);
+    const inter = Math.max(0, x2 - x1) * Math.max(0, y2 - y1);
+    const union = a.w * a.h + b.w * b.h - inter;
+    return { iou: union > 0 ? inter / union : 0, containment: inter / Math.min(a.w * a.h, b.w * b.h) };
+  }
+
+  // The short-range model sees a 128 px view of whatever it is given, so
+  // small faces in a group photo are only found on closer crops. The whole
+  // photo plus overlapping 2x2 … 8x8 tiles are scanned (finer grids only
+  // while a tile stays at least 160 px, so small photos are not upscaled
+  // into noise), then merged by consensus. Fixed passes keep it deterministic.
+  const GRIDS = [1, 2, 3, 4, 6, 8];
+  function tilesFor(width, height) {
+    const tiles = [];
+    GRIDS.filter((grid) => grid === 1 || (Math.min(width, height) / grid) * 1.35 >= 160).forEach((grid) => {
+      const tw = grid === 1 ? width : Math.min(width, (width / grid) * 1.35);
+      const th = grid === 1 ? height : Math.min(height, (height / grid) * 1.35);
+      for (let row = 0; row < grid; row++) {
+        for (let col = 0; col < grid; col++) {
+          const x = grid === 1 ? 0 : Utils.clamp(col * (width / grid) - (tw - width / grid) / 2, 0, width - tw);
+          const y = grid === 1 ? 0 : Utils.clamp(row * (height / grid) - (th - height / grid) / 2, 0, height - th);
+          tiles.push({ x: Math.round(x), y: Math.round(y), w: Math.round(tw), h: Math.round(th) });
+        }
+      }
+    });
+    return tiles;
+  }
+
+  // Left to right, then top to bottom — a plain, predictable order so
+  // "Person 1" is always the left-most face. Same input, same order.
+  function orderFaces(faces) {
+    return faces.slice().sort((a, b) => (a.x + a.w / 2) - (b.x + b.w / 2) || (a.y + a.h / 2) - (b.y + b.h / 2));
+  }
+
+  // Detection runs on the full-resolution photo (long side capped at 3000 px)
+  // because group-photo faces are often only a few percent of the frame.
+  const DETECT_MAX_SIDE = 3000;
+
+  // Returns faces as normalized boxes [x, y, w, h] (0..1 of the photo),
+  // rounded so results are stable and compact when persisted.
+  async function detectFaces(image) {
+    const detector = await loadDetector();
+    const srcW = image.naturalWidth || image.width;
+    const srcH = image.naturalHeight || image.height;
+    const fit = Math.min(1, DETECT_MAX_SIDE / Math.max(srcW, srcH));
+    const width = Math.round(srcW * fit);
+    const height = Math.round(srcH * fit);
+    const source = document.createElement("canvas");
+    source.width = width;
+    source.height = height;
+    source.getContext("2d").drawImage(image, 0, 0, width, height);
+
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    const raw = [];
+    tilesFor(width, height).forEach((tile) => {
+      canvas.width = tile.w;
+      canvas.height = tile.h;
+      ctx.clearRect(0, 0, tile.w, tile.h);
+      ctx.drawImage(source, tile.x, tile.y, tile.w, tile.h, 0, 0, tile.w, tile.h);
+      const result = detector.detect(canvas);
+      (result.detections || []).forEach((det) => {
+        const bb = det.boundingBox;
+        if (!bb) return;
+        raw.push({
+          x: tile.x + bb.originX, y: tile.y + bb.originY, w: bb.width, h: bb.height,
+          score: (det.categories && det.categories[0] && det.categories[0].score) || 0,
+        });
+      });
+    });
+
+    // Merge overlapping hits from different tiles into one candidate each.
+    const clusters = [];
+    raw
+      .sort((a, b) => b.score - a.score || a.x - b.x || a.y - b.y)
+      .forEach((face) => {
+        const cluster = clusters.find((c) => {
+          const o = iou(face, c.best);
+          return o.iou > 0.3 || o.containment > 0.6;
+        });
+        if (cluster) cluster.hits += 1;
+        else clusters.push({ best: face, hits: 1 });
+      });
+
+    // Consensus: keep a candidate only when it is confident on its own or was
+    // found independently by at least two overlapping tiles. This rejects the
+    // one-off hits fine tiles produce on hands, badges and fabric.
+    // A candidate needs an absolute confidence of at least 0.7, and must
+    // either be confident on its own (>= 0.75) or be found independently by
+    // three overlapping tiles. Measured on real photos: every genuine face
+    // scored >= 0.77, while repeated hardware and fabric patterns (suit
+    // fittings, badges) scored 0.5-0.66 and could fool two or three views.
+    // Missing a distant face is cheaper than offering a false one, and manual
+    // framing is always available.
+    let kept = clusters
+      .filter((c) => c.best.score >= 0.7 && (c.best.score >= 0.75 || c.hits >= 3))
+      .map((c) => c.best);
+    // Size consistency: people in one photo have broadly similar face sizes,
+    // so anything far smaller than the confident faces is almost always a
+    // pattern, not a person.
+    const strong = kept.filter((f) => f.score >= 0.85).map((f) => Math.max(f.w, f.h)).sort((a, b) => a - b);
+    if (strong.length) {
+      const typical = strong[Math.floor(strong.length / 2)];
+      kept = kept.filter((f) => Math.max(f.w, f.h) >= typical * 0.4);
+    }
+    kept = kept.sort((a, b) => b.score - a.score || a.x - b.x).slice(0, MAX_FACES);
+
+    return orderFaces(kept).map((f) => {
+      const x = Utils.clamp(f.x / width, 0, 1);
+      const y = Utils.clamp(f.y / height, 0, 1);
+      return {
+        box: [
+          +x.toFixed(4), +y.toFixed(4),
+          +Utils.clamp(f.w / width, 0, 1 - x).toFixed(4),
+          +Utils.clamp(f.h / height, 0, 1 - y).toFixed(4),
+        ],
+        score: +f.score.toFixed(3),
+      };
+    });
+  }
+
+  // Exact inverse of Renderer.renderPhoto: choose zoom so the face occupies
+  // FACE_FRACTION of the mask, then the pan that puts the face centre on the
+  // mask centre. Both are clamped to the renderer's own limits (zoom 1..3,
+  // pan -1..1 of the available slack), so the mask can never show an empty
+  // edge; a face near the photo border is centred as far as the photo allows.
+  // Current rotation and mask shape are respected because the pan is solved
+  // in the photo's own rotated frame, exactly as the renderer applies it.
+  function computeAutoFit(project, box, imageWidth, imageHeight) {
+    const geo = Renderer.getArtGeometry(project);
+    const photo = project.photo || {};
+    const rotation = ((photo.rotation || 0) * Math.PI) / 180;
+    const c = Math.abs(Math.cos(rotation));
+    const s = Math.abs(Math.sin(rotation));
+    const cover = Math.max(geo.width / imageWidth, geo.height / imageHeight);
+    const layoutScale = Utils.clamp((project.layout && project.layout.photoScale) || 1, 0.5, 2);
+    const facePx = Math.max(box[2] * imageWidth, box[3] * imageHeight, 1);
+    const target = FACE_FRACTION * Math.min(geo.width, geo.height);
+    const zoom = Utils.clamp(target / (facePx * cover * (c + s) * layoutScale), 1, 3);
+
+    const scale = cover * (c + s) * zoom * layoutScale;
+    const drawW = imageWidth * scale;
+    const drawH = imageHeight * scale;
+    const slackX = Math.max(0, (drawW - (geo.width * c + geo.height * s)) / 2);
+    const slackY = Math.max(0, (drawH - (geo.width * s + geo.height * c)) / 2);
+    const u = box[0] + box[2] / 2;
+    const v = box[1] + box[3] / 2;
+    const panX = slackX > 0 ? Utils.clamp((-(u - 0.5) * drawW) / slackX, -1, 1) : 0;
+    const panY = slackY > 0 ? Utils.clamp((-(v - 0.5) * drawH) / slackY, -1, 1) : 0;
+    return { zoom: +zoom.toFixed(2), panX: +panX.toFixed(3), panY: +panY.toFixed(3) };
+  }
+
+  function sameFace(a, b) {
+    if (!a || !b) return false;
+    return iou({ x: a[0], y: a[1], w: a[2], h: a[3] }, { x: b[0], y: b[1], w: b[2], h: b[3] }).iou > 0.5;
+  }
+
+  return { loadDetector, detectFaces, computeAutoFit, orderFaces, tilesFor, sameFace, FACE_FRACTION };
+})();
+
+/* =========================================================================
    SECTION: ExportModule
    Owns high-resolution PNG rendering, filename sanitization, download
    fallback and Web Share API integration. Kept strictly separate from
@@ -6035,6 +6241,11 @@ const App = (() => {
   let renderRAF = null;
   let renderQueuedQuality = "preview";
   let editorTabHistory = [];
+  // Smart Person Focus: the last detection run, tied to the photo it was run
+  // on. Never persisted — only the chosen face box is saved on the card — and
+  // discarded as soon as the photo is replaced, removed, or undone away.
+  let focusSession = null; // { assetId, faces, image }
+  let focusBusy = false;
   let hasUnsavedChanges = false;
 
   /* ---------------- Toasts / live region ---------------- */
@@ -6787,6 +6998,60 @@ const App = (() => {
       useSelectedPhoto(dom.cameraInput, "Camera photo");
     });
 
+    // Smart Person Focus (R15): explicit, user-triggered, on-device only.
+    dom.findPeopleBtn.addEventListener("click", async () => {
+      const project = StateStore.getProject();
+      const occasionId = (project.occasion && project.occasion.id) || "birthday";
+      if (focusBusy || !project.photo || !OccasionRegistry.allowsPhoto(occasionId)) return;
+      const assetId = project.photo.assetId;
+      focusBusy = true;
+      dom.findPeopleBtn.disabled = true;
+      dom.personFocusStatus.textContent = "Loading the on-device detector… The first use downloads about 12 MB; after that it also works offline.";
+      try {
+        // Full resolution: small group-photo faces need every pixel.
+        const image = await AssetResolver.resolvePhoto(assetId, "export");
+        await PersonFocus.loadDetector();
+        dom.personFocusStatus.textContent = "Looking for people in your photo…";
+        const faces = await PersonFocus.detectFaces(image);
+        const current = StateStore.getProject().photo;
+        if (!current || current.assetId !== assetId) return; // photo changed meanwhile: discard as stale
+        focusSession = { assetId, faces, image };
+        renderPersonChoices(StateStore.getProject());
+        dom.personFocusStatus.textContent = faces.length
+          ? "Found " + faces.length + (faces.length === 1 ? " person" : " people") + ". Choose who this card is for — nothing is selected until you do."
+          : "No faces were found. Frame the photo manually below.";
+      } catch (err) {
+        console.warn("Smart Person Focus could not run.", err);
+        dom.personFocusStatus.textContent = navigator.onLine
+          ? "Smart Person Focus could not start on this device. You can still frame the photo manually below."
+          : "Smart Person Focus needs one online visit to download its detector. Manual framing below still works offline.";
+      } finally {
+        focusBusy = false;
+        syncPersonFocus(StateStore.getProject());
+      }
+    });
+
+    dom.personFocusChoices.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-face-index]");
+      if (!btn || !focusSession) return;
+      const project = StateStore.getProject();
+      if (!project.photo || project.photo.assetId !== focusSession.assetId) return;
+      const index = Number(btn.dataset.faceIndex);
+      const face = focusSession.faces[index];
+      if (!face) return;
+      const image = focusSession.image;
+      const fit = PersonFocus.computeAutoFit(project, face.box, image.naturalWidth || image.width, image.naturalHeight || image.height);
+      // One update = one Undo/Redo step for the whole Auto-Fit.
+      StateStore.update((p) => {
+        if (!p.photo || p.photo.assetId !== focusSession.assetId) return;
+        p.photo.zoom = fit.zoom;
+        p.photo.panX = fit.panX;
+        p.photo.panY = fit.panY;
+        p.photo.focus = { box: face.box.slice() };
+      }, { reason: "photo-focus" });
+      toast("Framed on person " + (index + 1) + ". Fine-tune with the sliders if needed.");
+    });
+
     // Transform engine. Pan is stored normalised (-1..1) so it survives a
     // change of centrepiece size; the renderer converts it to pixels using
     // whatever slack the current zoom leaves.
@@ -6808,7 +7073,12 @@ const App = (() => {
 
     dom.resetTransformBtn.addEventListener("click", () => {
       StateStore.update((p) => {
-        if (p.photo) { p.photo.zoom = 1; p.photo.panX = 0; p.photo.panY = 0; p.photo.rotation = 0; }
+        if (p.photo) {
+          p.photo.zoom = 1; p.photo.panX = 0; p.photo.panY = 0; p.photo.rotation = 0;
+          // A full reset also drops the Smart Person Focus choice, since the
+          // photo is no longer framed on that person.
+          delete p.photo.focus;
+        }
       }, { reason: "photo-reset" });
       syncPhotoControls(StateStore.getProject());
       toast("Transform reset.");
@@ -7418,7 +7688,75 @@ const App = (() => {
   /* ---------------- Sync controls from state (on load / undo / theme change) ---------------- */
   // Mirrors photo/centrepiece state onto its controls, and disables the
   // transform engine outright when there is no photo to transform.
+  // Enlarged, numbered face crops in the detector's deterministic order.
+  function renderPersonChoices(project) {
+    const list = dom.personFocusChoices;
+    list.innerHTML = "";
+    if (!focusSession || !focusSession.faces.length) {
+      list.hidden = true;
+      return;
+    }
+    const image = focusSession.image;
+    const iw = image.naturalWidth || image.width;
+    const ih = image.naturalHeight || image.height;
+    const total = focusSession.faces.length;
+    focusSession.faces.forEach((face, index) => {
+      const [bx, by, bw, bh] = face.box;
+      // Square crop around the face with room for hair and chin.
+      const side = Math.min(Math.max(bw * iw, bh * ih) * 1.8, iw, ih);
+      const sx = Utils.clamp((bx + bw / 2) * iw - side / 2, 0, iw - side);
+      const sy = Utils.clamp((by + bh / 2) * ih - side / 2, 0, ih - side);
+      const thumb = document.createElement("canvas");
+      thumb.width = 168;
+      thumb.height = 168;
+      thumb.getContext("2d").drawImage(image, sx, sy, side, side, 0, 0, 168, 168);
+      thumb.setAttribute("aria-hidden", "true");
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "person-choice";
+      btn.dataset.faceIndex = String(index);
+      btn.setAttribute("aria-label", "Focus on person " + (index + 1) + " of " + total);
+      btn.setAttribute("aria-pressed", "false");
+      const label = document.createElement("span");
+      label.textContent = "Person " + (index + 1);
+      btn.appendChild(thumb);
+      btn.appendChild(label);
+      list.appendChild(btn);
+    });
+    list.hidden = false;
+    syncPersonFocus(project);
+  }
+
+  function syncPersonFocus(project) {
+    if (!dom.personFocusFieldset) return;
+    const occasionId = (project.occasion && project.occasion.id) || "birthday";
+    const allowPhoto = OccasionRegistry.allowsPhoto(occasionId);
+    const photo = allowPhoto ? project.photo : null;
+    dom.personFocusFieldset.hidden = !allowPhoto;
+    dom.personFocusFieldset.disabled = !photo;
+    dom.findPeopleBtn.disabled = !photo || focusBusy;
+
+    // Stale-detection cleanup: detections belong to one photo only.
+    if (focusSession && (!project.photo || project.photo.assetId !== focusSession.assetId)) {
+      focusSession = null;
+      dom.personFocusChoices.innerHTML = "";
+      dom.personFocusChoices.hidden = true;
+      dom.personFocusStatus.textContent = "";
+    }
+    const chosen = photo && photo.focus && photo.focus.box;
+    dom.personFocusChoices.querySelectorAll("[data-face-index]").forEach((btn) => {
+      const face = focusSession && focusSession.faces[Number(btn.dataset.faceIndex)];
+      btn.setAttribute("aria-pressed", String(!!(face && chosen && PersonFocus.sameFace(face.box, chosen))));
+    });
+    if (!focusSession && !focusBusy) {
+      dom.personFocusStatus.textContent = chosen
+        ? "A focused person is saved for this photo. Tap Find people to change it."
+        : "";
+    }
+  }
+
   function syncPhotoControls(project) {
+    syncPersonFocus(project);
     const occasionId = (project.occasion && project.occasion.id) || "birthday";
     const occ = OccasionRegistry.get(occasionId);
     const allowPhoto = occ.allowPhoto !== false;
@@ -7703,6 +8041,8 @@ const App = (() => {
       photoUploadField: $("#photo-upload-field"),
       photoShapeFieldset: $("#photo-shape-fieldset"),
       photoInput: $("#photo-input"), cameraInput: $("#camera-input"),
+      personFocusFieldset: $("#person-focus-fieldset"), findPeopleBtn: $("#find-people-btn"),
+      personFocusStatus: $("#person-focus-status"), personFocusChoices: $("#person-focus-choices"),
       photoZoom: $("#photo-zoom"), photoZoomOut: $("#photo-zoom-out"),
       photoPanX: $("#photo-pan-x"), photoPanXOut: $("#photo-pan-x-out"),
       photoPanY: $("#photo-pan-y"), photoPanYOut: $("#photo-pan-y-out"),
@@ -7777,7 +8117,7 @@ const App = (() => {
       if (reason !== "silent") scheduleRender(reason === "photo-rotate" || reason === "theme-change" || reason === "occasion-change" ? "preview" : "preview");
       syncGreetingSafety(project);
       populateStampGalleryThumbsIfThemeChanged(reason);
-      if (reason === "photo-set" || reason === "photo-remove" || reason === "photo-reset") {
+      if (reason === "photo-set" || reason === "photo-remove" || reason === "photo-reset" || reason === "photo-focus") {
         syncPhotoControls(project);
       }
       if (reason === "theme-change" || reason === "occasion-change" || reason === "init" || reason === "undo" || reason === "redo") {
