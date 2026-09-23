@@ -587,11 +587,21 @@ Task 003 implementation and release were explicitly authorized. The Current Task
 
 ## 9. Current Task
 
-- **Approved Current Task:** Task 021 — Centrepiece asset documentation alignment
+- **Approved Current Task:** Task 022 — Relationship-aware Anniversary message generation
 - **Active Permission Level:** IMPLEMENT / COMMIT / PUSH / DEPLOY under standing owner authorization
-- **Status:** Complete, committed, pushed, deployed, and verified
-- **Approved scope:** Correct `assets/centerpieces/README.md` so its asset count, resolver order, path conventions, and offline-cache description match the released Task 020 implementation.
-- **Authorization boundary:** Documentation only. Do not change application code, images, asset IDs, cache contents, release/cache version 1.21.0, schema v6, rendering, or offline behavior.
+- **Status:** In progress
+- **Approved scope:** Extend the existing local message generator so Anniversary cards use appropriate wording for a recognized spouse, parent/elder, family/friend, or professional relationship. Blank and unrecognized relationships retain the existing generic Anniversary pools.
+- **Smallest safe plan:** Reuse the current relationship normalization and occasion-isolated state; add Anniversary-only relationship classification and four-tone local message pools; preserve manual text and regeneration behavior; test classification, wording, length bounds, state isolation, export, and offline behavior; then release as 1.22.0.
+- **Authorization boundary:** Do not change the relationship field, card schema, generic Anniversary drafts, other occasion pools, photos, centerpieces, decorations, rendering/layout, or the parked R18 creator footer. Smart Person Focus remains a separate R15 task because it requires a bundled local detection model and dedicated interaction testing.
+
+### Task 022 Impact Record
+
+- **Baseline:** `main` at commit `a2a94d0`; working tree clean; local `main` aligned with `origin/main`
+- **Existing implementation:** Birthday and Condolence use relationship-aware pools. Anniversary retains its relationship independently but generation currently ignores it.
+- **State/data impact:** No schema or migration change. Existing saved and manually edited messages remain untouched.
+- **UI/layout impact:** None. The existing Relationship field and Generate action are reused.
+- **Preview/export impact:** Only newly generated Anniversary wording changes; existing rendering and output paths are unchanged.
+- **Regression risks:** Incorrect relationship classification, text longer than the 220-character editor limit, accidental changes to generic or other-occasion messages, and loss of occasion-isolated content.
 
 ### Task 021 Implementation Record
 

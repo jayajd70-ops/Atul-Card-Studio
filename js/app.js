@@ -1129,7 +1129,7 @@ const ThemePreferences = (() => {
 // Application version. Shown in the header, stamped onto exported
 // backups, and kept in step with SW_VERSION in sw.js so a released
 // shell and the code inside it always report the same number.
-const APP_VERSION = "1.21.0";
+const APP_VERSION = "1.22.0";
 
 const CURRENT_SCHEMA_VERSION = 6;
 
@@ -1812,6 +1812,62 @@ const GreetingGenerator = (() => {
     Object.entries(BIRTHDAY_RELATIONSHIP_CONTEXTS).map(([id, context]) => [id, buildBirthdayRelationshipPool(context)])
   );
 
+  const ANNIVERSARY_RELATIONSHIP_CONTEXTS = {
+    spouse: {
+      occasionLead: "On our anniversary",
+      appreciation: "Sharing life with you has brought love, understanding, and meaning to every season",
+      wish: "May we continue to grow together with good health, laughter, and many cherished memories",
+      poetic: "With you beside me, each chapter feels warmer and every ordinary day becomes part of our story",
+      playful: "We still make a wonderful team, including when we have very different plans",
+    },
+    parents: {
+      occasionLead: "On your anniversary",
+      appreciation: "The love, patience, and values you share remain a beautiful example for the whole family",
+      wish: "May you both enjoy many more years of good health, companionship, and happy family moments",
+      poetic: "The home and memories you have built together continue to shelter generations with love",
+      playful: "You both continue to prove that patience, partnership, and a little humour make a strong team",
+    },
+    family: {
+      occasionLead: "On your anniversary",
+      appreciation: "The warmth and companionship you share bring happiness to everyone who knows you",
+      wish: "May the years ahead bring you both good health, understanding, and many joyful memories",
+      poetic: "May the story you share keep unfolding with friendship, patience, and quiet happiness",
+      playful: "You both make partnership look joyful, dependable, and full of stories worth retelling",
+    },
+    professional: {
+      occasionLead: "On your anniversary",
+      appreciation: "The mutual respect and steady partnership you share are sincerely admired",
+      wish: "May the years ahead bring you both continued happiness, good health, and fulfilment",
+      poetic: "May every year strengthen the respect, trust, and companionship at the heart of your journey",
+      playful: "Wishing you both another year of excellent teamwork and many reasons to celebrate together",
+    },
+  };
+
+  function buildAnniversaryRelationshipPool(context) {
+    return {
+      heartfelt: [
+        "Happy anniversary, {name}. " + context.appreciation + ".",
+        "Warm anniversary wishes, {name}. " + context.wish + ".",
+      ],
+      poetic: [
+        context.poetic + ", {name}. Wishing you a beautiful anniversary.",
+        context.occasionLead + ", {name}, " + context.poetic.toLowerCase() + ".",
+      ],
+      professional: [
+        "Warm anniversary wishes, {name}. " + context.appreciation + ".",
+        "Wishing you a very happy anniversary, {name}. " + context.wish + ".",
+      ],
+      playful: [
+        "Happy anniversary, {name}! " + context.playful + ".",
+        context.playful + ", {name}! Wishing you a cheerful anniversary.",
+      ],
+    };
+  }
+
+  const ANNIVERSARY_RELATIONSHIP_POOLS = Object.fromEntries(
+    Object.entries(ANNIVERSARY_RELATIONSHIP_CONTEXTS).map(([id, context]) => [id, buildAnniversaryRelationshipPool(context)])
+  );
+
   const FESTIVAL_GREETINGS = {
     "dhanteras-lakshmi-puja": ["Dhanteras and Lakshmi Puja", "May this auspicious season bring prosperity, peace, and a home filled with blessings"],
     "bestu-varas": ["Bestu Varas", "May the Gujarati New Year open with health, goodwill, and bright new beginnings"],
@@ -1954,6 +2010,15 @@ const GreetingGenerator = (() => {
     return "";
   }
 
+  function classifyAnniversaryRelationship(relationship) {
+    const value = normalizeRelationship(relationship);
+    if (["spouse", "partner", "wife"].includes(value)) return "spouse";
+    if (["father", "mother", "parent", "parents", "grandfather", "grandmother", "grandparent", "grandparents"].includes(value)) return "parents";
+    if (["brother", "sister", "son", "daughter", "uncle", "aunt", "cousin", "friend", "family friend", "neighbour", "relative"].includes(value)) return "family";
+    if (["manager", "colleague", "teacher", "mentor"].includes(value)) return "professional";
+    return "";
+  }
+
   function fill(template, name, relationship) {
     const who = String(name || "").trim() || "friend";
     const filled = template
@@ -1975,10 +2040,13 @@ const GreetingGenerator = (() => {
     const normEmotion = normalizeEmotion(emotion, occ.id);
     const relationshipLabel = occ.id === "condolence" ? normalizeRelationship(relationship) : "";
     const birthdayRelationship = occ.id === "birthday" ? classifyBirthdayRelationship(relationship) : "";
+    const anniversaryRelationship = occ.id === "anniversary" ? classifyAnniversaryRelationship(relationship) : "";
     const pool = relationshipLabel
       ? CONDOLENCE_RELATIONSHIP_POOLS[normEmotion]
       : birthdayRelationship
         ? BIRTHDAY_RELATIONSHIP_POOLS[birthdayRelationship][normEmotion]
+        : anniversaryRelationship
+          ? ANNIVERSARY_RELATIONSHIP_POOLS[anniversaryRelationship][normEmotion]
         : ((POOLS[occ.id] && POOLS[occ.id][normEmotion]) || POOLS.birthday.heartfelt);
     const candidates = pool.map((t) => fill(t, name, relationshipLabel));
     const fresh = candidates.filter((c) => c !== previousText);
@@ -1997,10 +2065,13 @@ const GreetingGenerator = (() => {
     const normEmotion = normalizeEmotion(emotion, occ.id);
     const relationshipLabel = occ.id === "condolence" ? normalizeRelationship(relationship) : "";
     const birthdayRelationship = occ.id === "birthday" ? classifyBirthdayRelationship(relationship) : "";
+    const anniversaryRelationship = occ.id === "anniversary" ? classifyAnniversaryRelationship(relationship) : "";
     const pool = relationshipLabel
       ? CONDOLENCE_RELATIONSHIP_POOLS[normEmotion]
       : birthdayRelationship
         ? BIRTHDAY_RELATIONSHIP_POOLS[birthdayRelationship][normEmotion]
+        : anniversaryRelationship
+          ? ANNIVERSARY_RELATIONSHIP_POOLS[anniversaryRelationship][normEmotion]
         : ((POOLS[occ.id] && POOLS[occ.id][normEmotion]) || POOLS.birthday.heartfelt);
     return fill(pool[0], name, relationshipLabel);
   }
@@ -2028,7 +2099,7 @@ const GreetingGenerator = (() => {
 
   return {
     list, generate, fallbackFor, normalizeEmotion, isValid, validateSafety,
-    normalizeRelationship, classifyBirthdayRelationship, resolveProjectGreeting, validateProjectGreeting,
+    normalizeRelationship, classifyBirthdayRelationship, classifyAnniversaryRelationship, resolveProjectGreeting, validateProjectGreeting,
   };
 })();
 
