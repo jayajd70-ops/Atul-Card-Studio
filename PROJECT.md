@@ -587,9 +587,28 @@ Task 003 implementation and release were explicitly authorized. The Current Task
 
 ## 9. Current Task
 
-- **Approved Current Task:** Task 026 (R2) complete; Task 027 (R4) is next
-- **Active Permission Level:** IMPLEMENT / COMMIT / PUSH / DEPLOY under standing owner authorization (`PROJECT.md` section 4.1; owner instruction of 23 September 2026). Owner scope for this series: R1, R2 and R4 only (Task 025 R1 done, 026 R2, 027 R4). R5, R15 and R18 are out of scope.
-- **Status:** Complete, committed, pushed, deployed, and verified
+- **Approved Current Task:** Task 027 — Optional decoration library and keyboard-accessible decorations (R4)
+- **Active Permission Level:** IMPLEMENT / COMMIT / PUSH / DEPLOY under standing owner authorization (`PROJECT.md` section 4.1; owner instruction of 23 September 2026). Owner scope for this series: R1, R2 and R4 only (Task 025 R1 and 026 R2 done). R5, R15 and R18 are out of scope.
+- **Status:** Implementation and local verification complete; release in progress
+
+### Task 027 Impact Record
+
+- **Baseline:** `main` at commit `f232cb6`; clean; aligned with `origin/main`; live site serves v1.26.0.
+- **Existing behavior found:** 19 decorations ("stamps": text badges, seal, medallion, ribbon, ornaments, crest, monogram) grouped in the Finishing tab, added by tap and repositioned by pointer drag, with scale, rotation, opacity, layer and remove controls in a toolbar over the card. No emoji or symbols, no keyboard repositioning, no list of what is on the card, and Condolence already has decorations disabled entirely.
+- **Requirement:** R4 (optional/collapsible library with clear groups, emoji/symbols alongside proper artwork, add/select/move/resize/rotate/remove, touch and keyboard usable, no content reset, restricted-context suppression).
+- **State/data impact:** None new. Library items are ordinary stamps with new definition ids (`lib-*`, `g-*`); the persisted stamp shape and schema v6 are unchanged. Existing decorations, categories and defaults are untouched and library items are kept out of the main gallery.
+- **UI/layout impact:** A collapsed "More decorations (optional)" section in the Finishing tab, built only when opened; an "On this card" list to select and remove placed decorations; four move buttons in the stamp toolbar (44 px on touch devices) and arrow-key/Delete shortcuts; the toolbar now wraps instead of scrolling sideways.
+- **Preview/export impact:** Library items draw through the existing stamp path, so preview and PNG export share them. Emoji use the device's own emoji font, so their look differs between devices but matches between preview and export on one device.
+- **Regression risks:** Keyboard shortcuts stealing keys from fields or radios, Undo grouping, occasion isolation, restricted contexts, toolbar layout on narrow screens.
+- **Smallest safe plan:** Add five code-drawn foil artworks (Sparkle Burst, Laurel Wreath, Heart Flourish, Foil Rosette, Diya Lamp) and 52 emoji across Birthday, Anniversary & Love, Festivals, Flowers & Nature, Celebration, General and five occasion-specific groups shown only for that occasion; hide festive items on Get Well; release 1.27.0 with no new asset files.
+
+### Task 027 Implementation Record
+
+- **Baseline:** `main` at commit `f232cb6`
+- **Status:** Implementation and local verification complete; release in progress
+- **Release:** Application, manifest, service worker, and cache version `1.27.0`; schema remains v6; no new asset files, so the 53-entry shell precache is unchanged
+- **Verified locally (Chrome, PASS):** Library is collapsed by default and shows 43 items in six groups on a birthday card (main gallery still 19); all 43 thumbnails render; art was inspected and two drawings (Heart Flourish, Laurel Wreath) were redrawn after inspection; adding a library artwork and an emoji works and both appear on the card; the On this card list selects and removes; move buttons move by 1% as one Undo step; arrow keys move by 1% (Shift 4%) grouped into one Undo step; arrow keys typed in a text field do not move anything; Delete removes and Undo restores; Get Well hides the party/festive emoji and adds a Get Well & Thanks group; New Baby adds its group; Condolence hides the Finishing tab and lists nothing; each occasion keeps its own decorations; recipient, greeting and other content are untouched; decorations survive reload and appear in a backup; PNG export with decorations is exactly 1200 x 1760; at 375 px there is no horizontal overflow and the toolbar wraps with 44 px buttons.
+- **NOT TESTED:** Emoji on a phone or another operating system (glyph shapes differ by device; only this Windows browser was checked); a physical touch drag of a library item; resize and rotate of every one of the 57 new items individually (the shared sliders were exercised on existing items and library items draw through the same path); backup re-import of a card with library decorations; real offline restart and live service-worker behavior until the live check below.
 
 ### Task 026 Impact Record
 

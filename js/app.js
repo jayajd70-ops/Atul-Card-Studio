@@ -984,6 +984,310 @@ const StampCollections = (() => {
     { id: "monogram", name: "Monogram", category: "monogram", defaultLayer: "foreground", draw: drawMedallion },
   ];
 
+
+  /* ---------------- Decoration library (R4) ----------------
+     Optional extra decorations, grouped for a collapsible library. Proper
+     artwork (drawn with the same foil gradients as the stamps above) leads
+     each group; emoji/symbol glyphs sit alongside as quick extras. Glyphs
+     use the device's own emoji font, so their exact look differs between
+     devices, but the preview and the exported PNG on one device match.
+     Definitions marked tone "festive" are unavailable on Get Well cards. */
+  function drawRosette(ctx, size) {
+    return function (preset) {
+      const s = size;
+      withShadow(ctx, s * 0.05, "rgba(0,0,0,0.4)", 0, s * 0.015, () => {
+        for (let ring = 0; ring < 2; ring++) {
+          const petals = 12;
+          const len = s * (ring === 0 ? 0.4 : 0.27);
+          const wid = s * (ring === 0 ? 0.11 : 0.08);
+          for (let i = 0; i < petals; i++) {
+            ctx.save();
+            ctx.rotate((Math.PI * 2 * i) / petals + (ring ? Math.PI / petals : 0));
+            ctx.translate(0, -len * 0.55);
+            ctx.beginPath();
+            ctx.ellipse(0, 0, wid, len * 0.5, 0, 0, Math.PI * 2);
+            ctx.fillStyle = metallicGradient(ctx, -wid, -len * 0.5, wid, len * 0.5, preset);
+            ctx.fill();
+            ctx.lineWidth = s * 0.004;
+            ctx.strokeStyle = preset.shadow;
+            ctx.stroke();
+            ctx.restore();
+          }
+        }
+        const r = s * 0.09;
+        const grad = ctx.createRadialGradient(-r * 0.3, -r * 0.3, r * 0.1, 0, 0, r);
+        preset.stops.forEach((st) => grad.addColorStop(st.t, st.c));
+        ctx.beginPath();
+        ctx.arc(0, 0, r, 0, Math.PI * 2);
+        ctx.fillStyle = grad;
+        ctx.fill();
+      });
+    };
+  }
+
+  function drawHeartFlourish(ctx, size, opts) {
+    const preset = opts.preset;
+    const s = size;
+    withShadow(ctx, s * 0.05, "rgba(0,0,0,0.4)", 0, s * 0.015, () => {
+      ctx.save();
+      ctx.scale(1.28, 1.28);
+      ctx.translate(0, -s * 0.03);
+      ctx.beginPath();
+      ctx.moveTo(0, s * 0.3);
+      ctx.bezierCurveTo(-s * 0.5, s * 0.02, -s * 0.28, -s * 0.34, 0, -s * 0.12);
+      ctx.bezierCurveTo(s * 0.28, -s * 0.34, s * 0.5, s * 0.02, 0, s * 0.3);
+      ctx.closePath();
+      ctx.fillStyle = metallicGradient(ctx, -s * 0.4, -s * 0.3, s * 0.4, s * 0.3, preset);
+      ctx.fill();
+      ctx.lineWidth = s * 0.009;
+      ctx.strokeStyle = preset.shadow;
+      ctx.stroke();
+      // Inner engraved outline and highlight
+      ctx.save();
+      ctx.scale(0.72, 0.72);
+      ctx.translate(0, s * 0.02);
+      ctx.beginPath();
+      ctx.moveTo(0, s * 0.3);
+      ctx.bezierCurveTo(-s * 0.5, s * 0.02, -s * 0.28, -s * 0.34, 0, -s * 0.12);
+      ctx.bezierCurveTo(s * 0.28, -s * 0.34, s * 0.5, s * 0.02, 0, s * 0.3);
+      ctx.closePath();
+      ctx.lineWidth = s * 0.008;
+      ctx.strokeStyle = "rgba(255,255,255,0.45)";
+      ctx.stroke();
+      ctx.restore();
+      ctx.beginPath();
+      ctx.moveTo(-s * 0.2, -s * 0.05);
+      ctx.bezierCurveTo(-s * 0.28, -s * 0.18, -s * 0.13, -s * 0.24, -s * 0.07, -s * 0.13);
+      ctx.lineWidth = s * 0.012;
+      ctx.strokeStyle = "rgba(255,255,255,0.6)";
+      ctx.lineCap = "round";
+      ctx.stroke();
+      ctx.restore();
+    });
+  }
+
+  function drawSparkleBurst(ctx, size, opts) {
+    const preset = opts.preset;
+    const s = size;
+    function spark(cx, cy, outer, inner) {
+      ctx.beginPath();
+      for (let i = 0; i < 8; i++) {
+        const r = i % 2 === 0 ? outer : inner;
+        const a = (Math.PI / 4) * i - Math.PI / 2;
+        const x = cx + Math.cos(a) * r;
+        const y = cy + Math.sin(a) * r;
+        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      }
+      ctx.closePath();
+      ctx.fillStyle = metallicGradient(ctx, cx - outer, cy - outer, cx + outer, cy + outer, preset);
+      ctx.fill();
+    }
+    withShadow(ctx, s * 0.04, "rgba(0,0,0,0.35)", 0, s * 0.01, () => {
+      spark(0, 0, s * 0.42, s * 0.07);
+      spark(s * 0.28, -s * 0.28, s * 0.15, s * 0.03);
+      spark(-s * 0.3, s * 0.26, s * 0.12, s * 0.025);
+      spark(s * 0.3, s * 0.3, s * 0.09, s * 0.02);
+    });
+  }
+
+  function drawLaurelWreath(ctx, size, opts) {
+    const preset = opts.preset;
+    const s = size;
+    const R = s * 0.34;
+    withShadow(ctx, s * 0.04, "rgba(0,0,0,0.4)", 0, s * 0.012, () => {
+      [1, -1].forEach((side) => {
+        ctx.save();
+        ctx.scale(side, 1);
+        // Branch: bottom, up the left side, stopping short of the top.
+        ctx.beginPath();
+        ctx.arc(0, 0, R, Math.PI * 0.5, Math.PI * 1.42, false);
+        ctx.lineWidth = s * 0.014;
+        ctx.strokeStyle = metallicGradient(ctx, -R, -R, R, R, preset);
+        ctx.stroke();
+        for (let i = 0; i < 8; i++) {
+          const phi = Math.PI * 0.56 + (i / 7) * Math.PI * 0.82;
+          [0.62, -0.62].forEach((tilt) => {
+            ctx.save();
+            ctx.translate(Math.cos(phi) * R, Math.sin(phi) * R);
+            ctx.rotate(phi + Math.PI / 2 + tilt);
+            ctx.beginPath();
+            ctx.ellipse(s * 0.05, 0, s * 0.075, s * 0.028, 0, 0, Math.PI * 2);
+            ctx.fillStyle = metallicGradient(ctx, 0, -s * 0.03, s * 0.12, s * 0.03, preset);
+            ctx.fill();
+            ctx.lineWidth = s * 0.003;
+            ctx.strokeStyle = preset.shadow;
+            ctx.stroke();
+            ctx.restore();
+          });
+        }
+        ctx.restore();
+      });
+      // Tie at the base
+      ctx.beginPath();
+      ctx.arc(0, R, s * 0.04, 0, Math.PI * 2);
+      ctx.fillStyle = metallicGradient(ctx, -s * 0.04, R - s * 0.04, s * 0.04, R + s * 0.04, preset);
+      ctx.fill();
+    });
+  }
+
+  function drawDiyaLamp(ctx, size, opts) {
+    const preset = opts.preset;
+    const s = size;
+    withShadow(ctx, s * 0.05, "rgba(0,0,0,0.45)", 0, s * 0.02, () => {
+      // Bowl
+      ctx.beginPath();
+      ctx.moveTo(-s * 0.36, s * 0.02);
+      ctx.bezierCurveTo(-s * 0.3, s * 0.34, s * 0.26, s * 0.34, s * 0.36, s * 0.02);
+      ctx.quadraticCurveTo(s * 0.44, -s * 0.02, s * 0.5, -s * 0.06);
+      ctx.quadraticCurveTo(s * 0.38, -s * 0.1, s * 0.3, -s * 0.06);
+      ctx.lineTo(-s * 0.3, -s * 0.06);
+      ctx.quadraticCurveTo(-s * 0.34, -s * 0.02, -s * 0.36, s * 0.02);
+      ctx.closePath();
+      ctx.fillStyle = metallicGradient(ctx, -s * 0.4, -s * 0.1, s * 0.4, s * 0.34, preset);
+      ctx.fill();
+      ctx.lineWidth = s * 0.008;
+      ctx.strokeStyle = preset.shadow;
+      ctx.stroke();
+    });
+    // Flame with warm glow
+    const glow = ctx.createRadialGradient(0, -s * 0.2, s * 0.02, 0, -s * 0.2, s * 0.3);
+    glow.addColorStop(0, "rgba(255,214,120,0.55)");
+    glow.addColorStop(1, "rgba(255,214,120,0)");
+    ctx.fillStyle = glow;
+    ctx.fillRect(-s * 0.35, -s * 0.5, s * 0.7, s * 0.6);
+    ctx.beginPath();
+    ctx.moveTo(0, -s * 0.42);
+    ctx.bezierCurveTo(s * 0.13, -s * 0.24, s * 0.11, -s * 0.09, 0, -s * 0.07);
+    ctx.bezierCurveTo(-s * 0.11, -s * 0.09, -s * 0.13, -s * 0.24, 0, -s * 0.42);
+    const flame = ctx.createLinearGradient(0, -s * 0.42, 0, -s * 0.07);
+    flame.addColorStop(0, "#fff3c4");
+    flame.addColorStop(0.5, "#ffb94a");
+    flame.addColorStop(1, "#e2731f");
+    ctx.fillStyle = flame;
+    ctx.fill();
+  }
+
+  function drawGlyph(ctx, size, opts) {
+    const s = size;
+    ctx.save();
+    ctx.font = Math.round(s * 0.66) + "px 'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji','Twemoji Mozilla',sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.shadowColor = "rgba(0,0,0,0.35)";
+    ctx.shadowBlur = s * 0.04;
+    ctx.shadowOffsetY = s * 0.015;
+    ctx.fillText(opts.glyph, 0, s * 0.03);
+    ctx.restore();
+  }
+
+  const LIBRARY_GROUPS = [
+    { id: "birthday", label: "Birthday" },
+    { id: "love", label: "Anniversary & Love" },
+    { id: "festivals", label: "Festivals" },
+    { id: "nature", label: "Flowers & Nature" },
+    { id: "celebration", label: "Celebration" },
+    { id: "general", label: "General" },
+    { id: "baby", label: "New Baby", occasions: ["new-baby"] },
+    { id: "graduation", label: "Graduation", occasions: ["graduation"] },
+    { id: "home", label: "New Home", occasions: ["new-home"] },
+    { id: "retirement", label: "Retirement", occasions: ["retirement"] },
+    { id: "wellbeing", label: "Get Well & Thanks", occasions: ["get-well", "friendship-thanks"] },
+  ];
+
+  const LIBRARY_ART = [
+    { id: "lib-sparkle-burst", name: "Sparkle Burst", group: "celebration", draw: drawSparkleBurst },
+    { id: "lib-laurel-wreath", name: "Laurel Wreath", group: "celebration", draw: drawLaurelWreath },
+    { id: "lib-heart-flourish", name: "Heart Flourish", group: "love", draw: drawHeartFlourish },
+    { id: "lib-rosette", name: "Foil Rosette", group: "nature", draw: (ctx, s, o) => drawRosette(ctx, s)(o.preset) },
+    { id: "lib-diya-lamp", name: "Diya Lamp", group: "festivals", draw: drawDiyaLamp },
+  ];
+
+  // [id, name, glyph, group, festive?]
+  const LIBRARY_GLYPHS = [
+    ["g-cake", "Birthday cake", "\u{1F382}", "birthday", true],
+    ["g-balloon", "Balloon", "\u{1F388}", "birthday", true],
+    ["g-gift", "Gift", "\u{1F381}", "birthday", false],
+    ["g-party", "Party popper", "\u{1F389}", "birthday", true],
+    ["g-confetti", "Confetti ball", "\u{1F38A}", "birthday", true],
+    ["g-cupcake", "Cupcake", "\u{1F9C1}", "birthday", true],
+    ["g-red-heart", "Red heart", "\u2764\uFE0F", "love", false],
+    ["g-two-hearts", "Two hearts", "\u{1F495}", "love", false],
+    ["g-ring", "Ring", "\u{1F48D}", "love", false],
+    ["g-rose", "Rose", "\u{1F339}", "love", false],
+    ["g-bouquet", "Bouquet", "\u{1F490}", "love", false],
+    ["g-toast", "Clinking glasses", "\u{1F942}", "love", true],
+    ["g-diya", "Diya lamp", "\u{1FA94}", "festivals", true],
+    ["g-fireworks", "Fireworks", "\u{1F386}", "festivals", true],
+    ["g-sparkler", "Sparkler", "\u{1F387}", "festivals", true],
+    ["g-kite", "Kite", "\u{1FA81}", "festivals", true],
+    ["g-crescent", "Crescent moon", "\u{1F319}", "festivals", false],
+    ["g-tree", "Christmas tree", "\u{1F384}", "festivals", true],
+    ["g-rainbow", "Rainbow", "\u{1F308}", "festivals", false],
+    ["g-namaste", "Folded hands", "\u{1F64F}", "festivals", false],
+    ["g-blossom", "Cherry blossom", "\u{1F338}", "nature", false],
+    ["g-hibiscus", "Hibiscus", "\u{1F33A}", "nature", false],
+    ["g-daisy", "Daisy", "\u{1F33C}", "nature", false],
+    ["g-tulip", "Tulip", "\u{1F337}", "nature", false],
+    ["g-sunflower", "Sunflower", "\u{1F33B}", "nature", false],
+    ["g-herb", "Leaves", "\u{1F33F}", "nature", false],
+    ["g-butterfly", "Butterfly", "\u{1F98B}", "nature", false],
+    ["g-sparkles", "Sparkles", "\u2728", "celebration", false],
+    ["g-star", "Glowing star", "\u{1F31F}", "celebration", false],
+    ["g-dizzy", "Shooting star", "\u{1F4AB}", "celebration", false],
+    ["g-trophy", "Trophy", "\u{1F3C6}", "celebration", true],
+    ["g-medal", "Gold medal", "\u{1F947}", "celebration", true],
+    ["g-clap", "Clapping hands", "\u{1F44F}", "celebration", true],
+    ["g-yellow-heart", "Yellow heart", "\u{1F49B}", "general", false],
+    ["g-dove", "Dove", "\u{1F54A}\uFE0F", "general", false],
+    ["g-clover", "Four-leaf clover", "\u{1F340}", "general", false],
+    ["g-sun", "Sun", "\u2600\uFE0F", "general", false],
+    ["g-tea", "Cup of tea", "\u{1F375}", "general", false],
+    ["g-bottle", "Baby bottle", "\u{1F37C}", "baby", false],
+    ["g-teddy", "Teddy bear", "\u{1F9F8}", "baby", false],
+    ["g-baby", "Baby", "\u{1F476}", "baby", false],
+    ["g-chick", "Hatching chick", "\u{1F423}", "baby", false],
+    ["g-cap", "Graduation cap", "\u{1F393}", "graduation", true],
+    ["g-scroll", "Scroll", "\u{1F4DC}", "graduation", false],
+    ["g-books", "Books", "\u{1F4DA}", "graduation", false],
+    ["g-house", "House", "\u{1F3E1}", "home", false],
+    ["g-key", "Key", "\u{1F511}", "home", false],
+    ["g-sunrise", "Sunrise", "\u{1F305}", "retirement", false],
+    ["g-compass", "Compass", "\u{1F9ED}", "retirement", false],
+    ["g-sailboat", "Sailboat", "\u26F5", "retirement", false],
+    ["g-well-tea", "Warm drink", "\u2615", "wellbeing", false],
+    ["g-well-hug", "Smiling face with hearts", "\u{1F970}", "wellbeing", false],
+  ];
+  const LIBRARY_GLYPH_DEFS = LIBRARY_GLYPHS.map(([id, name, glyph, group, festive]) => ({
+    id, name, group, kind: "glyph", tone: festive ? "festive" : "gentle", defaultLayer: "top",
+    draw: (ctx, s, o) => drawGlyph(ctx, s, { ...o, glyph }),
+  }));
+
+  LIBRARY_ART.concat(LIBRARY_GLYPH_DEFS).forEach((def) => {
+    def.library = true;
+    def.category = "library";
+    if (!def.defaultLayer) def.defaultLayer = "top";
+    DEFS.push(def);
+  });
+
+  // Festive glyphs are not offered on Get Well cards; Condolence has no
+  // decorations at all (see OccasionRegistry.allowsStamps).
+  function isAvailableFor(def, occasionId) {
+    if (occasionId === "condolence") return false;
+    if (occasionId === "get-well" && def.tone === "festive") return false;
+    return true;
+  }
+
+  function libraryGroups(occasionId) {
+    return LIBRARY_GROUPS
+      .filter((group) => !group.occasions || group.occasions.includes(occasionId))
+      .map((group) => ({
+        id: group.id,
+        label: group.label,
+        items: DEFS.filter((def) => def.library && def.group === group.id && isAvailableFor(def, occasionId)),
+      }))
+      .filter((group) => group.items.length);
+  }
+
   function getDef(id) { return DEFS.find((d) => d.id === id) || DEFS[0]; }
   function list() { return DEFS; }
 
@@ -1001,7 +1305,7 @@ const StampCollections = (() => {
     return canvas;
   }
 
-  return { list, getDef, renderToCanvas };
+  return { list, getDef, renderToCanvas, libraryGroups, isAvailableFor };
 })();
 
 /* =========================================================================
@@ -1226,7 +1530,7 @@ const DesignPreferences = createFavouriteStore("design-preferences", () => Desig
 // Application version. Shown in the header, stamped onto exported
 // backups, and kept in step with SW_VERSION in sw.js so a released
 // shell and the code inside it always report the same number.
-const APP_VERSION = "1.26.0";
+const APP_VERSION = "1.27.0";
 
 const CURRENT_SCHEMA_VERSION = 6;
 
@@ -6885,6 +7189,7 @@ const App = (() => {
     ];
     const groupById = Object.fromEntries(groups.map((group) => [group.id, group]));
     definitions.forEach((def) => {
+      if (def.library) return;
       if (recommendedIds.includes(def.id)) return;
       let groupId = "celebration";
       if (def.category === "occasion") groupId = "occasion";
@@ -6909,6 +7214,81 @@ const App = (() => {
       section.appendChild(heading);
       section.appendChild(grid);
       gallery.appendChild(section);
+    });
+    decorationLibraryDirty = true;
+    if (dom.decorationLibrary && dom.decorationLibrary.open) populateDecorationLibrary();
+  }
+
+  // Optional library (R4): built only while its panel is open, so the routine
+  // editor stays light and uncluttered.
+  let decorationLibraryDirty = true;
+  function populateDecorationLibrary() {
+    const host = dom.decorationLibraryGroups;
+    if (!host) return;
+    decorationLibraryDirty = false;
+    host.innerHTML = "";
+    const project = StateStore.getProject();
+    const occasionId = (project.occasion && project.occasion.id) || "birthday";
+    if (!OccasionRegistry.allowsStamps(occasionId)) return;
+    StampCollections.libraryGroups(occasionId).forEach((group) => {
+      const section = document.createElement("section");
+      section.className = "stamp-gallery-section";
+      const heading = document.createElement("h4");
+      heading.className = "stamp-gallery-heading";
+      heading.id = "decoration-group-" + group.id;
+      heading.textContent = group.label;
+      const grid = document.createElement("div");
+      grid.className = "stamp-gallery-grid";
+      grid.setAttribute("role", "list");
+      grid.setAttribute("aria-labelledby", heading.id);
+      group.items.forEach((def) => grid.appendChild(createStampGalleryItem(def, [], project)));
+      section.appendChild(heading);
+      section.appendChild(grid);
+      host.appendChild(section);
+    });
+  }
+
+  // "On this card": every placed decoration as a keyboard-reachable row, so a
+  // decoration can be selected, moved and removed without the pointer.
+  let placedListSignature = "";
+  function syncPlacedStamps(project) {
+    const host = dom.stampPlacedList;
+    if (!host || !project) return;
+    const occasionId = (project.occasion && project.occasion.id) || "birthday";
+    const stamps = OccasionRegistry.allowsStamps(occasionId) ? project.stamps : [];
+    const signature = stamps.map((s) => s.id + ":" + s.assetId).join("|") + "#" + (selectedStampId || "");
+    if (signature === placedListSignature) return;
+    placedListSignature = signature;
+    host.innerHTML = "";
+    dom.stampPlacedEmpty.hidden = stamps.length > 0;
+    stamps.forEach((stamp, index) => {
+      const def = StampCollections.getDef(stamp.assetId);
+      const li = document.createElement("li");
+      li.className = "stamp-placed-row";
+      const pick = document.createElement("button");
+      pick.type = "button";
+      pick.className = "btn btn-ghost btn-small stamp-placed-pick";
+      pick.setAttribute("aria-pressed", String(stamp.id === selectedStampId));
+      pick.textContent = (index + 1) + ". " + def.name;
+      pick.addEventListener("click", () => {
+        selectedStampId = stamp.id;
+        showStampToolbar(stamp);
+        placedListSignature = "";
+        syncPlacedStamps(StateStore.getProject());
+        toast(def.name + " selected. Use the arrow buttons on the card, or the arrow keys, to move it.");
+      });
+      const remove = document.createElement("button");
+      remove.type = "button";
+      remove.className = "btn btn-ghost btn-small btn-danger-text stamp-placed-remove";
+      remove.setAttribute("aria-label", "Remove " + def.name);
+      remove.textContent = "Remove";
+      remove.addEventListener("click", () => {
+        StateStore.update((p) => { p.stamps = p.stamps.filter((s) => s.id !== stamp.id); }, { reason: "stamp-remove" });
+        if (selectedStampId === stamp.id) { selectedStampId = null; hideStampToolbar(); }
+      });
+      li.appendChild(pick);
+      li.appendChild(remove);
+      host.appendChild(li);
     });
   }
 
@@ -7476,6 +7856,11 @@ const App = (() => {
       toast(violations.length ? "Arranged — a few stamps are tight on space." : "Stamps arranged.");
     });
 
+    dom.decorationLibrary.addEventListener("toggle", () => {
+      if (dom.decorationLibrary.open && decorationLibraryDirty) populateDecorationLibrary();
+    });
+    bindStampKeyboard();
+
     dom.clearStampsBtn.addEventListener("click", async () => {
       if (!StateStore.getProject().stamps.length) return;
       const ok = await confirmDialog("Remove all placed stamps from this card?", "Clear all stamps");
@@ -7515,12 +7900,53 @@ const App = (() => {
       hideStampToolbar();
       return;
     }
+    if (action.indexOf("move-") === 0) { nudgeSelectedStamp(action.slice(5), 0.01, false); return; }
     StateStore.update((p) => {
       const stamp = p.stamps.find((s) => s.id === selectedStampId);
       if (!stamp) return;
       if (action === "layer-back") stamp.layer = "background";
       if (action === "layer-front") stamp.layer = "top";
     }, { reason: "stamp-layer" });
+  }
+
+  // Move the selected decoration by a fraction of the card. Buttons make one
+  // Undo step per press; held/repeated arrow keys are grouped by the caller.
+  function nudgeSelectedStamp(direction, step, skipHistory) {
+    if (!selectedStampId) return false;
+    const dx = direction === "left" ? -step : direction === "right" ? step : 0;
+    const dy = direction === "up" ? -step : direction === "down" ? step : 0;
+    let moved = false;
+    StateStore.update((p) => {
+      const stamp = p.stamps.find((s) => s.id === selectedStampId);
+      if (!stamp) return;
+      stamp.x = Utils.clamp(stamp.x + dx, 0, 1);
+      stamp.y = Utils.clamp(stamp.y + dy, 0, 1);
+      moved = true;
+    }, skipHistory ? { skipHistory: true, reason: "stamp-move" } : { reason: "stamp-move" });
+    return moved;
+  }
+
+  function bindStampKeyboard() {
+    let pendingCheckpoint = false;
+    document.addEventListener("keydown", (e) => {
+      if (!selectedStampId || e.ctrlKey || e.metaKey || e.altKey) return;
+      const target = e.target;
+      if (target && target.closest && target.closest("input, textarea, select, [contenteditable], [role=tab], [role=radio], dialog")) return;
+      const arrows = { ArrowLeft: "left", ArrowRight: "right", ArrowUp: "up", ArrowDown: "down" };
+      if (arrows[e.key]) {
+        e.preventDefault();
+        if (nudgeSelectedStamp(arrows[e.key], e.shiftKey ? 0.04 : 0.01, true)) pendingCheckpoint = true;
+      } else if (e.key === "Delete" || e.key === "Backspace") {
+        e.preventDefault();
+        handleStampAction("remove");
+      }
+    });
+    document.addEventListener("keyup", (e) => {
+      if (pendingCheckpoint && e.key.indexOf("Arrow") === 0) {
+        pendingCheckpoint = false;
+        StateStore.update(() => {});
+      }
+    });
   }
 
   function handleStampSlider(action, value) {
@@ -8369,6 +8795,8 @@ const App = (() => {
       layoutTextWidth: $("#layout-text-width"), layoutTextWidthOut: $("#layout-text-width-out"),
       resetLayoutBtn: $("#reset-layout-btn"),
 
+      decorationLibrary: $("#decoration-library"), decorationLibraryGroups: $("#decoration-library-groups"),
+      stampPlacedList: $("#stamp-placed-list"), stampPlacedEmpty: $("#stamp-placed-empty"),
       stampGallery: $("#stamp-gallery"), autoArrangeBtn: $("#auto-arrange-btn"),
       clearStampsBtn: $("#clear-stamps-btn"), monogramToggle: $("#monogram-toggle"),
 
@@ -8428,6 +8856,7 @@ const App = (() => {
       if (reason !== "init" && reason !== "silent") hasUnsavedChanges = true;
       if (reason !== "silent") scheduleRender(reason === "photo-rotate" || reason === "theme-change" || reason === "occasion-change" ? "preview" : "preview");
       syncGreetingSafety(project);
+      syncPlacedStamps(project);
       populateStampGalleryThumbsIfThemeChanged(reason);
       if (reason === "photo-set" || reason === "photo-remove" || reason === "photo-reset" || reason === "photo-focus") {
         syncPhotoControls(project);

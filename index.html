@@ -90,6 +90,12 @@
               Opacity
               <input type="range" min="0.1" max="1" step="0.01" data-stamp-action="opacity" aria-label="Stamp opacity" />
             </label>
+            <span class="stamp-move-group" role="group" aria-label="Move decoration">
+              <button type="button" class="mini-btn" data-stamp-action="move-left" aria-label="Move decoration left">&#9664;</button>
+              <button type="button" class="mini-btn" data-stamp-action="move-up" aria-label="Move decoration up">&#9650;</button>
+              <button type="button" class="mini-btn" data-stamp-action="move-down" aria-label="Move decoration down">&#9660;</button>
+              <button type="button" class="mini-btn" data-stamp-action="move-right" aria-label="Move decoration right">&#9654;</button>
+            </span>
             <button type="button" class="mini-btn mini-btn-danger" data-stamp-action="remove" aria-label="Remove stamp">✕</button>
           </div>
         </div>
@@ -371,6 +377,17 @@
           <fieldset class="field">
             <legend id="stamp-gallery-legend">Occasion decorations</legend>
             <div id="stamp-gallery" class="stamp-gallery" aria-label="Available decorations by category"></div>
+          </fieldset>
+          <details id="decoration-library" class="decoration-library">
+            <summary>More decorations <span class="field-optional">(optional)</span></summary>
+            <p class="field-hint">Extra artwork and emoji, grouped by theme. Emoji look slightly different on each device, but your preview and PNG match on the same device.</p>
+            <div id="decoration-library-groups" class="stamp-gallery"></div>
+          </details>
+          <fieldset class="field">
+            <legend>On this card</legend>
+            <p id="stamp-placed-empty" class="field-hint">No decorations added yet.</p>
+            <ul id="stamp-placed-list" class="stamp-placed-list"></ul>
+            <p class="field-hint">Select a decoration here or on the card, then move it with the arrow buttons on the card or the arrow keys (Shift for bigger steps), resize or rotate it with the sliders, and press Delete or Remove to take it off.</p>
           </fieldset>
           <div class="field field-row">
             <button id="auto-arrange-btn" class="btn btn-ghost" type="button">Auto-arrange</button>

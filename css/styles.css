@@ -353,9 +353,11 @@ input, select, textarea { font-family: inherit; }
 
 .selected-stamp-toolbar {
   position: absolute;
-  left: 50%;
+  left: 0;
+  right: 0;
+  margin: 0 auto;
+  width: fit-content;
   bottom: 10px;
-  transform: translateX(-50%);
   display: flex;
   align-items: center;
   gap: 6px;
@@ -366,7 +368,9 @@ input, select, textarea { font-family: inherit; }
   border: 1px solid var(--border-glass-strong);
   box-shadow: var(--shadow-soft);
   max-width: calc(100% - 20px);
-  overflow-x: auto;
+  flex-wrap: wrap;
+  justify-content: center;
+  border-radius: 20px;
 }
 
 .mini-slider-label {
@@ -940,3 +944,17 @@ fieldset[disabled] button { cursor: not-allowed; }
   text-shadow: 0 1px 4px rgba(0,0,0,0.75);
 }
 .design-fav[aria-pressed="false"] { opacity: 0.7; }
+
+/* Decoration library (R4) */
+.decoration-library { margin: 12px 0; border: 1px solid var(--border-glass); border-radius: var(--radius-md); padding: 4px 12px 12px; }
+.decoration-library > summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; gap: 6px; font-weight: 600; color: var(--gold-200); }
+.decoration-library > summary:focus-visible { outline: 2px solid var(--gold-300); outline-offset: 2px; }
+.decoration-library .stamp-gallery { margin-top: 10px; }
+.stamp-placed-list { list-style: none; margin: 8px 0; padding: 0; display: grid; gap: 6px; }
+.stamp-placed-row { display: flex; gap: 6px; align-items: stretch; }
+.stamp-placed-pick { flex: 1; min-height: 44px; min-width: 0; text-align: left; overflow-wrap: anywhere; }
+.stamp-placed-pick[aria-pressed="true"] { border-color: var(--gold-300); background: rgba(232,199,119,0.12); }
+.stamp-placed-remove { min-height: 44px; min-width: 44px; }
+.stamp-move-group { display: inline-flex; gap: 2px; }
+.selected-stamp-toolbar .mini-btn { min-width: 40px; min-height: 40px; }
+@media (pointer: coarse) { .selected-stamp-toolbar .mini-btn { min-width: 44px; min-height: 44px; } }
