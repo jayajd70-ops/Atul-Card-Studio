@@ -587,9 +587,9 @@ Task 003 implementation and release were explicitly authorized. The Current Task
 
 ## 9. Current Task
 
-- **Approved Current Task:** Task 027 — Optional decoration library and keyboard-accessible decorations (R4)
+- **Approved Current Task:** None open. Tasks 025 (R1), 026 (R2) and 027 (R4) are complete; the owner-approved R1/R2/R4 series is finished. Remaining product questions are listed in the report to the owner.
 - **Active Permission Level:** IMPLEMENT / COMMIT / PUSH / DEPLOY under standing owner authorization (`PROJECT.md` section 4.1; owner instruction of 23 September 2026). Owner scope for this series: R1, R2 and R4 only (Task 025 R1 and 026 R2 done). R5, R15 and R18 are out of scope.
-- **Status:** Implementation and local verification complete; release in progress
+- **Status:** Complete, committed, pushed, deployed, and verified
 
 ### Task 027 Impact Record
 
@@ -605,7 +605,9 @@ Task 003 implementation and release were explicitly authorized. The Current Task
 ### Task 027 Implementation Record
 
 - **Baseline:** `main` at commit `f232cb6`
-- **Status:** Implementation and local verification complete; release in progress
+- **Status:** Complete, committed, pushed, deployed, and verified
+- **Completed commit:** `e932bb7` — `feat: add optional decoration library and keyboard-accessible decorations (R4)`
+- **Live verification:** GitHub Pages run [`35930293948`](https://github.com/jayajd70-ops/Atul-Card-Studio/actions/runs/35930293948) succeeded; live manifest, service worker and app serve 1.27.0. After the waiting worker was activated the caches were exactly the detector cache plus `atul-shell-v1.27.0` with 53 entries (unchanged first-install size, no new asset files). On the live HTTPS page under service-worker control the library opens with 43 items (main gallery still 19), a library artwork and an emoji were added and listed under On this card, an arrow-key move was undone, and `js/app.js` was served from the cache. Real airplane-mode restart NOT TESTED (embedded browser cannot toggle offline).
 - **Release:** Application, manifest, service worker, and cache version `1.27.0`; schema remains v6; no new asset files, so the 53-entry shell precache is unchanged
 - **Verified locally (Chrome, PASS):** Library is collapsed by default and shows 43 items in six groups on a birthday card (main gallery still 19); all 43 thumbnails render; art was inspected and two drawings (Heart Flourish, Laurel Wreath) were redrawn after inspection; adding a library artwork and an emoji works and both appear on the card; the On this card list selects and removes; move buttons move by 1% as one Undo step; arrow keys move by 1% (Shift 4%) grouped into one Undo step; arrow keys typed in a text field do not move anything; Delete removes and Undo restores; Get Well hides the party/festive emoji and adds a Get Well & Thanks group; New Baby adds its group; Condolence hides the Finishing tab and lists nothing; each occasion keeps its own decorations; recipient, greeting and other content are untouched; decorations survive reload and appear in a backup; PNG export with decorations is exactly 1200 x 1760; at 375 px there is no horizontal overflow and the toolbar wraps with 44 px buttons.
 - **NOT TESTED:** Emoji on a phone or another operating system (glyph shapes differ by device; only this Windows browser was checked); a physical touch drag of a library item; resize and rotate of every one of the 57 new items individually (the shared sliders were exercised on existing items and library items draw through the same path); backup re-import of a card with library decorations; real offline restart and live service-worker behavior until the live check below.
