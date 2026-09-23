@@ -587,9 +587,9 @@ Task 003 implementation and release were explicitly authorized. The Current Task
 
 ## 9. Current Task
 
-- **Approved Current Task:** Task 025 — Curated Design Library (R1)
+- **Approved Current Task:** Task 025 (R1) complete; Task 026 (R2) is next
 - **Active Permission Level:** IMPLEMENT / COMMIT / PUSH / DEPLOY under standing owner authorization (`PROJECT.md` section 4.1; owner instruction of 23 September 2026). Owner scope for this series: R1, R2 and R4 only, as three small tasks (025 R1, 026 R2, 027 R4). R5, R15 and R18 are out of scope.
-- **Status:** Implementation and local verification complete; release in progress
+- **Status:** Complete, committed, pushed, deployed, and verified
 
 ### Task 025 Impact Record
 
@@ -605,7 +605,9 @@ Task 003 implementation and release were explicitly authorized. The Current Task
 ### Task 025 Implementation Record
 
 - **Baseline:** `main` at commit `1ed2339`
-- **Status:** Implementation and local verification complete; release in progress
+- **Status:** Complete, committed, pushed, deployed, and verified
+- **Completed commit:** `bac00d7` — `feat: add curated Design Library with local favourites (R1)`
+- **Live verification:** GitHub Pages run [`35928482271`](https://github.com/jayajd70-ops/Atul-Card-Studio/actions/runs/35928482271) succeeded; live manifest, service worker and app serve 1.25.0 and the Design library markup is present. After the waiting service worker was activated, the cache set was exactly the detector cache plus `atul-shell-v1.25.0` with 53 entries (old shell caches removed, unchanged first-install size). On the live HTTPS page all ten thumbnails rendered, a favourite was set and a design applied, and `js/app.js` was served from the service-worker cache. Real airplane-mode restart NOT TESTED (embedded browser cannot toggle offline).
 - **Release:** Application, manifest, service worker, and cache version `1.25.0`; schema remains v6; no new assets, so the 53-entry shell precache is unchanged
 - **Behavior:** Ten curated designs (Royal Gold, Pearl Heirloom, Emerald Elegance, Burgundy Romance, Sapphire Modern, Tuscan Warmth, Blush Rose Gold, Midnight Platinum, Festive Ember, Soft Care), each with a live thumbnail of the current card, a name, suitability text, and a local favourite star. Designs that suit the current occasion sort first and carry a "Suits this occasion" mark. Selecting one is a single Undo step.
 - **Verified locally (Chrome, PASS):** All ten thumbnails render (about 6 s total in the hidden pane, sequential, cancelled when the card changes); applying a design leaves recipient, sender, message, photo zoom/pan, photo shape and centrepiece choice unchanged; Undo restores the previous design; favourite persists across reload and the favourites-only filter works; Condolence disables the library with an explanation and shows no active design; festival (Diwali) and Get Well reorder by suitability; the chosen design survives reload; no horizontal page overflow at 375 px; favourite target 44 x 44 px; PNG export is exactly 1200 x 1760.
