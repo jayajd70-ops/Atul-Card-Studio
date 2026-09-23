@@ -1121,6 +1121,31 @@ function createFavouriteStore(settingsKey, knownIdsFn) {
 const ThemePreferences = createFavouriteStore("theme-preferences", () => ThemeRegistry.list().map((theme) => theme.id));
 
 /* =========================================================================
+   SECTION: FrameStyles (R2)
+   Border families for personal-occasion and festival cards. "classic" is the
+   original triple foil rule with botanical corners and remains the default
+   for any card that has no frameStyle. The other families reuse the reviewed
+   foil-rule drawing already used for restrained cards, so they stay inside
+   the same safe margins. Condolence keeps its own mood-driven frame and
+   ignores this setting.
+   ========================================================================= */
+const FrameStyles = (() => {
+  const STYLES = [
+    { id: "classic", name: "Classic Foil", hint: "Triple rule with botanical corners", borderStyle: null },
+    { id: "refined", name: "Refined Double", hint: "Slim double rule with fine corners", borderStyle: "heartfelt" },
+    { id: "tailored", name: "Tailored", hint: "Crisp hairlines with corner brackets", borderStyle: "professional" },
+    { id: "regal", name: "Regal Rule", hint: "Stepped rule with centre diamonds", borderStyle: "reverent" },
+    { id: "soft", name: "Soft Round", hint: "Gentle rounded double border", borderStyle: "comforting" },
+  ];
+
+  function list() { return STYLES; }
+  function get(id) { return STYLES.find((style) => style.id === id) || STYLES[0]; }
+  function normalize(id) { return get(id).id; }
+
+  return { list, get, normalize };
+})();
+
+/* =========================================================================
    SECTION: DesignLibrary (R1)
    A small curated set of reusable design presets. A preset is data only: it
    names an existing theme, foil palette/finish and font pairing that work
@@ -1134,16 +1159,16 @@ const ThemePreferences = createFavouriteStore("theme-preferences", () => ThemeRe
    ========================================================================= */
 const DesignLibrary = (() => {
   const PRESETS = [
-    { id: "royal-gold", name: "Royal Gold", themeId: "midnight-obsidian", foilPresetId: "gold", foilMode: "foil", foilIntensity: 78, pairingId: "cinzel-source-sans", mood: "regal", suits: ["birthday", "anniversary", "congratulations"] },
-    { id: "pearl-heirloom", name: "Pearl Heirloom", themeId: "pearl-marble", foilPresetId: "gold", foilMode: "foil", foilIntensity: 70, pairingId: "cormorant-inter", mood: "classic", suits: ["anniversary", "birthday", "friendship-thanks"] },
-    { id: "emerald-elegance", name: "Emerald Elegance", themeId: "imperial-emerald", foilPresetId: "emerald", foilMode: "foil", foilIntensity: 72, pairingId: "playfair-montserrat", mood: "editorial", suits: ["birthday", "graduation", "new-home"] },
-    { id: "burgundy-romance", name: "Burgundy Romance", themeId: "royal-burgundy", foilPresetId: "rose-gold", foilMode: "foil", foilIntensity: 72, pairingId: "baskerville-manrope", mood: "romantic", suits: ["anniversary", "birthday"] },
-    { id: "sapphire-modern", name: "Sapphire Modern", themeId: "velvet-sapphire", foilPresetId: "platinum", foilMode: "foil", foilIntensity: 70, pairingId: "dmserif-worksans", mood: "modern-luxury", suits: ["congratulations", "graduation", "retirement"] },
-    { id: "tuscan-warmth", name: "Tuscan Warmth", themeId: "amber-tuscan", foilPresetId: "champagne", foilMode: "foil", foilIntensity: 68, pairingId: "cormorant-inter", mood: "classic", suits: ["new-home", "friendship-thanks", "birthday", "festival"] },
-    { id: "blush-rose-gold", name: "Blush Rose Gold", themeId: "pearl-marble", foilPresetId: "rose-gold", foilMode: "emboss", foilIntensity: 66, pairingId: "baskerville-manrope", mood: "romantic", suits: ["new-baby", "anniversary", "birthday"] },
-    { id: "midnight-platinum", name: "Midnight Platinum", themeId: "midnight-obsidian", foilPresetId: "platinum", foilMode: "foil", foilIntensity: 70, pairingId: "playfair-montserrat", mood: "editorial", suits: ["retirement", "congratulations", "graduation"] },
-    { id: "festive-ember", name: "Festive Ember", themeId: "royal-burgundy", foilPresetId: "gold", foilMode: "foil", foilIntensity: 78, pairingId: "cinzel-source-sans", mood: "regal", suits: ["festival", "birthday", "anniversary"] },
-    { id: "soft-care", name: "Soft Care", themeId: "pearl-marble", foilPresetId: "champagne", foilMode: "deboss", foilIntensity: 60, pairingId: "cormorant-inter", mood: "classic", suits: ["get-well", "friendship-thanks", "new-baby"] },
+    { id: "royal-gold", frameStyle: "classic", name: "Royal Gold", themeId: "midnight-obsidian", foilPresetId: "gold", foilMode: "foil", foilIntensity: 78, pairingId: "cinzel-source-sans", mood: "regal", suits: ["birthday", "anniversary", "congratulations"] },
+    { id: "pearl-heirloom", frameStyle: "tailored", name: "Pearl Heirloom", themeId: "pearl-marble", foilPresetId: "gold", foilMode: "foil", foilIntensity: 70, pairingId: "cormorant-inter", mood: "classic", suits: ["anniversary", "birthday", "friendship-thanks"] },
+    { id: "emerald-elegance", frameStyle: "classic", name: "Emerald Elegance", themeId: "imperial-emerald", foilPresetId: "emerald", foilMode: "foil", foilIntensity: 72, pairingId: "playfair-montserrat", mood: "editorial", suits: ["birthday", "graduation", "new-home"] },
+    { id: "burgundy-romance", frameStyle: "classic", name: "Burgundy Romance", themeId: "royal-burgundy", foilPresetId: "rose-gold", foilMode: "foil", foilIntensity: 72, pairingId: "baskerville-manrope", mood: "romantic", suits: ["anniversary", "birthday"] },
+    { id: "sapphire-modern", frameStyle: "tailored", name: "Sapphire Modern", themeId: "velvet-sapphire", foilPresetId: "platinum", foilMode: "foil", foilIntensity: 70, pairingId: "dmserif-worksans", mood: "modern-luxury", suits: ["congratulations", "graduation", "retirement"] },
+    { id: "tuscan-warmth", frameStyle: "soft", name: "Tuscan Warmth", themeId: "amber-tuscan", foilPresetId: "champagne", foilMode: "foil", foilIntensity: 68, pairingId: "cormorant-inter", mood: "classic", suits: ["new-home", "friendship-thanks", "birthday", "festival"] },
+    { id: "blush-rose-gold", frameStyle: "soft", name: "Blush Rose Gold", themeId: "pearl-marble", foilPresetId: "rose-gold", foilMode: "emboss", foilIntensity: 66, pairingId: "baskerville-manrope", mood: "romantic", suits: ["new-baby", "anniversary", "birthday"] },
+    { id: "midnight-platinum", frameStyle: "regal", name: "Midnight Platinum", themeId: "midnight-obsidian", foilPresetId: "platinum", foilMode: "foil", foilIntensity: 70, pairingId: "playfair-montserrat", mood: "editorial", suits: ["retirement", "congratulations", "graduation"] },
+    { id: "festive-ember", frameStyle: "regal", name: "Festive Ember", themeId: "royal-burgundy", foilPresetId: "gold", foilMode: "foil", foilIntensity: 78, pairingId: "cinzel-source-sans", mood: "regal", suits: ["festival", "birthday", "anniversary"] },
+    { id: "soft-care", frameStyle: "soft", name: "Soft Care", themeId: "pearl-marble", foilPresetId: "champagne", foilMode: "deboss", foilIntensity: 60, pairingId: "cormorant-inter", mood: "classic", suits: ["get-well", "friendship-thanks", "new-baby"] },
   ];
 
   function list() { return PRESETS; }
@@ -1175,13 +1200,15 @@ const DesignLibrary = (() => {
     project.foil.intensity = preset.foilIntensity;
     project.typography.pairingId = preset.pairingId;
     project.typography.mood = preset.mood;
+    project.layout.frameStyle = FrameStyles.normalize(preset.frameStyle);
   }
 
   function isActive(project, preset) {
     return project.theme.id === preset.themeId
       && project.foil.presetId === preset.foilPresetId
       && project.foil.mode === preset.foilMode
-      && project.typography.pairingId === preset.pairingId;
+      && project.typography.pairingId === preset.pairingId
+      && FrameStyles.normalize(project.layout && project.layout.frameStyle) === FrameStyles.normalize(preset.frameStyle);
   }
 
   return { list, get, isAvailableFor, suitsOccasion, suitabilityLabel, applyToProject, isActive };
@@ -1199,7 +1226,7 @@ const DesignPreferences = createFavouriteStore("design-preferences", () => Desig
 // Application version. Shown in the header, stamped onto exported
 // backups, and kept in step with SW_VERSION in sw.js so a released
 // shell and the code inside it always report the same number.
-const APP_VERSION = "1.25.0";
+const APP_VERSION = "1.26.0";
 
 const CURRENT_SCHEMA_VERSION = 6;
 
@@ -1251,6 +1278,7 @@ function createDefaultProject(overrides) {
       textShiftX: 0,
       centerpieceId: "auto",
       photoShape: "circle",
+      frameStyle: "classic",
     },
     typography: {
       pairingId: "cinzel-source-sans",
@@ -2465,6 +2493,8 @@ const Migrations = (() => {
     record.content.emotion = GreetingGenerator.normalizeEmotion(record.content.emotion, record.occasion.id);
     ensureOccasionContentStates(record);
     ensureOccasionStampStates(record);
+
+    if (record.layout) record.layout.frameStyle = FrameStyles.normalize(record.layout.frameStyle);
 
     if (record.layout && record.layout.textShiftX == null) {
       record.layout.textShiftX = 0;
@@ -4464,9 +4494,13 @@ const Renderer = (() => {
     const design = OccasionRegistry.getDesign(isCondolence ? "condolence" : "birthday", emotion);
 
     compositeFoil(ctx, W, H, (mctx) => {
+      const frameBorder = FrameStyles.get(project && project.layout && project.layout.frameStyle).borderStyle;
       if (isCondolence) {
         drawCondolenceBorderLines(mctx, design.borderStyle);
         drawCondolenceCorners(mctx, design.borderStyle);
+      } else if (frameBorder) {
+        drawCondolenceBorderLines(mctx, frameBorder);
+        drawCondolenceCorners(mctx, frameBorder);
       } else {
         drawBorderLines(mctx);
         drawCorners(mctx);
@@ -6695,6 +6729,45 @@ const App = (() => {
     }
   }
 
+  function populateFrameList() {
+    const list = dom.frameList;
+    if (!list) return;
+    list.innerHTML = "";
+    FrameStyles.list().forEach((style) => {
+      const item = document.createElement("button");
+      item.type = "button";
+      item.className = "option-item";
+      item.setAttribute("role", "radio");
+      item.setAttribute("aria-checked", "false");
+      item.dataset.frameId = style.id;
+      const strong = document.createElement("strong");
+      strong.textContent = style.name;
+      const span = document.createElement("span");
+      span.textContent = style.hint;
+      item.appendChild(strong);
+      item.appendChild(span);
+      item.addEventListener("click", () => {
+        StateStore.update((p) => { p.layout.frameStyle = style.id; }, { reason: "theme-change" });
+        toast("Border set to " + style.name);
+      });
+      list.appendChild(item);
+    });
+  }
+
+  function syncFrameList(project) {
+    if (!dom.frameList) return;
+    const occasionId = currentOccasionId(project);
+    const available = occasionId !== "condolence";
+    dom.frameFieldset.disabled = !available;
+    dom.frameHint.textContent = available
+      ? "Choose the border drawn around the card. It never changes your text or photo."
+      : "Condolence cards keep their own restrained border.";
+    const current = FrameStyles.normalize(project.layout && project.layout.frameStyle);
+    dom.frameList.querySelectorAll(".option-item").forEach((el) => {
+      el.setAttribute("aria-checked", String(available && el.dataset.frameId === current));
+    });
+  }
+
   function populateThemeGrid() {
     const grid = dom.themeGrid;
     grid.innerHTML = "";
@@ -8097,6 +8170,7 @@ const App = (() => {
     });
     syncThemeFavouriteControls(project);
     syncDesignLibrary(project);
+    syncFrameList(project);
     document.querySelectorAll("#foil-grid .swatch").forEach((el) => {
       el.setAttribute("aria-checked", String(el.dataset.foilId === project.foil.presetId));
     });
@@ -8256,6 +8330,7 @@ const App = (() => {
 
       designGrid: $("#design-grid"), designFieldset: $("#design-library-fieldset"), designHint: $("#design-library-hint"),
       designEmpty: $("#design-empty"), designFavouritesFilter: $("#design-favourites-filter"),
+      frameList: $("#frame-list"), frameFieldset: $("#frame-style-fieldset"), frameHint: $("#frame-style-hint"),
       themeGrid: $("#theme-grid"), themeFavouriteBtn: $("#theme-favourite-btn"), themeFavouriteHint: $("#theme-favourite-hint"),
 
       moodSelect: $("#mood-select"), pairingList: $("#pairing-list"),
@@ -8318,6 +8393,7 @@ const App = (() => {
     await DesignPreferences.init();
     populateOccasionSelect();
     populateThemeGrid();
+    populateFrameList();
     populateDesignGrid();
     populateFoilGrid();
     populatePairingList();

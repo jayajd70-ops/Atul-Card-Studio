@@ -587,9 +587,28 @@ Task 003 implementation and release were explicitly authorized. The Current Task
 
 ## 9. Current Task
 
-- **Approved Current Task:** Task 025 (R1) complete; Task 026 (R2) is next
-- **Active Permission Level:** IMPLEMENT / COMMIT / PUSH / DEPLOY under standing owner authorization (`PROJECT.md` section 4.1; owner instruction of 23 September 2026). Owner scope for this series: R1, R2 and R4 only, as three small tasks (025 R1, 026 R2, 027 R4). R5, R15 and R18 are out of scope.
-- **Status:** Complete, committed, pushed, deployed, and verified
+- **Approved Current Task:** Task 026 — Border style families (R2)
+- **Active Permission Level:** IMPLEMENT / COMMIT / PUSH / DEPLOY under standing owner authorization (`PROJECT.md` section 4.1; owner instruction of 23 September 2026). Owner scope for this series: R1, R2 and R4 only (Task 025 R1 done, 026 R2, 027 R4). R5, R15 and R18 are out of scope.
+- **Status:** Implementation and local verification complete; release in progress
+
+### Task 026 Impact Record
+
+- **Baseline:** `main` at commit `7a771f8`; clean; aligned with `origin/main`; live site serves v1.25.0.
+- **Existing behavior found:** Personal-occasion and festival cards always drew one border (triple foil rule with botanical corners). Only Condolence had alternative frames. No-photo cards already show a centred fallback centrepiece in the halo/medallion with occasion-specific corner artwork, so their composition is intact and is not replaced.
+- **Requirement:** R2 (more intentional variety in borders/frames for photo and no-photo cards, without replacing working rendering).
+- **State/data impact:** One optional additive field, `layout.frameStyle` (`classic` default). Missing or unknown values load as `classic` (verified through the migration path), so older cards and backups open unchanged and schema stays v6; the backup format id is unchanged. Choosing a Design Library preset now also sets its border.
+- **UI/layout impact:** New "Border style" group in the Theme tab (five options with names and hints), disabled for Condolence, which keeps its own border.
+- **Preview/export impact:** Renderer change is confined to `renderLuxuryBorder`, which now selects between the original drawing and the already-reviewed restrained-frame drawing; both stay inside the existing safe margins, and preview and export use the same code.
+- **Regression risks:** Frames colliding with corner artwork or text, Condolence frame, Undo/Redo, old projects, backups.
+- **Smallest safe plan:** `FrameStyles` registry (Classic Foil, Refined Double, Tailored, Regal Rule, Soft Round) reusing existing frame drawing; assign a frame to each design preset; release 1.26.0 with no new assets.
+
+### Task 026 Implementation Record
+
+- **Baseline:** `main` at commit `7a771f8`
+- **Status:** Implementation and local verification complete; release in progress
+- **Release:** Application, manifest, service worker, and cache version `1.26.0`; schema remains v6; no new assets (53-entry shell precache unchanged)
+- **Verified locally (Chrome, PASS):** All five frames render distinctly on a birthday card without touching text or centrepiece (visually inspected); frame choice is one Undo step; choosing a design preset applies its frame and Undo restores the earlier one; Condolence disables the group and keeps its own border; Diwali keeps the chosen frame; a photo card also renders with the Tailored frame; migration maps a missing, null or unknown frame to Classic and keeps a valid one (Node run of the real migration code); backup export contains `frameStyle` and re-opening the imported backup restores the frame; PNG export is exactly 1200 x 1760.
+- **NOT TESTED:** Frames on every festival artwork and with a photo card in each frame (only birthday without photo, one photo card with the Tailored frame, and a festival switch were exercised); narrow-phone visual of the new group after this change; real offline restart and live service-worker behavior until the live check below.
 
 ### Task 025 Impact Record
 
