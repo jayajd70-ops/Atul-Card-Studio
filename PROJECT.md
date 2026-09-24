@@ -587,9 +587,9 @@ Task 003 implementation and release were explicitly authorized. The Current Task
 
 ## 9. Current Task
 
-- **Approved Current Task:** Task 028 — Optional Creator Footer (R18)
+- **Approved Current Task:** Task 028 (R18) complete; Task 029 (R5) is next
 - **Active Permission Level:** IMPLEMENT / COMMIT / PUSH / DEPLOY under standing owner authorization (`PROJECT.md` section 4.1). Owner instruction of 24 September 2026: “Continue R5 and R18”, which approves R18 and further R5 work. Planned: Task 028 R18, then Task 029 R5.
-- **Status:** Implementation and local verification complete; release in progress
+- **Status:** Complete, committed, pushed, deployed, and verified
 
 ### Task 028 Impact Record
 
@@ -604,7 +604,9 @@ Task 003 implementation and release were explicitly authorized. The Current Task
 ### Task 028 Implementation Record
 
 - **Baseline:** `main` at commit `0669232`
-- **Status:** Implementation and local verification complete; release in progress
+- **Status:** Complete, committed, pushed, deployed, and verified
+- **Completed commit:** `b7ba242` — `feat: add optional creator footer stored on the device (R18)`
+- **Live verification:** GitHub Pages run [`36037568169`](https://github.com/jayajd70-ops/Atul-Card-Studio/actions/runs/36037568169) succeeded; live manifest, service worker and app serve 1.28.0; in a fresh browser profile the service worker installed `atul-shell-v1.28.0` with 53 entries and controlled the page; the footer is off by default, a live PNG export (1200 x 1760) has no footer when off and shows it when switched on with a name, and `js/app.js` is served from the cache. Real airplane-mode restart NOT TESTED.
 - **Release:** Application, manifest, service worker, and cache version `1.28.0`; schema remains v6; no new assets (53-entry shell precache unchanged)
 - **Verified locally (Chrome, PASS):** Off by default; switching on with a name draws “Developed and created by [Name]” in the PNG export and switching off or blanking the name draws nothing (pixel check of the footer area); extra spaces in the name are collapsed; the Sender field is unchanged and Undo history is unaffected; name and switch persist across reload; a backup contains neither the name nor any creator field; visually checked on a light (Pearl Marble), dark (Midnight Obsidian), Condolence, Diwali and Holi card: the line sits below the date without touching the border, and a first attempt that was nearly invisible on festival artwork was fixed with a light colour and halo there; PNG export is exactly 1200 x 1760; at 375 px the section has 44 px targets and no horizontal overflow.
 - **Observation (not changed, out of scope):** The existing card date uses the theme’s muted colour, so it can be hard to read on festival artwork when a light theme is selected.
