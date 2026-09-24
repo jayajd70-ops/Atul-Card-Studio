@@ -587,9 +587,19 @@ Task 003 implementation and release were explicitly authorized. The Current Task
 
 ## 9. Current Task
 
-- **Approved Current Task:** Task 035 — R5 closeout: review of every relationship-aware message pool. Task 034 (Design Library active-state fix) is complete.
-- **Current release:** v1.34.0 (application, manifest, service worker and shell cache), schema v6, backup format `atul-birthday-card-studio` version 1.
-- **Next step:** Owner decision needed on the personal sub-occasion selector (R5 remaining gap, not implemented — see below). Independent audit otherwise open.
+- **Approved Current Task:** Task 037 — Birthday-card usability and rendering corrections reported by the owner after manual desktop use.
+- **Current release:** v1.35.0 (application, manifest, service worker and shell cache), schema v6, backup format `atul-birthday-card-studio` version 1.
+- **Owner decision recorded:** no R5 personal sub-occasion selector; R5 is complete at the approved relationship-aware scope.
+
+### Task 037 Impact Record and Implementation Record — Birthday usability corrections
+
+- **Baseline:** `main` at commit `c13d75b`, clean and equal to `origin/main`; v1.34.0.
+- **Reported evidence:** Desktop Birthday-card use showed a saved Mahesh/Atul card reopening with its historic 21 September date, a group-photo focus that needed a tighter framed crop, slow/flickering design changes, a low-contrast Soft Care recipient name, and later tabs hidden behind horizontal scrolling. The Windows camera-labelled control opened photo selection.
+- **Finding:** Recipient and Sender defaults were already blank in `createDefaultProject`; the observed names and 21 September date belong to the saved card and must remain intact. New cards did print their date by default. The 3x photo-zoom ceiling was too restrictive for a wide framed crop. Each design application changed `layout.frameStyle`, which unnecessarily invalidated ten live design thumbnails even though every preset supplies its own frame. Soft Care rendered foil-styled recipient text too faintly on light stock. The desktop tab row scrolled horizontally, concealing Foil, Finishing, and Audio. Windows browsers correctly treat the HTML `capture` hint as file selection; no direct desktop-camera permission flow existed.
+- **Change:** New cards retain today's device-local date in the editable field but leave date printing off until its switch is enabled; saved dates remain untouched. The unified photo zoom bound is 5x for renderer, slider, pinch, and Smart Person Focus auto-fit so framed photos can isolate a selected person. Design thumbnails now ignore the current frame in their cache signature, removing the redundant re-render caused by applying a preset. Light themes render the recipient in the theme's dark ink while preserving foil on dark cards; the sender already uses the light-theme signature ink. Desktop tabs wrap into two visible rows. The camera control now says `Take photo (mobile)` and explains that Windows opens photo selection.
+- **Compatibility:** No migration or schema change. Existing names, sender, card date, photo data, focused person, manual framing, centrepiece choices, messages, occasions, backups, and offline operation remain preserved. Existing cards keep their date visibility and their stored date; only newly created cards default to hidden date printing.
+- **Verification (local, PASS):** `node --check` for app and service worker; manifest JSON parse; and whitespace check. Headless Chrome on a fresh local profile verified blank new-card recipient/sender fields, local current-date field, date switch off, 5x framed zoom, Circle selection, all eight desktop tab labels without horizontal overflow, and direct Foil/Finishing/Audio panels without Next. Soft Care was visually inspected with a recipient and sender: both are readable on the light background. No page errors occurred.
+- **Not yet verified:** Physical mobile camera invocation (browser/device controlled), live GitHub Pages, and real-device touch pinch. These require the released build.
 
 ### Task 035 Impact Record and Implementation Record — R5 message-pool review
 
@@ -602,7 +612,7 @@ Task 003 implementation and release were explicitly authorized. The Current Task
 - **Verified locally (Node, PASS):** Re-ran the length and duplicate-detection checks against the edited file — 478/478 templates still within the 220-character cap, 0 duplicate entries remain in any selectable pool (down from 2 before the fix); `node -c js/app.js`, `node -c sw.js`, and `manifest.json` JSON-parse all clean.
 - **Verified locally (headless Chromium via Playwright, PASS, 14/14):** message generation for the edited pool (friendship-thanks/friend/heartfelt renders the new wording); relationship change alters generated wording (elder vs. friend); manual edit is retained and not overwritten by regeneration; occasion switching preserves each occasion's own content in isolation (Birthday vs. Friendship & Thanks); Get Well cross-occasion wording triggers the safety warning and blocks PNG export with the correct message; the warning clears once corrected; Undo reverts and Redo re-applies a manual edit; save/reopen survives a full page reload; backup export downloads a file and importing it creates a new project with the original recipient and message intact; no horizontal overflow at 360px mobile width; offline reload (service worker `activated`, network forced offline) still serves the app shell.
 - **Deployment evidence:** This session runs in a sandboxed container whose network egress to `jayajd70-ops.github.io` is blocked by policy (confirmed: proxy returns 403 on CONNECT). Live rendered-page verification could not be performed from this session. The only deployment evidence available here is the GitHub Actions "pages build and deployment" run for the pushed commit reporting `conclusion: success` via the GitHub API — record the run URL once available and confirm the live version banner reads v1.34.0 from a normal browser before considering this task's deployment fully verified.
-- **Owner decision needed:** R5's remaining gap is the personal sub-occasion selector (which sub-occasions/options are wanted for each personal occasion). Not implemented this task, as instructed.
+- **Later owner decision:** no personal sub-occasion selector is wanted; R5 is closed at the relationship-aware scope.
 
 ### Task 034 Impact Record and Implementation Record — Design Library active state (audit P2)
 
@@ -622,7 +632,7 @@ This replaces nothing above: the matrix recorded after Task 024 and every task r
 | R2 Templates, borders, no-photo | Complete for the approved scope | Five border families (Task 026); existing photo/no-photo compositions and medallion kept. Broader visual expansion parked. |
 | R3 Coordinated theme/typography | Complete | Unchanged since earlier tasks. |
 | R4 Decorations and emoji | Complete, with a device limit | Optional grouped library, 5 artworks and 52 emoji, keyboard move/delete, On-this-card list (Task 027). Emoji look depends on the device’s emoji font. |
-| R5 Message generator | Partial | Relationship-aware for every personal occasion (earlier Birthday, Anniversary and Condolence work plus Task 029); Indian-context wording rule applied; all 478 templates reviewed line-by-line and one duplicate-wording defect fixed (Task 035). Remaining: a personal sub-occasion selector (owner decision). |
+| R5 Message generator | Complete | Relationship-aware for every personal occasion; Indian-context wording rule applied; all 478 templates reviewed line-by-line and one duplicate-wording defect fixed (Task 035). The owner declined a personal sub-occasion selector. |
 | R6 Photo adjustment | Complete | |
 | R7 Persistent state | Complete | Task 032 closed a data-loss path (Undo after photo replacement). |
 | R8 Composition fine-tune | Complete | |

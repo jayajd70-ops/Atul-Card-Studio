@@ -308,10 +308,10 @@
               <input id="photo-input" type="file" accept="image/png,image/jpeg,image/webp" class="visually-hidden-input" />
             </label>
             <label for="camera-input" class="btn btn-ghost btn-block file-btn">
-              Take photo / Camera
+              Take photo (mobile)
               <input id="camera-input" type="file" accept="image/*" capture="environment" class="visually-hidden-input" />
             </label>
-            <p class="field-hint">Use your camera on a compatible device, or upload a JPG, PNG or WEBP. The original is kept untouched; only your zoom, pan and rotation are stored.</p>
+            <p class="field-hint">On a compatible phone this opens the camera. On Windows it opens photo selection; use Upload photo to choose JPG, PNG or WEBP. The original is kept untouched; only your zoom, pan and rotation are stored.</p>
           </div>
           <fieldset class="field" id="person-focus-fieldset" disabled>
             <legend>Smart Person Focus <span class="field-optional">(optional)</span></legend>
@@ -324,7 +324,7 @@
             <legend>Transform engine</legend>
             <div class="field">
               <label for="photo-zoom">Zoom <output id="photo-zoom-out">1.00</output>&times;</label>
-              <input id="photo-zoom" type="range" min="1" max="3" step="0.01" value="1" />
+              <input id="photo-zoom" type="range" min="1" max="5" step="0.01" value="1" />
             </div>
             <div class="field">
               <label for="photo-pan-x">Pan &mdash; horizontal <output id="photo-pan-x-out">0</output>%</label>

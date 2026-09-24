@@ -1578,7 +1578,12 @@ const DesignPreferences = createFavouriteStore("design-preferences", () => Desig
 // Application version. Shown in the header, stamped onto exported
 // backups, and kept in step with SW_VERSION in sw.js so a released
 // shell and the code inside it always report the same number.
-const APP_VERSION = "1.34.0";
+const APP_VERSION = "1.35.0";
+
+// A closer crop is sometimes necessary for a wide framed photo. Keep this
+// one shared bound for slider, pinch, renderer and Smart Person Focus so
+// preview and exported cards always agree.
+const MAX_PHOTO_ZOOM = 5;
 
 const CURRENT_SCHEMA_VERSION = 6;
 
@@ -1604,7 +1609,9 @@ function createDefaultProject(overrides) {
     title: "Untitled Card",
     createdAt: now,
     updatedAt: now,
-    cardDate: { value: localDateISO(now), visible: true },
+    // A new card knows today's local date for convenient editing, but does
+    // not print it until the maker explicitly enables the date switch.
+    cardDate: { value: localDateISO(now), visible: false },
     occasion: {
       id: "birthday",
       subOccasion: null,
@@ -5628,7 +5635,7 @@ const Renderer = (() => {
       // never expose an empty corner inside the mask.
       const cover = Math.max(geo.width / photoImage.width, geo.height / photoImage.height);
       const rotationSafe = Math.abs(Math.cos(rotation)) + Math.abs(Math.sin(rotation));
-      const zoom = Utils.clamp(p.zoom || 1, 1, 3) * Utils.clamp(project.layout.photoScale || 1, 0.5, 2);
+      const zoom = Utils.clamp(p.zoom || 1, 1, MAX_PHOTO_ZOOM) * Utils.clamp(project.layout.photoScale || 1, 0.5, 2);
       const scale = cover * rotationSafe * zoom;
       const drawW = photoImage.width * scale;
       const drawH = photoImage.height * scale;
@@ -5885,7 +5892,8 @@ const Renderer = (() => {
 
     const recipientMask = createWorkCanvas(W, H);
     const rmCtx = recipientMask.getContext("2d");
-    rmCtx.fillStyle = "#fff";
+    const solidRecipientInk = !!(theme.background && theme.background.light && !lightInkOnArtwork);
+    rmCtx.fillStyle = solidRecipientInk ? textColor : "#fff";
     const recipientLineHeight = recipientFit.size * (typography.lineHeight || pairing.lineHeight);
     LayoutEngine.drawLines(rmCtx, recipientFit.lines, {
       fontFamily: pairing.recipientFont, weight: pairing.recipientWeight,
@@ -5895,15 +5903,24 @@ const Renderer = (() => {
     });
     const recipientHeight = recipientFit.lines.length * recipientLineHeight;
     boxes.push(textBoxToLayoutBox("recipient-name", cx, cursorY, recipientFit.maxLineWidth, recipientHeight, 100));
-    compositeFoil(ctx, W, H, (mctx) => mctx.drawImage(recipientMask, 0, 0), {
-      presetId: recipientPreset,
-      mode: design ? design.foil.mode : project.foil.mode,
-      intensity: design ? design.foil.intensity : project.foil.intensity,
-      grain: design ? design.foil.grain : project.foil.grain,
-      highlight: design ? design.foil.highlight : project.foil.highlight,
-      shadow: design ? design.foil.shadow : project.foil.shadow,
-      quality,
-    });
+    // Foil is intentionally subtle on light stock; use the theme's solid
+    // ink for the highest-priority text so Soft Care and other light designs
+    // stay readable in both preview and export.
+    if (solidRecipientInk) {
+      ctx.save();
+      ctx.drawImage(recipientMask, 0, 0);
+      ctx.restore();
+    } else {
+      compositeFoil(ctx, W, H, (mctx) => mctx.drawImage(recipientMask, 0, 0), {
+        presetId: recipientPreset,
+        mode: design ? design.foil.mode : project.foil.mode,
+        intensity: design ? design.foil.intensity : project.foil.intensity,
+        grain: design ? design.foil.grain : project.foil.grain,
+        highlight: design ? design.foil.highlight : project.foil.highlight,
+        shadow: design ? design.foil.shadow : project.foil.shadow,
+        quality,
+      });
+    }
     cursorY += recipientHeight + (isCondolence ? 34 : 26);
 
     // Greeting
@@ -6761,7 +6778,7 @@ const PersonFocus = (() => {
 
   // Exact inverse of Renderer.renderPhoto: choose zoom so the face occupies
   // FACE_FRACTION of the mask, then the pan that puts the face centre on the
-  // mask centre. Both are clamped to the renderer's own limits (zoom 1..3,
+  // mask centre. Both are clamped to the renderer's own limits (zoom 1..5,
   // pan -1..1 of the available slack), so the mask can never show an empty
   // edge; a face near the photo border is centred as far as the photo allows.
   // Current rotation and mask shape are respected because the pan is solved
@@ -6776,7 +6793,7 @@ const PersonFocus = (() => {
     const layoutScale = Utils.clamp((project.layout && project.layout.photoScale) || 1, 0.5, 2);
     const facePx = Math.max(box[2] * imageWidth, box[3] * imageHeight, 1);
     const target = FACE_FRACTION * Math.min(geo.width, geo.height);
-    const zoom = Utils.clamp(target / (facePx * cover * (c + s) * layoutScale), 1, 3);
+    const zoom = Utils.clamp(target / (facePx * cover * (c + s) * layoutScale), 1, MAX_PHOTO_ZOOM);
 
     const scale = cover * (c + s) * zoom * layoutScale;
     const drawW = imageWidth * scale;
@@ -7391,7 +7408,15 @@ const App = (() => {
     if (!project || !DesignLibrary.isAvailableFor(currentOccasionId(project))) return;
     const signature = JSON.stringify([
       project.occasion, project.recipient, project.sender, project.content, project.cardDate,
-      project.photo, project.layout, project.stamps, project.typography.recipientSize,
+      project.photo,
+      // A design supplies its own frame style. Excluding the user's current
+      // frame therefore avoids ten redundant thumbnail renders on every
+      // design click, which was causing desktop flicker.
+      { photoScale: project.layout.photoScale, textPosition: project.layout.textPosition,
+        textMaxWidth: project.layout.textMaxWidth, centerpieceSize: project.layout.centerpieceSize,
+        textShift: project.layout.textShift, textShiftX: project.layout.textShiftX,
+        centerpieceId: project.layout.centerpieceId, photoShape: project.layout.photoShape },
+      project.stamps, project.typography.recipientSize,
       project.typography.greetingSize, project.typography.senderSize,
     ]);
     if (signature === designPreviewSignature) return;
@@ -8513,7 +8538,7 @@ const App = (() => {
       if (dragMode === "pinch" && activePointers.size === 2) {
         const pts = Array.from(activePointers.values());
         const dist = Math.hypot(pts[0].clientX - pts[1].clientX, pts[0].clientY - pts[1].clientY);
-        const newZoom = Utils.clamp(pinchStartZoom * (dist / pinchStartDist), 1, 3);
+        const newZoom = Utils.clamp(pinchStartZoom * (dist / pinchStartDist), 1, MAX_PHOTO_ZOOM);
         StateStore.update((p) => { if (p.photo) p.photo.zoom = newZoom; }, { skipHistory: true });
         dom.photoZoom.value = String(newZoom);
         dom.photoZoomOut.textContent = newZoom.toFixed(2);

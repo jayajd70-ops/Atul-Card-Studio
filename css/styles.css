@@ -413,6 +413,10 @@ input, select, textarea { font-family: inherit; }
 
 @media (min-width: 980px) {
   .editor-panel { width: 380px; flex-shrink: 0; position: sticky; top: 76px; max-height: calc(100dvh - 100px); display: flex; flex-direction: column; }
+  /* The editor has eight sections. On desktop show every label at once
+     instead of making the finishing controls discoverable only through Next. */
+  .tabs { flex-wrap: wrap; overflow-x: visible; scroll-snap-type: none; }
+  .tab { flex: 1 0 auto; padding-inline: 10px; }
 }
 
 .tabs {
