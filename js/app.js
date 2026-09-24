@@ -1511,7 +1511,9 @@ const DesignLibrary = (() => {
     return project.theme.id === preset.themeId
       && project.foil.presetId === preset.foilPresetId
       && project.foil.mode === preset.foilMode
+      && Number(project.foil.intensity) === preset.foilIntensity
       && project.typography.pairingId === preset.pairingId
+      && project.typography.mood === preset.mood
       && FrameStyles.normalize(project.layout && project.layout.frameStyle) === FrameStyles.normalize(preset.frameStyle);
   }
 
@@ -1576,7 +1578,7 @@ const DesignPreferences = createFavouriteStore("design-preferences", () => Desig
 // Application version. Shown in the header, stamped onto exported
 // backups, and kept in step with SW_VERSION in sw.js so a released
 // shell and the code inside it always report the same number.
-const APP_VERSION = "1.32.0";
+const APP_VERSION = "1.33.0";
 
 const CURRENT_SCHEMA_VERSION = 6;
 
@@ -7352,6 +7354,18 @@ const App = (() => {
     refreshDesignPreviews();
   }
 
+  // A design stays marked as chosen only while every field it sets is
+  // unchanged; refreshed on every state change, so editing the mood, foil
+  // intensity or any other preset field clears the mark immediately.
+  function markActiveDesign(project) {
+    if (!dom.designGrid || !project) return;
+    const available = DesignLibrary.isAvailableFor(currentOccasionId(project));
+    dom.designGrid.querySelectorAll(".design-choice").forEach((el) => {
+      const preset = DesignLibrary.get(el.dataset.designId);
+      el.setAttribute("aria-checked", String(!!preset && available && DesignLibrary.isActive(project, preset)));
+    });
+  }
+
   function syncDesignLibrary(project) {
     if (!dom.designGrid || !project) return;
     const occasionId = currentOccasionId(project);
@@ -7361,10 +7375,7 @@ const App = (() => {
     dom.designHint.textContent = available
       ? "Ready-made looks that coordinate theme, foil and fonts. Choosing one never changes your names, message, date or photo."
       : "Condolence cards keep their own restrained, reviewed design, so the design library is not available here.";
-    dom.designGrid.querySelectorAll(".design-choice").forEach((el) => {
-      const preset = DesignLibrary.get(el.dataset.designId);
-      el.setAttribute("aria-checked", String(!!preset && available && DesignLibrary.isActive(project, preset)));
-    });
+    markActiveDesign(project);
     dom.designFavouritesFilter.setAttribute("aria-pressed", String(designFavouritesOnly));
     dom.designFavouritesFilter.textContent = designFavouritesOnly ? "Show all designs" : "Show favourites only";
     refreshDesignPreviews();
@@ -9246,6 +9257,7 @@ const App = (() => {
       if (reason !== "silent") scheduleRender(reason === "photo-rotate" || reason === "theme-change" || reason === "occasion-change" ? "preview" : "preview");
       syncGreetingSafety(project);
       syncPlacedStamps(project);
+      markActiveDesign(project);
       populateStampGalleryThumbsIfThemeChanged(reason);
       if (reason === "photo-set" || reason === "photo-remove" || reason === "photo-reset" || reason === "photo-focus") {
         syncPhotoControls(project);

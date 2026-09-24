@@ -587,9 +587,17 @@ Task 003 implementation and release were explicitly authorized. The Current Task
 
 ## 9. Current Task
 
-- **Approved Current Task:** None open. Task 031 (final verification and audit handover) is complete; it produced two narrow defect fixes, Task 032 and Task 033.
-- **Current release:** v1.32.0 (application, manifest, service worker and shell cache), schema v6, backup format `atul-birthday-card-studio` version 1.
+- **Approved Current Task:** Task 034 — fix the independent audit’s P2 finding (Design Library active state). Task 031 (final verification and audit handover) is complete; it produced two narrow defect fixes, Task 032 and Task 033.
+- **Current release:** v1.33.0 (application, manifest, service worker and shell cache), schema v6, backup format `atul-birthday-card-studio` version 1.
 - **Next step:** Independent audit. Open owner decisions are listed below.
+
+### Task 034 Impact Record and Implementation Record — Design Library active state (audit P2)
+
+- **Baseline:** `main` at commit `ec0512e`; live site v1.32.0; independent audit of 24 September 2026 found no other functional issue.
+- **Finding (independent audit, P2, non-blocking):** After choosing a design, changing its typography mood or foil intensity left the design marked as selected (`aria-checked="true"`), although both fields are part of the preset. `DesignLibrary.isActive` compared theme, foil palette, foil finish, pairing and border but not mood or foil intensity. While verifying, a second cause was found: the design radios were only re-marked on theme, occasion, Undo/Redo and initial load, so edits made in other tabs did not refresh the mark at all.
+- **Change:** `isActive` also compares `typography.mood` and `foil.intensity`; a new `markActiveDesign()` re-marks the design radios on every state change (cheap: ten attribute updates, no re-render of thumbnails). No state, schema, backup, rendering or layout change.
+- **Release:** Application, manifest, service worker, and cache version `1.33.0`.
+- **Verified locally (headless Chrome, PASS):** Emerald Elegance applied → marked; mood changed to Romantic → no design marked (recipient untouched); Undo → marked again; foil intensity 40 → unmarked; back to 72 (the preset value) → marked; two Undos → marked; choosing another font pairing → unmarked; Royal Gold applied → marked, and still marked after a browser restart.
 
 ### Current R1–R18 Status (Task 031, 24 September 2026)
 
