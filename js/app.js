@@ -1576,7 +1576,7 @@ const DesignPreferences = createFavouriteStore("design-preferences", () => Desig
 // Application version. Shown in the header, stamped onto exported
 // backups, and kept in step with SW_VERSION in sw.js so a released
 // shell and the code inside it always report the same number.
-const APP_VERSION = "1.28.0";
+const APP_VERSION = "1.29.0";
 
 const CURRENT_SCHEMA_VERSION = 6;
 
@@ -2038,8 +2038,8 @@ const GreetingGenerator = (() => {
       "Congratulations, {name}, on your growing family. Wishing you health, happiness, and a joyful new beginning.",
       "Warm wishes to you and your family, {name}, as you welcome your new baby.",
     ], [
-      "Congratulations, {name}! Your family just gained its smallest and most important team member.",
-      "Welcome to a new adventure, {name}. Wishing you plenty of smiles and at least a little sleep!",
+      "Congratulations, {name}! The newest little member of your family is surely everyone’s favourite already.",
+      "Welcome to a joyful new chapter, {name}. Wishing your family plenty of smiles and many sweet moments.",
     ]),
     "new-home": buildPersonalPool("new home", [
       "Congratulations on your new home, {name}. May it be filled with peace, warmth, and happy memories.",
@@ -2051,7 +2051,7 @@ const GreetingGenerator = (() => {
       "Warm congratulations, {name}, on your new home. Wishing you a smooth transition and many happy years there.",
       "Best wishes for your new home, {name}. May it be a place of comfort, connection, and lasting memories.",
     ], [
-      "Congratulations, {name}! May your new home have great light, good company, and a reliable internet connection.",
+      "Congratulations, {name}! May your new home be full of light, good company, and happy gatherings.",
       "New keys, new memories, {name}! Wishing you a wonderful start in your new home.",
     ]),
     graduation: buildPersonalPool("graduation", [
@@ -2104,7 +2104,7 @@ const GreetingGenerator = (() => {
       "With sincere thanks, {name}. It is a pleasure to know and work with someone so dependable and considerate.",
     ], [
       "Thank you, {name}! Good friends like you make every ordinary day better.",
-      "{name}, friendship points are officially yours in abundance. Thank you for being wonderful!",
+      "{name}, every conversation with you makes the day better. Thank you for being such a wonderful friend!",
     ]),
     diwali: buildPersonalPool("Diwali", [
       "Wishing you and your family a joyful Diwali, {name}. May your home be filled with warmth, peace, and togetherness.",
@@ -2467,6 +2467,265 @@ const GreetingGenerator = (() => {
     return "";
   }
 
+  // Relationship-aware lines for the remaining personal occasions. The
+  // relationship picks the voice (respect for elders and teachers, "our" for a
+  // spouse, family warmth, friendship, or workplace courtesy); the tone is
+  // still applied inside the occasion. An unrecognised or empty relationship
+  // falls back to the generic pools exactly as before.
+  const OCCASION_RELATIONSHIP_LINES = {
+    congratulations: {
+      elder: {
+        heartfelt: "Heartfelt congratulations, {name}. Your achievement is a proud moment for all of us, and your example continues to inspire us.",
+        poetic: "{name}, your success shows that dedication never ages. May this proud moment bring you deep contentment and many blessings.",
+        professional: "Respectful congratulations, {name}, on this well-deserved achievement. Wishing you continued good health and success.",
+        playful: "Congratulations, {name}! Once again you have shown all of us how it is done.",
+      },
+      spouse: {
+        heartfelt: "Congratulations, {name}. I have seen the effort behind this success, and I could not be prouder of you.",
+        poetic: "{name}, every late night and quiet sacrifice has found its reward. I am proud to share this moment with you.",
+        professional: "Warm congratulations, {name}, on this well-earned achievement. Your commitment has truly paid off.",
+        playful: "Congratulations, {name}! I always knew you would do it, and now I have the proof.",
+      },
+      family: {
+        heartfelt: "Heartfelt congratulations, {name}. The whole family is proud of you and happy to share in this success.",
+        poetic: "{name}, your hard work has blossomed into success. May this be the first of many proud moments for our family.",
+        professional: "Warm congratulations, {name}, on this achievement. Your dedication is admired by all of us.",
+        playful: "Congratulations, {name}! The family now has one more achievement to proudly mention at every gathering.",
+      },
+      friend: {
+        heartfelt: "Heartfelt congratulations, {name}. I am truly happy for you, and I know how much effort went into this.",
+        poetic: "{name}, your hard work has found its reward. May this success open many more doors in the years ahead.",
+        professional: "Warm congratulations, {name}, on this well-deserved achievement. Wishing you continued success.",
+        playful: "Congratulations, {name}! I am proud to say I knew you before you became this successful.",
+      },
+      professional: {
+        heartfelt: "Warm congratulations, {name}. Your achievement reflects the dedication and care you bring to your work every day.",
+        poetic: "{name}, steady effort has led to a well-deserved success. May this milestone open many rewarding opportunities.",
+        professional: "Congratulations, {name}, on this well-deserved achievement. Your contribution is sincerely appreciated by the team.",
+        playful: "Congratulations, {name}! The whole team is proud of you, and rightly so.",
+      },
+    },
+    "new-baby": {
+      elder: {
+        heartfelt: "Warm congratulations to you and your family, {name}, on the arrival of the little one. May the child grow up healthy and surrounded by your love.",
+        poetic: "{name}, a new little life has brought fresh joy to your home. May your family be blessed with health, peace, and happiness.",
+        professional: "Respectful congratulations, {name}, on the arrival of the little one. Wishing your family good health and happiness.",
+        playful: "Congratulations, {name}! Your home has a new little member who will surely be spoiled with love.",
+      },
+      spouse: {
+        heartfelt: "{name}, welcoming our little one with you is the greatest joy of my life. Thank you for your strength, love, and care.",
+        poetic: "{name}, our family has grown by one tiny heartbeat, and my love for you has grown with it.",
+        professional: "{name}, as we welcome our little one, I am grateful for you and for the family we are building together.",
+        playful: "{name}, our little one has arrived and has already taken charge of our home and our hearts.",
+      },
+      family: {
+        heartfelt: "Warm congratulations, {name}, on the arrival of your little one. The whole family is overjoyed to welcome this new member.",
+        poetic: "{name}, a new little heart has joined our family. May your child grow up healthy, happy, and deeply loved.",
+        professional: "Warm congratulations, {name}, on the arrival of your baby. Wishing you and your family good health and happiness.",
+        playful: "Congratulations, {name}! The newest member of our family is already everyone’s favourite.",
+      },
+      friend: {
+        heartfelt: "Warm congratulations, {name}, on the arrival of your little one. I am so happy for you and your family.",
+        poetic: "{name}, may your little one bring gentle mornings, happy moments, and a home filled with love.",
+        professional: "Warm congratulations, {name}, on your new baby. Wishing your family good health and much happiness.",
+        playful: "Congratulations, {name}! I cannot wait to meet the little one who has already taken over your home.",
+      },
+      professional: {
+        heartfelt: "Warm congratulations, {name}, on the arrival of your little one. Wishing you and your family health and happiness.",
+        poetic: "{name}, may this new chapter bring your family peace, good health, and many joyful moments together.",
+        professional: "Congratulations, {name}, on the arrival of your baby. The whole team sends warm wishes to you and your family.",
+        playful: "Congratulations, {name}! The team sends warm wishes to your family and a warm welcome to the little one.",
+      },
+    },
+    "new-home": {
+      elder: {
+        heartfelt: "Warm congratulations on your new home, {name}. May it be blessed with good health, peace, and many happy family gatherings.",
+        poetic: "{name}, may your new home be filled with the same warmth and care you have always shown to others.",
+        professional: "Respectful congratulations, {name}, on your new home. Wishing you comfort, peace, and many happy years there.",
+        playful: "Congratulations on your new home, {name}! We hope it has plenty of room for all of us to visit.",
+      },
+      spouse: {
+        heartfelt: "{name}, our new home is special because I share it with you. May it be filled with love, peace, and happy memories.",
+        poetic: "{name}, may every room of our new home hold our laughter, our quiet evenings, and the life we are building together.",
+        professional: "{name}, as we settle into our new home, I am grateful for your patience, planning, and care.",
+        playful: "{name}, we have a new home, new keys, and many new debates about where everything should go.",
+      },
+      family: {
+        heartfelt: "Warm congratulations on your new home, {name}. The whole family wishes you peace, comfort, and many happy years there.",
+        poetic: "{name}, may your new home be filled with warmth, laughter, and many happy family gatherings.",
+        professional: "Warm congratulations, {name}, on your new home. Wishing you a smooth move and many comfortable years ahead.",
+        playful: "Congratulations on your new home, {name}! Please keep a comfortable corner ready for family visits.",
+      },
+      friend: {
+        heartfelt: "Congratulations on your new home, {name}. I am so happy for you and wish you peace, comfort, and many happy memories there.",
+        poetic: "{name}, may your new home welcome good friends, warm conversations, and many peaceful evenings.",
+        professional: "Warm congratulations, {name}, on your new home. Wishing you a smooth move and many happy years there.",
+        playful: "Congratulations on your new home, {name}! I look forward to the first of many visits and long conversations there.",
+      },
+      professional: {
+        heartfelt: "Warm congratulations on your new home, {name}. Wishing you and your family comfort, peace, and happy years ahead.",
+        poetic: "{name}, may your new home be a place of rest, warmth, and many happy moments with your loved ones.",
+        professional: "Congratulations, {name}, on your new home. The whole team wishes you a smooth move and many happy years there.",
+        playful: "Congratulations on your new home, {name}! Wishing you an easy move and a very comfortable new beginning.",
+      },
+    },
+    graduation: {
+      elder: {
+        heartfelt: "Heartfelt congratulations on your graduation, {name}. Your dedication to learning is an inspiration to all of us.",
+        poetic: "{name}, your graduation shows that learning has no age. May this achievement bring you deep satisfaction.",
+        professional: "Respectful congratulations, {name}, on your graduation. Your commitment and perseverance are truly admirable.",
+        playful: "Congratulations on your graduation, {name}! You have set a very high standard for the rest of us.",
+      },
+      spouse: {
+        heartfelt: "Congratulations on your graduation, {name}. I have seen every hour of effort behind this, and I am so proud of you.",
+        poetic: "{name}, every lesson and late night has led to this proud day. May the road ahead be as bright as your effort.",
+        professional: "Warm congratulations on your graduation, {name}. Your discipline and hard work have truly paid off.",
+        playful: "Congratulations, {name}! You have finished your studies, so now I finally get more of your evenings.",
+      },
+      family: {
+        heartfelt: "Heartfelt congratulations on your graduation, {name}. The whole family is proud of you and excited for your future.",
+        poetic: "{name}, your years of learning have brought you to a proud new beginning. May your future be bright and fulfilling.",
+        professional: "Warm congratulations on your graduation, {name}. Wishing you success and growth in the next chapter.",
+        playful: "Congratulations on your graduation, {name}! The whole family is proud, and the photographs will prove it.",
+      },
+      friend: {
+        heartfelt: "Congratulations on your graduation, {name}. I am proud of you and excited to see where this new chapter takes you.",
+        poetic: "{name}, every lesson has brought you here. May the next chapter be bright, purposeful, and truly your own.",
+        professional: "Warm congratulations on your graduation, {name}. Wishing you every success in the years ahead.",
+        playful: "Congratulations on your graduation, {name}! You did it, and I am proud to have been cheering for you.",
+      },
+      professional: {
+        heartfelt: "Warm congratulations on your graduation, {name}. Balancing study with everything else is a remarkable achievement.",
+        poetic: "{name}, your commitment to learning opens new paths. May this qualification lead to rewarding opportunities.",
+        professional: "Congratulations on your graduation, {name}. The whole team appreciates your commitment to growth and learning.",
+        playful: "Congratulations on your graduation, {name}! The team is proud of you and your well-earned new qualification.",
+      },
+    },
+    retirement: {
+      elder: {
+        heartfelt: "Warm retirement wishes, {name}. Your years of dedicated work have been an example to all of us. May this new chapter bring good health and peace.",
+        poetic: "{name}, after years of dedicated service, may your days now unfold at a gentle pace, filled with health, peace, and family.",
+        professional: "Respectful good wishes on your retirement, {name}. Thank you for a lifetime of dedication, and may good health be with you.",
+        playful: "Happy retirement, {name}! Now we hope to enjoy more of your time, your stories, and your advice.",
+      },
+      spouse: {
+        heartfelt: "Happy retirement, {name}. Thank you for all your years of hard work for our family. I look forward to this new chapter together.",
+        poetic: "{name}, a long working chapter closes, and a new one begins for us both. May it be unhurried, healthy, and full of shared joys.",
+        professional: "Warm wishes on your retirement, {name}. Your dedication over the years has given our family so much.",
+        playful: "Happy retirement, {name}! Now we can finally plan all the trips we kept postponing.",
+      },
+      family: {
+        heartfelt: "Warm retirement wishes, {name}. The whole family is proud of your years of dedication and wishes you good health and peace.",
+        poetic: "{name}, may retirement bring you unhurried days, good health, and plenty of time for everything you love.",
+        professional: "Congratulations on your retirement, {name}. Wishing you good health and a rewarding new chapter.",
+        playful: "Happy retirement, {name}! The family is ready to welcome you to many more gatherings and long conversations.",
+      },
+      friend: {
+        heartfelt: "Happy retirement, {name}. You have worked hard for many years, and you truly deserve this new chapter of rest and freedom.",
+        poetic: "{name}, may the days ahead bring good health, new interests, and time for everything you love.",
+        professional: "Warm wishes on your retirement, {name}. Wishing you good health and many rewarding years ahead.",
+        playful: "Happy retirement, {name}! Now you have no excuse for missing our get-togethers.",
+      },
+      professional: {
+        heartfelt: "Warm retirement wishes, {name}. Your dedication and guidance have made a lasting difference to all of us.",
+        poetic: "{name}, your years of steady work leave a lasting legacy. May this new chapter bring you good health and peace.",
+        professional: "Congratulations on your retirement, {name}. Thank you for your valuable contribution over the years, and best wishes for what comes next.",
+        playful: "Happy retirement, {name}! The office will miss you, and your calendar will finally be your own.",
+      },
+    },
+    "get-well": {
+      elder: {
+        heartfelt: "Wishing you a speedy and comfortable recovery, {name}. Please rest well and take care of your health; we are all thinking of you.",
+        poetic: "{name}, may each new day bring you a little more strength and comfort. We are keeping you in our thoughts.",
+        professional: "Respectful wishes for a smooth and speedy recovery, {name}. Please take good care of your health.",
+        playful: "Get well soon, {name}. Please rest, follow the doctor’s advice, and let others look after you for a change.",
+      },
+      spouse: {
+        heartfelt: "{name}, please rest and let me take care of you. I am wishing you a quick and complete recovery.",
+        poetic: "{name}, may every day bring back a little more of your strength. I am right here beside you.",
+        professional: "{name}, wishing you a smooth recovery. Please take all the rest you need; everything else can wait.",
+        playful: "Get well soon, {name}. For now, the only thing you need to manage is resting.",
+      },
+      family: {
+        heartfelt: "Get well soon, {name}. The whole family is thinking of you and wishing you a quick and complete recovery.",
+        poetic: "{name}, may rest restore you and each new day bring back your strength. We are all thinking of you.",
+        professional: "Wishing you a smooth recovery, {name}. Please take good care of yourself and rest well.",
+        playful: "Get well soon, {name}! Please rest and let the rest of the family do the running around for a while.",
+      },
+      friend: {
+        heartfelt: "Thinking of you, {name}, and wishing you a quick recovery. Please rest well; I am here if you need anything.",
+        poetic: "{name}, may each day bring you more strength and comfort. I am thinking of you warmly.",
+        professional: "Wishing you a smooth and speedy recovery, {name}. Please take good care of yourself.",
+        playful: "Get well soon, {name}! I miss our conversations, so please rest and recover quickly.",
+      },
+      professional: {
+        heartfelt: "Wishing you a speedy recovery, {name}. Please take all the time you need; the whole team is thinking of you.",
+        poetic: "{name}, may rest and care restore your strength steadily. We look forward to seeing you well again.",
+        professional: "Wishing you a smooth recovery, {name}. Please focus on your health; the team sends its best wishes.",
+        playful: "Get well soon, {name}! The team is managing, but we do miss you.",
+      },
+    },
+    "friendship-thanks": {
+      elder: {
+        heartfelt: "Thank you, {name}, for your blessings, guidance, and care. Your kindness means a great deal to me.",
+        poetic: "{name}, your guidance has been a steady light for me. With sincere gratitude and respect.",
+        professional: "With sincere thanks and respect, {name}, for your support and guidance.",
+        playful: "Thank you, {name}! Your advice is always right, even when I take a little time to admit it.",
+      },
+      spouse: {
+        heartfelt: "Thank you, {name}, for your love, patience, and care every single day. I am grateful to share my life with you.",
+        poetic: "{name}, your quiet care makes every day brighter. Thank you for being my partner in everything.",
+        professional: "Thank you, {name}, for your constant support and understanding. It means more than I can say.",
+        playful: "Thank you, {name}, for putting up with me and still smiling at the end of every day.",
+      },
+      family: {
+        heartfelt: "Thank you, {name}, for your love and support. I am grateful to have you in my family and in my life.",
+        poetic: "{name}, family is a gift, and you make it even more precious. Thank you for always being there.",
+        professional: "Thank you, {name}, for your support and help. It is sincerely appreciated.",
+        playful: "Thank you, {name}! You are the family member everyone can count on, and I certainly do.",
+      },
+      friend: {
+        heartfelt: "Thank you, {name}, for your kindness and steady friendship. You make life feel warmer and more supported.",
+        poetic: "Some friendships become quiet places of strength, {name}. Thank you for being one of mine.",
+        professional: "With sincere thanks, {name}, for your help and thoughtfulness. It is truly appreciated.",
+        playful: "Thank you, {name}! Friends like you make every ordinary day better.",
+      },
+      professional: {
+        heartfelt: "Thank you, {name}, for your support and cooperation. Your thoughtfulness makes a real difference to the team.",
+        poetic: "{name}, your steady help and good spirit make every challenge easier. Thank you sincerely.",
+        professional: "With sincere thanks, {name}, for your support and cooperation. Your contribution is greatly appreciated.",
+        playful: "Thank you, {name}! The team is lucky to have someone so dependable and cheerful.",
+      },
+    },
+  };
+
+  function classifyOccasionRelationship(relationship) {
+    const value = normalizeRelationship(relationship);
+    if (["grandfather", "grandmother", "grandparent", "uncle", "aunt", "father", "mother", "teacher", "mentor"].includes(value)) return "elder";
+    if (["spouse", "partner", "wife"].includes(value)) return "spouse";
+    if (["brother", "sister", "cousin", "son", "daughter", "relative"].includes(value)) return "family";
+    if (["friend", "family friend", "neighbour"].includes(value)) return "friend";
+    if (["manager", "colleague"].includes(value)) return "professional";
+    return "";
+  }
+
+  // Pool for occasions covered above: the relationship line first, then the
+  // reviewed generic lines as Regenerate alternatives.
+  function occasionRelationshipPool(occasionId, relationship, emotion) {
+    const lines = OCCASION_RELATIONSHIP_LINES[occasionId];
+    if (!lines) return null;
+    const group = classifyOccasionRelationship(relationship);
+    const line = group && lines[group] && lines[group][emotion];
+    if (!line) return null;
+    // Generic lines were written for a friend or colleague audience, so they
+    // are offered as Regenerate alternatives only there; elders, a spouse and
+    // family keep their dedicated line (correctness over variety).
+    const generic = group === "friend" || group === "professional"
+      ? ((POOLS[occasionId] && POOLS[occasionId][emotion]) || [])
+      : [];
+    return [line].concat(generic);
+  }
+
   function fill(template, name, relationship) {
     const who = String(name || "").trim() || "friend";
     const filled = template
@@ -2489,13 +2748,16 @@ const GreetingGenerator = (() => {
     const relationshipLabel = occ.id === "condolence" ? normalizeRelationship(relationship) : "";
     const birthdayRelationship = occ.id === "birthday" ? classifyBirthdayRelationship(relationship) : "";
     const anniversaryRelationship = occ.id === "anniversary" ? classifyAnniversaryRelationship(relationship) : "";
+    const occasionPool = occasionRelationshipPool(occ.id, relationship, normEmotion);
     const pool = relationshipLabel
       ? CONDOLENCE_RELATIONSHIP_POOLS[normEmotion]
       : birthdayRelationship
         ? BIRTHDAY_RELATIONSHIP_POOLS[birthdayRelationship][normEmotion]
         : anniversaryRelationship
           ? ANNIVERSARY_RELATIONSHIP_POOLS[anniversaryRelationship][normEmotion]
-        : ((POOLS[occ.id] && POOLS[occ.id][normEmotion]) || POOLS.birthday.heartfelt);
+          : occasionPool
+            ? occasionPool
+            : ((POOLS[occ.id] && POOLS[occ.id][normEmotion]) || POOLS.birthday.heartfelt);
     const candidates = pool.map((t) => fill(t, name, relationshipLabel));
     const fresh = candidates.filter((c) => c !== previousText);
     const from = fresh.length ? fresh : candidates;
@@ -2514,13 +2776,16 @@ const GreetingGenerator = (() => {
     const relationshipLabel = occ.id === "condolence" ? normalizeRelationship(relationship) : "";
     const birthdayRelationship = occ.id === "birthday" ? classifyBirthdayRelationship(relationship) : "";
     const anniversaryRelationship = occ.id === "anniversary" ? classifyAnniversaryRelationship(relationship) : "";
+    const occasionPool = occasionRelationshipPool(occ.id, relationship, normEmotion);
     const pool = relationshipLabel
       ? CONDOLENCE_RELATIONSHIP_POOLS[normEmotion]
       : birthdayRelationship
         ? BIRTHDAY_RELATIONSHIP_POOLS[birthdayRelationship][normEmotion]
         : anniversaryRelationship
           ? ANNIVERSARY_RELATIONSHIP_POOLS[anniversaryRelationship][normEmotion]
-        : ((POOLS[occ.id] && POOLS[occ.id][normEmotion]) || POOLS.birthday.heartfelt);
+          : occasionPool
+            ? occasionPool
+            : ((POOLS[occ.id] && POOLS[occ.id][normEmotion]) || POOLS.birthday.heartfelt);
     return fill(pool[0], name, relationshipLabel);
   }
 

@@ -587,9 +587,28 @@ Task 003 implementation and release were explicitly authorized. The Current Task
 
 ## 9. Current Task
 
-- **Approved Current Task:** Task 028 (R18) complete; Task 029 (R5) is next
-- **Active Permission Level:** IMPLEMENT / COMMIT / PUSH / DEPLOY under standing owner authorization (`PROJECT.md` section 4.1). Owner instruction of 24 September 2026: “Continue R5 and R18”, which approves R18 and further R5 work. Planned: Task 028 R18, then Task 029 R5.
-- **Status:** Complete, committed, pushed, deployed, and verified
+- **Approved Current Task:** Task 029 — Relationship-aware messages for the remaining personal occasions (R5)
+- **Active Permission Level:** IMPLEMENT / COMMIT / PUSH / DEPLOY under standing owner authorization (`PROJECT.md` section 4.1). Owner instruction of 24 September 2026: “Continue R5 and R18” (Task 028 R18 done).
+- **Status:** Implementation and local verification complete; release in progress
+
+### Task 029 Impact Record
+
+- **Baseline:** `main` at commit `13620c6`; clean; aligned with `origin/main`; live site serves v1.28.0.
+- **Existing behavior found:** Relationship-aware generation existed only for Birthday, Anniversary and Condolence. Congratulations, New Baby, New Home, Graduation, Retirement, Get Well and Friendship / Thanks ignored the Relationship field, so a card to a spouse or a grandparent read the same as one to a colleague. Four generic lines used casual Western idioms (“smallest and most important team member”, “at least a little sleep”, “a reliable internet connection”, “friendship points”).
+- **Requirement:** R5 (relationship-aware wording; tone applied inside the occasion; Indian-context rule: respect for elders and teachers, warm family voice, dignified professional voice, no Western clichés; semantic correctness over variety).
+- **Design:** Relationships are grouped as elder (grandparents, parents, uncle, aunt, teacher, mentor), spouse (spouse, partner, wife, husband), family (sibling, child, cousin, relative), friend (friend, family friend, neighbour) and professional (manager, colleague), reusing the existing alias normaliser. Each of the seven occasions has one authored line per group and tone (140 lines). Friend and professional groups also keep the reviewed generic lines as Regenerate alternatives; elder, spouse and family use only their dedicated line, because generic lines can be wrong for them (for example “your family” to a spouse). An unrecognised or blank relationship behaves exactly as before. Elder lines avoid “the whole family” so they remain correct for teachers and mentors.
+- **State/data impact:** None; only generator text. Manual and edited messages, message modes, occasion isolation and the 220-character limit are unchanged.
+- **UI/layout/preview/export impact:** None.
+- **Smallest safe plan:** Add the relationship lines and one classifier, route `generate` and `fallbackFor` through them before the generic pools, replace the four idioms, release 1.29.0.
+
+### Task 029 Implementation Record
+
+- **Baseline:** `main` at commit `13620c6`
+- **Status:** Implementation and local verification complete; release in progress
+- **Release:** Application, manifest, service worker, and cache version `1.29.0`; schema remains v6; no new assets
+- **Verified (Node, real generator code, PASS):** 3,192 generated messages across the 7 occasions, 23 relationship inputs (including aliases such as “Nani”, “my father”, “Best Friend”, blank and an unrecognised “Landlord”), 4 tones and a 40-character name: longest 179 characters (limit 220), no unfilled placeholders, every Get Well line passes the Get Well output guard, no cross-occasion wording (for example no “congratulations” on Get Well or Thanks, no “recover” outside Get Well), no listed Western idioms; the auto-write first draft is deterministic; Birthday, Anniversary, Condolence and Diwali output is unchanged.
+- **Verified in the app (Chrome, PASS):** New Baby with “Wife” gives the “our little one” lines per tone; Get Well with “Colleague” gives a workplace-appropriate draft; a manual Get Well message survives switching to New Baby and back, each occasion keeps its own message and relationship, recipient and sender are untouched; PNG export is exactly 1200 x 1760.
+- **NOT TESTED:** Review of all 140 new lines by a native-speaker family reader (authored and machine-checked only); a personal sub-occasion selector (still not present, needs a product decision); real offline restart and live service-worker behavior until the live check below.
 
 ### Task 028 Impact Record
 
