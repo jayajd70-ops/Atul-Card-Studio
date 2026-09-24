@@ -587,9 +587,17 @@ Task 003 implementation and release were explicitly authorized. The Current Task
 
 ## 9. Current Task
 
-- **Approved Current Task:** Task 029 (R5) complete; Task 030 (service-worker stale precache fix) is next
-- **Active Permission Level:** IMPLEMENT / COMMIT / PUSH / DEPLOY under standing owner authorization (`PROJECT.md` section 4.1). Owner instruction of 24 September 2026: “Continue R5 and R18” (Task 028 R18 done).
-- **Status:** Complete, committed, pushed, deployed, and verified
+- **Approved Current Task:** Task 030 — Service worker must not precache the previous release (release integrity)
+- **Active Permission Level:** IMPLEMENT / COMMIT / PUSH / DEPLOY under standing owner authorization (`PROJECT.md` section 4.1); a concrete residual defect found while verifying Task 029.
+- **Status:** Implementation complete; live verification in progress
+
+### Task 030 Impact Record and Implementation Record
+
+- **Baseline:** `main` at commit `e1c1726`; live site serves v1.29.0.
+- **Evidence:** During the Task 029 live check, the v1.29.0 service worker installed while the browser still held the 1.28.0 `js/app.js` in its HTTP cache (GitHub Pages sends `Cache-Control: max-age=600`). `cache.add()` and the stale-while-revalidate refresh both go through that HTTP cache, so the `atul-shell-v1.29.0` cache stored 1.28.0 code and kept serving it until the HTTP copy expired. Any user who opened the app within 10 minutes before a release could run mixed versions for a while.
+- **Change (`sw.js` only):** Install precaches each shell file with `cache: "reload"`; the background refresh uses `cache: "no-cache"` (a conditional request, normally a 304) and, for page navigations, re-fetches by URL because a navigation request cannot be re-initialised. Cache names, the precache list (53 entries), the detector cache, the offline fallback and the private-media guard are unchanged.
+- **Release:** Application, manifest, service worker, and cache version `1.30.0`; schema remains v6.
+- **Verification plan:** Deploy while this test browser still holds 1.29.0 files in its HTTP cache, then confirm the new shell cache contains 1.30.0 `js/app.js` immediately after install.
 
 ### Task 029 Impact Record
 

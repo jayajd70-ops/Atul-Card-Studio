@@ -10,7 +10,7 @@
 // Kept in step with APP_VERSION in js/app.js: bumping either one must
 // bump the other, since the cache name is what forces clients onto a
 // freshly released shell.
-const SW_VERSION = "v1.29.0";
+const SW_VERSION = "v1.30.0";
 const SHELL_CACHE = "atul-shell-" + SW_VERSION;
 
 // Smart Person Focus detector (MediaPipe runtime + BlazeFace model, ~12 MB).
@@ -90,11 +90,14 @@ self.addEventListener("install", (event) => {
     (async () => {
       const cache = await caches.open(SHELL_CACHE);
       // Cache shell assets individually so one missing file (e.g. during
-      // local development) doesn't fail the entire install.
+      // local development) doesn't fail the entire install. `reload` skips
+      // the browser's HTTP cache: GitHub Pages serves files with
+      // max-age=600, so a plain add() could store the previous release's
+      // files inside this release's cache.
       await Promise.all(
         SHELL_ASSETS.map(async (url) => {
           try {
-            await cache.add(url);
+            await cache.add(new Request(url, { cache: "reload" }));
           } catch (err) {
             console.warn("[sw] Could not precache", url, err);
           }
@@ -174,7 +177,11 @@ self.addEventListener("fetch", (event) => {
       (async () => {
         const cache = await caches.open(SHELL_CACHE);
         const cached = await cache.match(request, { ignoreSearch: true });
-        const network = fetch(request)
+        // Revalidate with the server (a cheap 304 when unchanged) instead of
+        // accepting a copy the browser's HTTP cache may still hold.
+        const network = (request.mode === "navigate"
+          ? fetch(request.url, { cache: "no-cache", credentials: "same-origin" })
+          : fetch(request, { cache: "no-cache" }))
           .then(async (response) => {
             if (response && response.ok) await cache.put(request, response.clone());
             return response;

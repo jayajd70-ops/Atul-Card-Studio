@@ -1576,7 +1576,7 @@ const DesignPreferences = createFavouriteStore("design-preferences", () => Desig
 // Application version. Shown in the header, stamped onto exported
 // backups, and kept in step with SW_VERSION in sw.js so a released
 // shell and the code inside it always report the same number.
-const APP_VERSION = "1.29.0";
+const APP_VERSION = "1.30.0";
 
 const CURRENT_SCHEMA_VERSION = 6;
 

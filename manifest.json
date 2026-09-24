@@ -1,7 +1,7 @@
 {
   "id": "/",
   "name": "Atul Card Studio",
-  "version": "1.29.0",
+  "version": "1.30.0",
   "short_name": "Card Studio",
   "description": "A private digital atelier for crafting luxury, foiled greeting cards with cinematic typography, hand-placed seals, and an optional voice greeting.",
   "start_url": "./index.html",
