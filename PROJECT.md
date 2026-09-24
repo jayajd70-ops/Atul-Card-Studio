@@ -587,9 +587,56 @@ Task 003 implementation and release were explicitly authorized. The Current Task
 
 ## 9. Current Task
 
-- **Approved Current Task:** Task 031 — Final verification, evidence reconciliation and handover before an independent audit (owner instruction of 24 September 2026). No new user-facing features; a concrete defect found during verification is fixed as its own narrow task (Task 032).
-- **Active Permission Level:** IMPLEMENT / COMMIT / PUSH / DEPLOY under standing owner authorization (`PROJECT.md` section 4.1).
-- **Status:** Verification in progress; Task 032 released for live verification
+- **Approved Current Task:** None open. Task 031 (final verification and audit handover) is complete; it produced two narrow defect fixes, Task 032 and Task 033.
+- **Current release:** v1.32.0 (application, manifest, service worker and shell cache), schema v6, backup format `atul-birthday-card-studio` version 1.
+- **Next step:** Independent audit. Open owner decisions are listed below.
+
+### Current R1–R18 Status (Task 031, 24 September 2026)
+
+This replaces nothing above: the matrix recorded after Task 024 and every task record remain as historical evidence of what was true at the time.
+
+| Req | Status | Basis / remaining gap |
+|---|---|---|
+| R1 Design library | Complete for the approved scope | Ten curated design presets with live previews, suitability and local favourites (Task 025). Acquisition, daily or AI designs are parked decisions. |
+| R2 Templates, borders, no-photo | Complete for the approved scope | Five border families (Task 026); existing photo/no-photo compositions and medallion kept. Broader visual expansion parked. |
+| R3 Coordinated theme/typography | Complete | Unchanged since earlier tasks. |
+| R4 Decorations and emoji | Complete, with a device limit | Optional grouped library, 5 artworks and 52 emoji, keyboard move/delete, On-this-card list (Task 027). Emoji look depends on the device’s emoji font. |
+| R5 Message generator | Partial | Relationship-aware for every personal occasion (earlier Birthday, Anniversary and Condolence work plus Task 029); Indian-context wording rule applied. Remaining: a personal sub-occasion selector (owner decision) and a family read-through of the authored lines. |
+| R6 Photo adjustment | Complete | |
+| R7 Persistent state | Complete | Task 032 closed a data-loss path (Undo after photo replacement). |
+| R8 Composition fine-tune | Complete | |
+| R9 Mobile navigation | Complete | |
+| R10 Occasions and festivals | Complete | Task 033 fixed unreadable text on festival artwork with a light theme. |
+| R11 Photo input | Complete | |
+| R12 Remove/replace/no-photo | Complete | Task 032. |
+| R13 Undo/Redo | Complete | Tasks 024 and 032. |
+| R14 Responsive workspace | Complete | |
+| R15 Smart Person Focus | Complete | Verified live online and after a real offline browser restart (Task 031). |
+| R16 Self-hosted fonts/offline | Complete | Real offline restart verified; Task 030 stale-precache fix reproduced and confirmed. |
+| R17 Date | Complete | |
+| R18 Creator footer | Complete | Approved 24 September 2026; device-local, excluded from backups (Task 028). |
+
+### Task 031 Record — Final Verification and Audit Handover
+
+- **Baseline:** `main` at commit `44ac34f`, clean, equal to `origin/main`; application, manifest and service worker v1.30.0 locally and on GitHub Pages.
+- **Method:** Installed Google Chrome driven through the DevTools protocol in headless mode with clean temporary profiles (outside the repository); a real browser restart with all traffic sent to a dead proxy for the offline run; licensed fixtures outside the repository (Apollo 11 crew portrait, NASA, public domain; MediaPipe sample portrait, Apache-2.0). No fixture, profile, export or backup was committed. In-page instrumentation only stubbed the file-save picker so exports could be inspected.
+- **Final results on live v1.32.0 (PASS unless stated):**
+  1. **Real offline restart:** after the service worker installed (53 shell entries) the browser was closed and restarted with the network unreachable (an uncontrolled request failed); the page, `js/app.js` and CSS were served by the service worker and the editor opened with the saved card (name, manual message, Smart Person Focus box, border, decorations, device creator-footer setting) identical to the saved state.
+  2. **Smart Person Focus on the live HTTPS app:** fixture chosen through the normal photo input; 3 people detected; nothing selected until chosen; choosing person 2 auto-fitted the photo and saved only the focus box; Undo and Redo worked; replacing the photo cleared the focus and the choices; save/reopen kept the focus; PNG export 1200 x 1760; the first use downloaded and cached exactly 4 detector files (12,465,471 bytes); after the offline restart detection ran again from the cache (3 people), a different person could be chosen and Undo restored the saved one.
+  3. **Backup round trip:** a card with a design preset, the Regal border, a library artwork, a library emoji, a manual message and a focused photo was backed up and imported offline into a new card: new id, every card field equal (name, relationship, sender, message and mode, theme, foil, pairing, border, decoration ids and positions, focus box, zoom), photo renders; the backup contains no creator-footer data and opening the imported card did not change the device creator setting.
+  4. **Creator footer:** a 40-character name across all 5 font pairings on light, dark and festival cards: the line always sits below the date (rows 1712–1731 of 1760), no collisions with the date or sender, readable in every case (visually inspected); hidden and blank settings change no pixels. One first-pass measurement (dark theme, Playfair pairing) showed changed pixels from row 1672; a repeat with identical renders confirmed to be deterministic gave row 1713, so the first value came from web fonts still loading during the harness’s direct renders (the app’s own Export path waits for fonts).
+  5. **Borders:** 5 borders x 6 cards (photo, no-photo, Get Well, Condolence, Diwali dark and light theme): 30 exports of 1200 x 1760, none blank, no text overflow, clamping or missing assets, no collisions; Condolence output is pixel-identical for every border choice; choosing a border in the UI changes only `layout.frameStyle`. Three full-size exports through the real Export button inspected.
+  6. **Decoration library:** 17 items covering every group (two per general group, one per occasion-specific group): each added, moved by real keyboard events (arrow and Shift+arrow), one Undo step per key press, Redo restores; Delete key removes and Undo restores; decorations for each occasion survive a browser restart; Condolence has none; PNG export with decorations 1200 x 1760.
+  7. **Task 030 stale-cache fix, exact reproduction:** a local copy served with `Cache-Control: max-age=600` (as GitHub Pages does), version A installed and loaded, the server switched to version B, the service worker updated: with the pre-Task-030 worker the new `vB` shell stored **A’s** `js/app.js`; with the current worker it stored **B’s**. The revalidation request was checked separately: the old `fetch(request)` returned the stale copy while `cache: "no-cache"` returned the new file.
+- **Defects found and fixed during Task 031:** Task 032 (Undo after replacing or removing a photo/audio could lose it after a restart) and Task 033 (festival cards unreadable with a light theme). Both are recorded below with evidence.
+- **Observations, not changed:** A newly added decoration is always placed at the card centre, over the recipient name, until moved or Auto-arranged (existing behaviour; the overlap warning shows). In headless test runs, holding many full-size canvases at once produced blank canvases; the evidence above was regenerated by rendering one canvas at a time, and this is a test-harness effect, not seen in the app.
+
+### Final Evidence and Limitations (for the independent audit)
+
+- **Verified on the live site:** installation, real offline restart, detector caching and offline reuse, backup export/import, export dimensions, border and footer rendering, decoration keyboard controls, per-occasion persistence, service-worker cache contents (53 shell entries plus a separate detector cache).
+- **NOT TESTED:** a physical phone or tablet (touch dragging, pinch, camera capture); iOS Safari and Firefox (all runtime checks used Chromium); Windows airplane mode itself (the offline run cut the network at browser level, which the service worker cannot tell apart); emoji appearance on other operating systems; two tabs open at once (see the Task 032 known limit); a family read-through of the relationship message lines.
+- **Privacy/release gate for this series:** no real private data, secrets, fixtures, exports, backups or browser profiles were committed; the application still makes no third-party network requests at runtime (Content-Security-Policy `connect-src 'self' blob: data:`).
+- **Owner decisions still open:** personal sub-occasion selector (R5); whether new decorations should be placed away from the text automatically; design acquisition/AI generation, calendar/reminders, People & Events, renaming, a separate festival app, background extraction and photo enhancement remain parked.
 
 ### Task 033 Impact Record and Implementation Record — Festival cards unreadable with a light theme
 
@@ -598,6 +645,7 @@ Task 003 implementation and release were explicitly authorized. The Current Task
 - **Change (renderer only):** `renderBackground` reports when festival artwork was actually drawn; in that case a light theme’s text uses light ink (`#f7f2e9` text, `#e6dccb` muted/signature) and the sender uses the same foil path as dark themes. If the artwork fails to load, the theme background is drawn and the theme’s own ink is kept. Dark themes, non-festival cards and Condolence are unaffected. No state, schema, backup or UI change.
 - **Release:** Application, manifest, service worker, and cache version `1.32.0`; schema remains v6.
 - **Verified locally (headless Chrome, export renderer, PASS):** Diwali with Midnight Obsidian and with Pearl Marble side by side: greeting, relationship line, sender and date are clearly legible on both (visually inspected at full resolution).
+- **Status:** Complete, committed, pushed, deployed, and verified. Commit `762f694` (`fix: use light ink for card text on festival artwork with a light theme`), GitHub Pages run [`36047138209`](https://github.com/jayajd70-ops/Atul-Card-Studio/actions/runs/36047138209). Live proof: the 30-card border montage on v1.32.0 shows the Pearl Marble Diwali row as legible as the dark-theme row.
 
 ### Task 032 Impact Record and Implementation Record — Undo after replacing a photo must not lose it
 
@@ -609,6 +657,7 @@ Task 003 implementation and release were explicitly authorized. The Current Task
 - **Known limit:** With two tabs open at once, starting the app in the second tab can tidy a file that the first tab’s Undo history still refers to (the same outcome as before this fix, not a regression).
 - **Release:** Application, manifest, service worker, and cache version `1.31.0`; schema remains v6.
 - **Verified locally (real headless Chrome, three restarts, PASS):** replace → Undo → restart keeps the original photo (renders, no missing asset) and the unused replacement is tidied (3 stored records → 2); remove → Undo → restart keeps the photo; replace without Undo → restart removes the old file and its preview and keeps the new one (3 → 1).
+- **Status:** Complete, committed, pushed, deployed, and verified. Commit `8fe862e` (`fix: keep replaced photos and audio until startup so Undo cannot lose them`), GitHub Pages run [`36043896616`](https://github.com/jayajd70-ops/Atul-Card-Studio/actions/runs/36043896616). Live proof: on v1.31.0 and again on v1.32.0, replace → Undo → offline browser restart kept the photo (no missing asset) with its Smart Person Focus box.
 
 ### Task 030 Impact Record and Implementation Record
 
