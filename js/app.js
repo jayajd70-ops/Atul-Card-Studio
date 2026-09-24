@@ -1518,6 +1518,52 @@ const DesignLibrary = (() => {
   return { list, get, isAvailableFor, suitsOccasion, suitabilityLabel, applyToProject, isActive };
 })();
 
+/* =========================================================================
+   SECTION: CreatorFooter (R18)
+   Optional "Developed and created by [Name]" line. It is a device preference,
+   not card data: it is never written into a CardProject or backup, is kept
+   apart from the card's Sender field, and draws nothing unless it is switched
+   on and a name is entered.
+   ========================================================================= */
+const CreatorFooter = (() => {
+  const SETTINGS_KEY = "creator-footer";
+  const MAX_NAME = 40;
+  let state = { name: "", visible: false };
+
+  function clean(name) { return Utils.sanitizeText(String(name || ""), MAX_NAME).replace(/\s+/g, " ").trim(); }
+
+  async function init() {
+    try {
+      const record = await DB.get("settings", SETTINGS_KEY);
+      state = { name: clean(record && record.name), visible: !!(record && record.visible) };
+    } catch (err) {
+      state = { name: "", visible: false };
+    }
+  }
+
+  function get() { return { name: state.name, visible: state.visible }; }
+
+  // Text to draw, or "" when hidden or blank.
+  function text() { return state.visible && state.name ? "Developed and created by " + state.name : ""; }
+
+  async function set(patch) {
+    const previous = state;
+    state = {
+      name: patch.name !== undefined ? clean(patch.name) : state.name,
+      visible: patch.visible !== undefined ? !!patch.visible : state.visible,
+    };
+    try {
+      await DB.put("settings", { key: SETTINGS_KEY, name: state.name, visible: state.visible });
+    } catch (err) {
+      state = previous;
+      throw err;
+    }
+    return get();
+  }
+
+  return { init, get, text, set, MAX_NAME };
+})();
+
 const DesignPreferences = createFavouriteStore("design-preferences", () => DesignLibrary.list().map((preset) => preset.id));
 
 /* =========================================================================
@@ -1530,7 +1576,7 @@ const DesignPreferences = createFavouriteStore("design-preferences", () => Desig
 // Application version. Shown in the header, stamped onto exported
 // backups, and kept in step with SW_VERSION in sw.js so a released
 // shell and the code inside it always report the same number.
-const APP_VERSION = "1.27.0";
+const APP_VERSION = "1.28.0";
 
 const CURRENT_SCHEMA_VERSION = 6;
 
@@ -5726,6 +5772,36 @@ const Renderer = (() => {
       boxes.push(textBoxToLayoutBox("card-date", cx, dateY - 17, 360, 34, 60));
     }
 
+    const creatorText = CreatorFooter.text();
+    if (creatorText) {
+      const footerY = H - 38;
+      ctx.save();
+      // Festival artwork sits under a dark overlay, so the footer is always
+      // light there; elsewhere it follows the card's muted text colour.
+      const onArtwork = FestivalDesignRegistry.isFestival(project.occasion && project.occasion.id);
+      const footerColor = onArtwork ? "#f3ead8" : mutedColor;
+      ctx.fillStyle = footerColor;
+      ctx.globalAlpha = onArtwork ? 0.9 : 0.78;
+      // A soft halo in the opposite tone keeps the line legible over busy
+      // festival artwork without boxing it in on plain paper.
+      const rgb = /^#([0-9a-f]{6})$/i.exec(String(footerColor));
+      const lum = rgb ? (parseInt(rgb[1].slice(0, 2), 16) * 0.299 + parseInt(rgb[1].slice(2, 4), 16) * 0.587 + parseInt(rgb[1].slice(4, 6), 16) * 0.114) : 200;
+      ctx.shadowColor = lum > 128 ? "rgba(0,0,0,0.85)" : "rgba(255,255,255,0.7)";
+      ctx.shadowBlur = 6;
+      let size = 19;
+      ctx.font = "400 " + size + "px " + pairing.supportFont;
+      const maxWidth = W - 2 * 120;
+      while (size > 12 && ctx.measureText(creatorText).width > maxWidth) {
+        size -= 1;
+        ctx.font = "400 " + size + "px " + pairing.supportFont;
+      }
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(creatorText, cx, footerY);
+      ctx.restore();
+      boxes.push(textBoxToLayoutBox("creator-footer", cx, footerY - size * 0.65, Math.min(maxWidth, ctx.measureText(creatorText).width), size * 1.3, 40));
+    }
+
     return boxes;
   }
 
@@ -7504,6 +7580,22 @@ const App = (() => {
         p.cardDate.value = /^\d{4}-\d{2}-\d{2}$/.test(e.target.value) ? e.target.value : localDateISO();
       }, { reason: "card-date" });
     });
+    const creator = CreatorFooter.get();
+    dom.creatorName.value = creator.name;
+    dom.creatorVisible.checked = creator.visible;
+    const saveCreator = async (patch) => {
+      try {
+        const now = await CreatorFooter.set(patch);
+        dom.creatorName.value = now.name;
+        designPreviewSignature = "";
+        scheduleRender("preview");
+      } catch (err) {
+        toast("Could not save the creator footer setting.", true);
+      }
+    };
+    dom.creatorName.addEventListener("change", () => saveCreator({ name: dom.creatorName.value }));
+    dom.creatorVisible.addEventListener("change", () => saveCreator({ visible: dom.creatorVisible.checked }));
+
     dom.cardDateVisible.addEventListener("change", (e) => {
       StateStore.update((p) => {
         if (!p.cardDate) p.cardDate = { value: localDateISO(), visible: false };
@@ -8750,6 +8842,7 @@ const App = (() => {
       occasionSelect: $("#occasion-select"),
       festivalDesignField: $("#festival-design-field"), festivalDesignList: $("#festival-design-list"),
       senderName: $("#sender-name"), cardDate: $("#card-date"), cardDateVisible: $("#card-date-visible"),
+      creatorName: $("#creator-name"), creatorVisible: $("#creator-visible"),
       autoGreetingToggle: $("#auto-greeting-toggle"),
       emotionRow: $("#emotion-row"), greetingText: $("#greeting-text"), greetingCount: $("#greeting-count"),
       greetingSafetyWarning: $("#greeting-safety-warning"), useEditedMessageBtn: $("#use-edited-message-btn"),
@@ -8819,6 +8912,7 @@ const App = (() => {
     initTabs();
     await ThemePreferences.init();
     await DesignPreferences.init();
+    await CreatorFooter.init();
     populateOccasionSelect();
     populateThemeGrid();
     populateFrameList();

@@ -167,6 +167,17 @@
             </label>
             <p class="field-hint">Use today’s date or choose another date for advance preparation.</p>
           </div>
+          <details class="field creator-footer-field">
+            <summary>Creator footer <span class="field-optional">(optional)</span></summary>
+            <label for="creator-name">Creator name</label>
+            <input id="creator-name" type="text" maxlength="40" autocomplete="off" placeholder="Your name" />
+            <label class="switch-label" for="creator-visible">
+              <input id="creator-visible" type="checkbox" class="switch-input" />
+              <span class="switch" aria-hidden="true"></span>
+              Show “Developed and created by” on cards
+            </label>
+            <p class="field-hint">Separate from the Sender. Saved only on this device and not included in card backups. Leave it off or blank to show nothing.</p>
+          </details>
           <div class="field field-row">
             <label for="auto-greeting-toggle" class="switch-label">
               <input id="auto-greeting-toggle" type="checkbox" class="switch-input" />

@@ -346,11 +346,11 @@ Further enhancement is optional and must not delay active work. If a later task 
 - Use an appropriate display format.
 - Preserve the chosen date when changing designs and when saving/reopening the card.
 
-### R18. Optional Creator Footer — PENDING
+### R18. Optional Creator Footer — APPROVED 24 September 2026 (Task 028)
 
-Retain the concept of an optional footer such as **“Developed and created by [Name]”**, but do not implement it without later explicit approval.
+An optional footer such as **“Developed and created by [Name]”**. The owner approved implementation on 24 September 2026 (“Continue R5 and R18”).
 
-If approved later:
+Requirements:
 
 - Creator name must be configurable, not hard-coded.
 - Blank or hidden means no creator attribution in preview/export.
@@ -457,7 +457,7 @@ India Inspiration Studio is a separate 365-day inspirational-message and related
 
 Parked ideas remain outside implementation scope until explicitly reviewed and promoted into an approved Current Task:
 
-- **R18 Creator Footer:** pending; retain the specification but do not implement.
+- **R18 Creator Footer:** approved by the owner on 24 September 2026 and implemented in Task 028.
 - **R16 further font/offline-asset enhancement:** optional; preserve current behavior, with no proactive expansion required.
 - Birthday/anniversary calendar and reminders.
 - People & Events database.
@@ -587,9 +587,28 @@ Task 003 implementation and release were explicitly authorized. The Current Task
 
 ## 9. Current Task
 
-- **Approved Current Task:** None open. Tasks 025 (R1), 026 (R2) and 027 (R4) are complete; the owner-approved R1/R2/R4 series is finished. Remaining product questions are listed in the report to the owner.
-- **Active Permission Level:** IMPLEMENT / COMMIT / PUSH / DEPLOY under standing owner authorization (`PROJECT.md` section 4.1; owner instruction of 23 September 2026). Owner scope for this series: R1, R2 and R4 only (Task 025 R1 and 026 R2 done). R5, R15 and R18 are out of scope.
-- **Status:** Complete, committed, pushed, deployed, and verified
+- **Approved Current Task:** Task 028 — Optional Creator Footer (R18)
+- **Active Permission Level:** IMPLEMENT / COMMIT / PUSH / DEPLOY under standing owner authorization (`PROJECT.md` section 4.1). Owner instruction of 24 September 2026: “Continue R5 and R18”, which approves R18 and further R5 work. Planned: Task 028 R18, then Task 029 R5.
+- **Status:** Implementation and local verification complete; release in progress
+
+### Task 028 Impact Record
+
+- **Baseline:** `main` at commit `0669232`; clean; aligned with `origin/main`; live site serves v1.27.0.
+- **Requirement:** R18 (configurable creator name, nothing shown when blank or hidden, Show/Hide option, name may be stored locally, separate from Sender).
+- **Decision taken within the spec:** The footer is a device preference (`creator-footer` in the IndexedDB `settings` store), not card data. It is never written into a card or a backup, so a shared or imported card never carries someone else’s attribution, and schema v6 and the backup format are unchanged. Consequence: the footer appears on every card made on that device while it is switched on, including reopened older cards.
+- **UI/layout impact:** A collapsed “Creator footer (optional)” section in the Content tab, under the date: name field (40 characters) and a Show switch, off by default.
+- **Preview/export impact:** One small centred line at the very bottom of the card (below the date, outside the border), in the card’s muted colour with a contrast halo; on festival artwork it is always light. Shrinks to fit rather than wrapping. Preview and export share the renderer.
+- **Regression risks:** Overlap with the date or border, legibility on festival art, confusion with Sender, backup contamination.
+- **Smallest safe plan:** `CreatorFooter` preference module, one draw call at the end of the text layer, the UI above; release 1.28.0 with no new assets.
+
+### Task 028 Implementation Record
+
+- **Baseline:** `main` at commit `0669232`
+- **Status:** Implementation and local verification complete; release in progress
+- **Release:** Application, manifest, service worker, and cache version `1.28.0`; schema remains v6; no new assets (53-entry shell precache unchanged)
+- **Verified locally (Chrome, PASS):** Off by default; switching on with a name draws “Developed and created by [Name]” in the PNG export and switching off or blanking the name draws nothing (pixel check of the footer area); extra spaces in the name are collapsed; the Sender field is unchanged and Undo history is unaffected; name and switch persist across reload; a backup contains neither the name nor any creator field; visually checked on a light (Pearl Marble), dark (Midnight Obsidian), Condolence, Diwali and Holi card: the line sits below the date without touching the border, and a first attempt that was nearly invisible on festival artwork was fixed with a light colour and halo there; PNG export is exactly 1200 x 1760; at 375 px the section has 44 px targets and no horizontal overflow.
+- **Observation (not changed, out of scope):** The existing card date uses the theme’s muted colour, so it can be hard to read on festival artwork when a light theme is selected.
+- **NOT TESTED:** Very long names in every font pairing (fit-to-width shrink was exercised on one pairing only); real offline restart and live service-worker behavior until the live check below.
 
 ### Task 027 Impact Record
 

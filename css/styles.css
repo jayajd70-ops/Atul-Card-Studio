@@ -958,3 +958,8 @@ fieldset[disabled] button { cursor: not-allowed; }
 .stamp-move-group { display: inline-flex; gap: 2px; }
 .selected-stamp-toolbar .mini-btn { min-width: 40px; min-height: 40px; }
 @media (pointer: coarse) { .selected-stamp-toolbar .mini-btn { min-width: 44px; min-height: 44px; } }
+
+/* Creator footer (R18) */
+.creator-footer-field > summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; gap: 6px; font-weight: 600; color: var(--paper-100); }
+.creator-footer-field > summary:focus-visible { outline: 2px solid var(--gold-300); outline-offset: 2px; }
+.creator-footer-field[open] { display: flex; flex-direction: column; gap: 8px; }
