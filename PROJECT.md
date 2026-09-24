@@ -591,6 +591,14 @@ Task 003 implementation and release were explicitly authorized. The Current Task
 - **Active Permission Level:** IMPLEMENT / COMMIT / PUSH / DEPLOY under standing owner authorization (`PROJECT.md` section 4.1).
 - **Status:** Verification in progress; Task 032 released for live verification
 
+### Task 033 Impact Record and Implementation Record — Festival cards unreadable with a light theme
+
+- **Baseline:** `main` at commit `8fe862e`; live site serves v1.31.0.
+- **Evidence (Task 031, item 4/5 renders of the live app):** With the Pearl Marble theme (the only theme marked `light`) on a festival card, the greeting, relationship line, sender and date were drawn in the theme’s dark ink over the darkened festival artwork and were close to invisible; the sender also skipped the foil treatment. Reachable in normal use: the Pearl Heirloom, Blush Rose Gold and Soft Care designs use Pearl Marble, and the theme is kept when the occasion is switched to a festival. Pre-existing since festival artwork was introduced; not caused by Tasks 025–032. The creator footer (Task 028) already handled this case.
+- **Change (renderer only):** `renderBackground` reports when festival artwork was actually drawn; in that case a light theme’s text uses light ink (`#f7f2e9` text, `#e6dccb` muted/signature) and the sender uses the same foil path as dark themes. If the artwork fails to load, the theme background is drawn and the theme’s own ink is kept. Dark themes, non-festival cards and Condolence are unaffected. No state, schema, backup or UI change.
+- **Release:** Application, manifest, service worker, and cache version `1.32.0`; schema remains v6.
+- **Verified locally (headless Chrome, export renderer, PASS):** Diwali with Midnight Obsidian and with Pearl Marble side by side: greeting, relationship line, sender and date are clearly legible on both (visually inspected at full resolution).
+
 ### Task 032 Impact Record and Implementation Record — Undo after replacing a photo must not lose it
 
 - **Baseline:** `main` at commit `44ac34f`; live site serves v1.30.0.

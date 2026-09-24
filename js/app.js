@@ -1576,7 +1576,7 @@ const DesignPreferences = createFavouriteStore("design-preferences", () => Desig
 // Application version. Shown in the header, stamped onto exported
 // backups, and kept in step with SW_VERSION in sw.js so a released
 // shell and the code inside it always report the same number.
-const APP_VERSION = "1.31.0";
+const APP_VERSION = "1.32.0";
 
 const CURRENT_SCHEMA_VERSION = 6;
 
@@ -4763,7 +4763,7 @@ const Renderer = (() => {
         overlay.addColorStop(1, "rgba(8,6,12," + Math.min(0.72, strength + 0.18) + ")");
         ctx.fillStyle = overlay;
         ctx.fillRect(0, 0, W, H);
-        return;
+        return true; // festival artwork drawn: the text layer must stay light
       }
     }
     const design = OccasionRegistry.getDesign(
@@ -5807,7 +5807,7 @@ const Renderer = (() => {
     return { id, x: cx - width / 2, y: topY, width, height, priority, movable: false };
   }
 
-  async function renderTextLayers(ctx, project, theme, pairing, diagnostics, quality) {
+  async function renderTextLayers(ctx, project, theme, pairing, diagnostics, quality, onFestivalArtwork) {
     const effective = getEffectiveTextStyle(project);
     const design = effective.design;
     const typography = effective.typography;
@@ -5855,6 +5855,15 @@ const Renderer = (() => {
       textColor = design.palette.text;
       mutedColor = design.palette.muted;
       signatureColor = design.palette.signature;
+    }
+    // A light theme's dark ink is unreadable over the darkened festival
+    // artwork, so on artwork the card text always uses light ink and the
+    // sender takes the foil treatment used on dark themes.
+    const lightInkOnArtwork = !!onFestivalArtwork && !!(theme.background && theme.background.light);
+    if (lightInkOnArtwork) {
+      textColor = "#f7f2e9";
+      mutedColor = "#e6dccb";
+      signatureColor = "#e6dccb";
     }
 
     // Recipient name (highest text priority)
@@ -5997,7 +6006,7 @@ const Renderer = (() => {
       if (senderFit.overflow) diagnostics.textOverflow = true;
       if (senderFit.clamped) diagnostics.textClamped = true;
       boxes.push(textBoxToLayoutBox("sender-signature", cx, signY - senderFit.size, senderFit.maxLineWidth, senderFit.size * 1.3, 95));
-      if (isCondolence || (theme.background && theme.background.light)) {
+      if (isCondolence || (theme.background && theme.background.light && !lightInkOnArtwork)) {
         ctx.save();
         ctx.fillStyle = signatureColor;
         LayoutEngine.drawLines(ctx, senderFit.lines, {
@@ -6140,7 +6149,7 @@ const Renderer = (() => {
     };
 
     ctx.clearRect(0, 0, W, H);
-    await renderBackground(ctx, theme, quality, project);
+    const onFestivalArtwork = (await renderBackground(ctx, theme, quality, project)) === true;
     await renderThemeBorderDecorations(ctx, project, theme);
     renderLuxuryBorder(ctx, theme, quality, project);
 
@@ -6159,7 +6168,7 @@ const Renderer = (() => {
     }
     await renderPhoto(ctx, project, theme, photoImage, getInitials(project), quality);
 
-    const textBoxes = await renderTextLayers(ctx, project, theme, pairing, diagnostics, quality);
+    const textBoxes = await renderTextLayers(ctx, project, theme, pairing, diagnostics, quality, onFestivalArtwork);
 
     renderStampsForLayer(ctx, project, theme, "foreground", getInitials(project));
     renderStampsForLayer(ctx, project, theme, "top", getInitials(project));
