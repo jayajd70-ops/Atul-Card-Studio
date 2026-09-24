@@ -1576,7 +1576,7 @@ const DesignPreferences = createFavouriteStore("design-preferences", () => Desig
 // Application version. Shown in the header, stamped onto exported
 // backups, and kept in step with SW_VERSION in sw.js so a released
 // shell and the code inside it always report the same number.
-const APP_VERSION = "1.30.0";
+const APP_VERSION = "1.31.0";
 
 const CURRENT_SCHEMA_VERSION = 6;
 
@@ -6401,6 +6401,27 @@ const ProjectVault = (() => {
     return project;
   }
 
+  // Replaced or removed photos and audio are not deleted at that moment,
+  // because Undo can bring the old reference back. Instead, at startup (when
+  // no Undo history exists yet) any stored asset that no saved card refers to
+  // is removed, together with its preview copy.
+  async function pruneUnreferencedAssets() {
+    const keep = new Set();
+    (await listProjects()).forEach((p) => {
+      if (p.photo && p.photo.assetId) keep.add(p.photo.assetId);
+      if (p.audio && p.audio.assetId) keep.add(p.audio.assetId);
+    });
+    let removed = 0;
+    for (const asset of await DB.getAll("assets")) {
+      const baseId = String(asset.id).replace(/__preview$/, "");
+      if (!keep.has(baseId)) {
+        await DB.delete("assets", asset.id);
+        removed += 1;
+      }
+    }
+    return removed;
+  }
+
   async function isAssetReferencedElsewhere(assetId, excludingProjectId) {
     const all = await listProjects();
     return all.some((p) => p.id !== excludingProjectId && (
@@ -6556,7 +6577,7 @@ const ProjectVault = (() => {
   return {
     listProjects, getProject, saveProject, createProject, duplicateProject,
     renameProject, deleteProject, searchProjects, getStorageEstimate,
-    exportBackup, importBackup, BACKUP_FORMAT_ID, BACKUP_FORMAT_VERSION,
+    exportBackup, importBackup, BACKUP_FORMAT_ID, BACKUP_FORMAT_VERSION, pruneUnreferencedAssets,
   };
 })();
 
@@ -8011,10 +8032,9 @@ const App = (() => {
         StateStore.update((p) => {
           p.photo = { assetId: asset.id, zoom: 1, panX: 0, panY: 0, rotation: 0 };
         }, { reason: "photo-set" });
-        if (previousAssetId) {
-          AssetResolver.invalidate(previousAssetId);
-          await AssetRepository.deleteAsset(previousAssetId).catch(() => {});
-        }
+        // The previous file stays stored so Undo can restore it; unreferenced
+        // files are removed at the next startup (pruneUnreferencedAssets).
+        if (previousAssetId) AssetResolver.invalidate(previousAssetId);
         toast(sourceLabel + " added.");
       } catch (err) {
         toast(err.message || "Could not add that " + sourceLabel.toLowerCase() + ".", true);
@@ -8140,7 +8160,6 @@ const App = (() => {
       const assetId = project.photo.assetId;
       StateStore.update((p) => { p.photo = null; }, { reason: "photo-remove" });
       AssetResolver.invalidate(assetId);
-      await AssetRepository.deleteAsset(assetId).catch(() => {});
       toast("Photo removed.");
     });
   }
@@ -8340,12 +8359,10 @@ const App = (() => {
       const file = e.target.files[0];
       if (!file) return;
       try {
-        const previousAssetId = StateStore.getProject().audio && StateStore.getProject().audio.assetId;
         const asset = await AssetRepository.storeAudio(file);
         StateStore.update((p) => {
           p.audio = { assetId: asset.id, title: file.name.replace(/\.[^.]+$/, ""), duration: asset.duration };
         }, { reason: "audio-set" });
-        if (previousAssetId) await AssetRepository.deleteAsset(previousAssetId).catch(() => {});
         await AudioController.load(asset.id);
         refreshAudioUI();
         toast("Audio greeting added.");
@@ -8373,7 +8390,6 @@ const App = (() => {
       const assetId = project.audio.assetId;
       AudioController.unload();
       StateStore.update((p) => { p.audio = null; }, { reason: "audio-remove" });
-      await AssetRepository.deleteAsset(assetId).catch(() => {});
       refreshAudioUI();
       toast("Audio greeting removed.");
     });
@@ -9178,6 +9194,11 @@ const App = (() => {
     await ThemePreferences.init();
     await DesignPreferences.init();
     await CreatorFooter.init();
+    try {
+      await ProjectVault.pruneUnreferencedAssets();
+    } catch (err) {
+      console.warn("Could not tidy unused stored files.", err && err.name);
+    }
     populateOccasionSelect();
     populateThemeGrid();
     populateFrameList();

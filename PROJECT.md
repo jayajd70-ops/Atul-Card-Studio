@@ -587,9 +587,20 @@ Task 003 implementation and release were explicitly authorized. The Current Task
 
 ## 9. Current Task
 
-- **Approved Current Task:** None open. Tasks 028 (R18), 029 (R5) and 030 (service-worker release integrity) are complete. Open R5 product question: a personal sub-occasion selector.
-- **Active Permission Level:** IMPLEMENT / COMMIT / PUSH / DEPLOY under standing owner authorization (`PROJECT.md` section 4.1); a concrete residual defect found while verifying Task 029.
-- **Status:** Complete, committed, pushed, deployed, and verified
+- **Approved Current Task:** Task 031 — Final verification, evidence reconciliation and handover before an independent audit (owner instruction of 24 September 2026). No new user-facing features; a concrete defect found during verification is fixed as its own narrow task (Task 032).
+- **Active Permission Level:** IMPLEMENT / COMMIT / PUSH / DEPLOY under standing owner authorization (`PROJECT.md` section 4.1).
+- **Status:** Verification in progress; Task 032 released for live verification
+
+### Task 032 Impact Record and Implementation Record — Undo after replacing a photo must not lose it
+
+- **Baseline:** `main` at commit `44ac34f`; live site serves v1.30.0.
+- **Evidence (Task 031, real headless Chrome, clean profile, live v1.30.0):** A photo was uploaded, replaced with another, and the replacement was undone. The editor showed the original photo again (from memory), but replacing had already deleted the original file from IndexedDB. After a browser restart the card referred to a missing photo (`missingAssets` contained its id) and the photo was gone from preview and export. The same pattern applied to Remove photo, audio replacement and Remove audio, which all deleted the file immediately while Undo could restore the reference.
+- **Requirement:** R7 (never lose the user’s work), R12 (remove/replace), R13 (Undo/Redo).
+- **Change:** Replacing or removing a photo or audio no longer deletes the stored file at that moment. `ProjectVault.pruneUnreferencedAssets()` runs once at startup, before the last card is opened and while no Undo history exists, and deletes stored assets (and their `__preview` copies) that no saved card references. Deleting a card is unchanged. No schema, backup-format or UI change.
+- **Privacy note:** A replaced private photo now stays in this device’s IndexedDB until the next app start instead of being deleted immediately; it never leaves the device.
+- **Known limit:** With two tabs open at once, starting the app in the second tab can tidy a file that the first tab’s Undo history still refers to (the same outcome as before this fix, not a regression).
+- **Release:** Application, manifest, service worker, and cache version `1.31.0`; schema remains v6.
+- **Verified locally (real headless Chrome, three restarts, PASS):** replace → Undo → restart keeps the original photo (renders, no missing asset) and the unused replacement is tidied (3 stored records → 2); remove → Undo → restart keeps the photo; replace without Undo → restart removes the old file and its preview and keeps the new one (3 → 1).
 
 ### Task 030 Impact Record and Implementation Record
 
