@@ -1578,7 +1578,7 @@ const DesignPreferences = createFavouriteStore("design-preferences", () => Desig
 // Application version. Shown in the header, stamped onto exported
 // backups, and kept in step with SW_VERSION in sw.js so a released
 // shell and the code inside it always report the same number.
-const APP_VERSION = "1.33.0";
+const APP_VERSION = "1.34.0";
 
 const CURRENT_SCHEMA_VERSION = 6;
 
@@ -2687,10 +2687,10 @@ const GreetingGenerator = (() => {
         playful: "Thank you, {name}! You are the family member everyone can count on, and I certainly do.",
       },
       friend: {
-        heartfelt: "Thank you, {name}, for your kindness and steady friendship. You make life feel warmer and more supported.",
-        poetic: "Some friendships become quiet places of strength, {name}. Thank you for being one of mine.",
+        heartfelt: "Thank you, {name}, for being the friend who always shows up. Your care and loyalty mean more than I can say.",
+        poetic: "{name}, good friends are rare, and true ones like you are rarer still. Thank you for staying close through it all.",
         professional: "With sincere thanks, {name}, for your help and thoughtfulness. It is truly appreciated.",
-        playful: "Thank you, {name}! Friends like you make every ordinary day better.",
+        playful: "Thank you, {name}! Not many people would put up with me this long, and I am grateful you still do.",
       },
       professional: {
         heartfelt: "Thank you, {name}, for your support and cooperation. Your thoughtfulness makes a real difference to the team.",
