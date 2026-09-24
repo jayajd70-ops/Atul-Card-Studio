@@ -587,9 +587,9 @@ Task 003 implementation and release were explicitly authorized. The Current Task
 
 ## 9. Current Task
 
-- **Approved Current Task:** Task 029 — Relationship-aware messages for the remaining personal occasions (R5)
+- **Approved Current Task:** Task 029 (R5) complete; Task 030 (service-worker stale precache fix) is next
 - **Active Permission Level:** IMPLEMENT / COMMIT / PUSH / DEPLOY under standing owner authorization (`PROJECT.md` section 4.1). Owner instruction of 24 September 2026: “Continue R5 and R18” (Task 028 R18 done).
-- **Status:** Implementation and local verification complete; release in progress
+- **Status:** Complete, committed, pushed, deployed, and verified
 
 ### Task 029 Impact Record
 
@@ -604,7 +604,9 @@ Task 003 implementation and release were explicitly authorized. The Current Task
 ### Task 029 Implementation Record
 
 - **Baseline:** `main` at commit `13620c6`
-- **Status:** Implementation and local verification complete; release in progress
+- **Status:** Complete, committed, pushed, deployed, and verified
+- **Completed commit:** `890639f` — `feat: add relationship-aware messages for remaining personal occasions (R5)`
+- **Live verification:** GitHub Pages run [`36038188446`](https://github.com/jayajd70-ops/Atul-Card-Studio/actions/runs/36038188446) succeeded; live manifest, service worker and app serve 1.29.0; cache `atul-shell-v1.29.0` has 53 entries; on the live page Retirement with “Grandmother” (Heartfelt) gives the elder line and repeats it on Regenerate, as designed. **Defect found during this check (fixed in Task 030):** the new service worker installed while the browser still held the 1.28.0 `js/app.js` in its HTTP cache (GitHub Pages `max-age=600`), so the v1.29.0 shell briefly contained 1.28.0 code until a later reload refreshed it.
 - **Release:** Application, manifest, service worker, and cache version `1.29.0`; schema remains v6; no new assets
 - **Verified (Node, real generator code, PASS):** 3,192 generated messages across the 7 occasions, 23 relationship inputs (including aliases such as “Nani”, “my father”, “Best Friend”, blank and an unrecognised “Landlord”), 4 tones and a 40-character name: longest 179 characters (limit 220), no unfilled placeholders, every Get Well line passes the Get Well output guard, no cross-occasion wording (for example no “congratulations” on Get Well or Thanks, no “recover” outside Get Well), no listed Western idioms; the auto-write first draft is deterministic; Birthday, Anniversary, Condolence and Diwali output is unchanged.
 - **Verified in the app (Chrome, PASS):** New Baby with “Wife” gives the “our little one” lines per tone; Get Well with “Colleague” gives a workplace-appropriate draft; a manual Get Well message survives switching to New Baby and back, each occasion keeps its own message and relationship, recipient and sender are untouched; PNG export is exactly 1200 x 1760.
