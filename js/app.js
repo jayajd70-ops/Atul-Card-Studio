@@ -1578,7 +1578,7 @@ const DesignPreferences = createFavouriteStore("design-preferences", () => Desig
 // Application version. Shown in the header, stamped onto exported
 // backups, and kept in step with SW_VERSION in sw.js so a released
 // shell and the code inside it always report the same number.
-const APP_VERSION = "1.38.0";
+const APP_VERSION = "1.39.0";
 
 // A closer crop is sometimes necessary for a wide framed photo. Keep this
 // one shared bound for slider, pinch, renderer and Smart Person Focus so
@@ -6057,8 +6057,26 @@ const Renderer = (() => {
       cursorY += isNewBaby ? 34 : 46;
     }
 
-    // Sender signature — pinned near the bottom, never overlapping name/greeting
+    const cardDate = project.cardDate || {};
+    const dateText = cardDate.visible ? formatCardDate(cardDate.value) : "";
     const senderText = Utils.sanitizeText(project.sender.name || "", 40).replace(/\s*&\s*/g, " & ");
+    // Detailed birthday artwork can be visually busy precisely where the
+    // signature and optional date sit. A gentle tonal veil keeps this footer
+    // legible without replacing the supplied artwork or moving user content.
+    if (artworkTextTone && (senderText || dateText)) {
+      const footerTop = H - 300;
+      const veil = ctx.createLinearGradient(0, footerTop, 0, H);
+      const veilColor = artworkTextTone === "dark" ? "255,250,246" : "8,6,12";
+      veil.addColorStop(0, "rgba(" + veilColor + ",0)");
+      veil.addColorStop(0.58, "rgba(" + veilColor + ",0.42)");
+      veil.addColorStop(1, "rgba(" + veilColor + ",0.68)");
+      ctx.save();
+      ctx.fillStyle = veil;
+      ctx.fillRect(84, footerTop, W - 168, H - footerTop);
+      ctx.restore();
+    }
+
+    // Sender signature — pinned near the bottom, never overlapping name/greeting
     if (senderText) {
       const signY = isNewBaby ? cursorY + 28 : Math.max(cursorY + (isCondolence ? 42 : 30), H - 150);
       const senderFit = LayoutEngine.fitText(measureCtx, {
@@ -6074,6 +6092,15 @@ const Renderer = (() => {
       if (senderFit.overflow) diagnostics.textOverflow = true;
       if (senderFit.clamped) diagnostics.textClamped = true;
       boxes.push(textBoxToLayoutBox("sender-signature", cx, signY - senderFit.size, senderFit.maxLineWidth, senderFit.size * 1.3, 95));
+      if (artworkTextTone) {
+        const plateWidth = Utils.clamp(senderFit.maxLineWidth + 82, 310, W - 168);
+        const plateHeight = senderFit.size * 1.56;
+        ctx.save();
+        ctx.fillStyle = artworkTextTone === "dark" ? "rgba(255,250,246,0.84)" : "rgba(8,6,12,0.64)";
+        roundRectPath(ctx, cx - plateWidth / 2, signY - senderFit.size * 1.22, plateWidth, plateHeight, plateHeight / 2);
+        ctx.fill();
+        ctx.restore();
+      }
       if (isCondolence || darkInkOnArtwork || (theme.background && theme.background.light && !lightInkOnArtwork)) {
         ctx.save();
         ctx.fillStyle = signatureColor;
@@ -6099,8 +6126,6 @@ const Renderer = (() => {
       }
     }
 
-    const cardDate = project.cardDate || {};
-    const dateText = cardDate.visible ? formatCardDate(cardDate.value) : "";
     if (dateText) {
       const dateY = H - 76;
       ctx.save();

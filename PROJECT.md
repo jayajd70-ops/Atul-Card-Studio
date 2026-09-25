@@ -587,9 +587,19 @@ Task 003 implementation and release were explicitly authorized. The Current Task
 
 ## 9. Current Task
 
-- **Approved Current Task:** Task 040 — Birthday background text-contrast correction and fresh-shell recovery after the owner reported a blank editor panel when toggling the card date.
-- **Current release:** v1.38.0 (application, manifest, service worker and shell cache), schema v6, backup format `atul-birthday-card-studio` version 1.
+- **Approved Current Task:** Task 041 — ensure the sender remains readable over full-card Birthday artwork and re-check the shared footer/date control path reported by the owner.
+- **Current release:** v1.39.0 (application, manifest, service worker and shell cache), schema v6, backup format `atul-birthday-card-studio` version 1.
 - **Owner decision recorded:** no R5 personal sub-occasion selector; R5 is complete at the approved relationship-aware scope.
+
+### Task 041 Impact Record and Implementation Record — Birthday signature legibility
+
+- **Baseline:** `main` at `8c27548`, Task 040 release v1.38.0, clean and equal to `origin/main`.
+- **Reported evidence:** The owner’s Romantic Pink Birthday card carried a sender value but its footer was visually lost against detailed flowers and cake. The same device still reported the editor panel blanking after Show footer or Show date on card.
+- **Finding:** The sender is pinned to the richly detailed lower portion of full-card artwork, so even correct dark ink can blend into local image detail. Fresh service-worker-blocked browser runs with recipient, sender, greeting, Romantic Pink artwork, and Show date enabled retain all eight tabs and three editor sections without an error; the shared date/footer state handlers do not clear the editor DOM. A new shell remains the safe recovery for a device holding mismatched cached assets.
+- **Change:** Birthday artwork now draws a restrained tonal footer veil plus a compact rounded signature plate behind a sender. It adapts to dark or light artwork ink, does not move the sender/date, and applies only when an artwork setting is selected. v1.39.0 forces a new shell cache.
+- **Compatibility:** No content, saved-date, sender, photo, centrepiece, occasion, backup, or schema mutation. Plain theme backgrounds and all non-Birthday cards remain unchanged.
+- **Verification (local, PASS):** JavaScript and service-worker syntax plus whitespace checks passed. A fresh browser profile with Romantic Pink, Mahesh, Atul Dhuvad, greeting, and date enabled shows a clear sender signature plate; the editor retains eight tabs and all three sections, with no browser errors.
+- **Not yet verified:** Live v1.39.0 on the owner’s device. If the panel still blanks after a full app restart at v1.39.0, a short screen recording from the tap through the blank state is needed because the error is not reproducible in clean local or live profiles.
 
 ### Task 040 Impact Record and Implementation Record — Birthday contrast and fresh shell
 
