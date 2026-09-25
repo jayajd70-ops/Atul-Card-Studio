@@ -587,9 +587,18 @@ Task 003 implementation and release were explicitly authorized. The Current Task
 
 ## 9. Current Task
 
-- **Approved Current Task:** Task 037 — Birthday-card usability and rendering corrections reported by the owner after manual desktop use.
-- **Current release:** v1.35.0 (application, manifest, service worker and shell cache), schema v6, backup format `atul-birthday-card-studio` version 1.
+- **Approved Current Task:** Task 038 — mobile editor placement and touch-gesture correction reported by the owner after live phone use.
+- **Current release:** v1.36.0 (application, manifest, service worker and shell cache), schema v6, backup format `atul-birthday-card-studio` version 1.
 - **Owner decision recorded:** no R5 personal sub-occasion selector; R5 is complete at the approved relationship-aware scope.
+
+### Task 038 Impact Record and Implementation Record — Mobile editor and canvas gestures
+
+- **Baseline:** `main` at commit `574e986`, clean and equal to `origin/main`; v1.35.0.
+- **Reported evidence:** On a phone, the card preview appeared before the editor, forcing the maker to scroll past a large movable image to reach the Content/Photo/Theme/Layout controls. The horizontally arranged controls were difficult to reach; a one-finger scroll on an uploaded image could instead move the photo. Native image capture itself works and should not be replaced with a browser permission flow.
+- **Change:** On portrait viewports below 980px, the workspace becomes a fixed vertical split: a compact live card preview remains at the top while the editor controls scroll independently below. In landscape, preview and editor are side by side. The eight editor tabs wrap visibly rather than requiring horizontal side-scrolling. The header is allowed to scroll away on phones so it cannot cover the workspace. The card canvas now permits one-finger vertical page scrolling; touch photo panning starts only after a deliberate horizontal movement, while mouse panning and two-finger pinch framing remain available. Native `capture` remains unchanged: the phone camera flow is responsible for its own permission/consent handling.
+- **Compatibility:** Desktop layout is unchanged. No state/schema/backup/rendering data changes: saved cards, photo transforms, focused-person selection, stamps, manual choices, occasions, preview/export parity, and offline behaviour remain intact.
+- **Verification (local, PASS):** JavaScript syntax and whitespace checks passed. At 390x844 in a touch-enabled browser, the compact preview occupies the upper split while the editor occupies the lower split; all eight tabs fit without horizontal overflow; scrolling the editor panel leaves the card preview and editor frame fixed; `touch-action: pan-y` is computed on the card. At 844x390 landscape, the preview and editor are side by side with no horizontal overflow. No browser errors occurred during those checks.
+- **Not yet verified:** A physical phone should confirm the native camera capture flow and one-finger vertical scrolling over a real uploaded image; these depend on the device browser.
 
 ### Task 037 Impact Record and Implementation Record — Birthday usability corrections
 

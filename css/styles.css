@@ -344,7 +344,9 @@ input, select, textarea { font-family: inherit; }
   box-shadow: var(--shadow-deep);
   border: 1px solid var(--border-glass);
   background: var(--ink-800);
-  touch-action: none;
+  /* A vertical one-finger swipe belongs to page scrolling on touch devices.
+     Horizontal drags and two-finger pinch stay available to frame a photo. */
+  touch-action: pan-y;
 }
 
 #card-canvas { width: 100%; height: 100%; display: block; }
@@ -464,6 +466,56 @@ input, select, textarea { font-family: inherit; }
 
 .tabpanels { padding: 16px; overflow-y: auto; }
 @media (min-width: 980px) { .tabpanels { flex: 1; } }
+
+/* Phone workspace: preserve a compact, live preview above the editor. Only the
+   controls pane scrolls, so changing text, photo framing, or layout always has
+   an immediate visual reference instead of pushing the card off-screen.
+   Desktop retains the full side-by-side workspace. */
+@media (max-width: 979px) {
+  .app-header { position: static; }
+  .app-main {
+    display: grid;
+    grid-template-rows: minmax(230px, 42dvh) minmax(0, 1fr);
+    gap: 8px;
+    flex: 0 0 100dvh;
+    height: 100dvh;
+    max-height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+    padding: 8px 12px 12px;
+  }
+  .stage {
+    min-height: 0;
+    overflow: hidden;
+    justify-content: center;
+  }
+  .stage-inner { height: 100%; justify-content: center; gap: 4px; }
+  .canvas-frame {
+    width: auto;
+    height: min(34dvh, 310px);
+    max-width: 100%;
+    flex: 0 1 auto;
+  }
+  .editor-panel {
+    min-height: 0;
+    height: 100%;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .tabs { flex-wrap: wrap; overflow-x: visible; scroll-snap-type: none; }
+  .tab { flex: 1 0 21%; padding-inline: 8px; }
+  .tabpanels { flex: 1 1 auto; min-height: 0; overscroll-behavior: contain; }
+}
+
+/* A short, wide phone has enough room for the familiar side-by-side editor. */
+@media (max-width: 979px) and (orientation: landscape) {
+  .app-main {
+    grid-template-columns: minmax(210px, 42vw) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+  }
+  .canvas-frame { height: min(82dvh, 620px); }
+}
 
 .tabpanel { display: flex; flex-direction: column; gap: 16px; }
 

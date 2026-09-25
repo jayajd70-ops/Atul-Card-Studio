@@ -1578,7 +1578,7 @@ const DesignPreferences = createFavouriteStore("design-preferences", () => Desig
 // Application version. Shown in the header, stamped onto exported
 // backups, and kept in step with SW_VERSION in sw.js so a released
 // shell and the code inside it always report the same number.
-const APP_VERSION = "1.35.0";
+const APP_VERSION = "1.36.0";
 
 // A closer crop is sometimes necessary for a wide framed photo. Keep this
 // one shared bound for slider, pinch, renderer and Smart Person Focus so
@@ -8525,7 +8525,10 @@ const App = (() => {
         const project = StateStore.getProject();
         const occasionId = (project.occasion && project.occasion.id) || "birthday";
         if (OccasionRegistry.allowsPhoto(occasionId) && project.photo) {
-          dragMode = "photo";
+          // On touch screens a vertical swipe should keep scrolling the page.
+          // Wait for a small horizontal lead before claiming it as photo pan;
+          // mouse dragging keeps the established free-form pan behaviour.
+          dragMode = e.pointerType === "touch" ? "photo-pending" : "photo";
           dragStart = { clientX: e.clientX, clientY: e.clientY, panX: project.photo.panX, panY: project.photo.panY };
         }
       }
@@ -8558,6 +8561,18 @@ const App = (() => {
           }
         }, { skipHistory: true });
         return;
+      }
+
+      if (dragMode === "photo-pending") {
+        const dx = e.clientX - dragStart.clientX;
+        const dy = e.clientY - dragStart.clientY;
+        if (Math.hypot(dx, dy) < 10) return;
+        if (Math.abs(dy) > Math.abs(dx)) {
+          dragMode = null;
+          dragStart = null;
+          return;
+        }
+        dragMode = "photo";
       }
 
       if (dragMode === "photo") {
