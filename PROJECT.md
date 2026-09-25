@@ -599,7 +599,7 @@ Task 003 implementation and release were explicitly authorized. The Current Task
 - **Change:** Birthday artwork now draws a restrained tonal footer veil plus a compact rounded signature plate behind a sender. It adapts to dark or light artwork ink, does not move the sender/date, and applies only when an artwork setting is selected. v1.39.0 forces a new shell cache.
 - **Compatibility:** No content, saved-date, sender, photo, centrepiece, occasion, backup, or schema mutation. Plain theme backgrounds and all non-Birthday cards remain unchanged.
 - **Verification (local, PASS):** JavaScript and service-worker syntax plus whitespace checks passed. A fresh browser profile with Romantic Pink, Mahesh, Atul Dhuvad, greeting, and date enabled shows a clear sender signature plate; the editor retains eight tabs and all three sections, with no browser errors.
-- **Not yet verified:** Live v1.39.0 on the owner’s device. If the panel still blanks after a full app restart at v1.39.0, a short screen recording from the tap through the blank state is needed because the error is not reproducible in clean local or live profiles.
+- **Live verification (PASS):** GitHub Pages workflow `36184424181` deployed commit `94267f8`; a fresh live page reports v1.39.0. Owner-device verification remains needed for the reported blank-panel path because it is not reproducible in clean local or live profiles.
 
 ### Task 040 Impact Record and Implementation Record — Birthday contrast and fresh shell
 
