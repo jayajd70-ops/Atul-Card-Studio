@@ -598,7 +598,7 @@ Task 003 implementation and release were explicitly authorized. The Current Task
 - **Change:** Message vertical position now ranges from -320px to +140px. The renderer and stamp-protection geometry share those bounds and still clamp the message below the current photo or centerpiece, so the extra upward travel cannot overlap it. Greeting size has moved from Type to Layout without changing its saved value or behavior.
 - **Compatibility:** No schema, content, photo, occasion, manual centerpiece selection, export, backup, or offline change. Existing saved layout values retain their appearance; the only new behaviour is additional upward range when the owner chooses it.
 - **Verification (local, PASS):** JavaScript and service-worker syntax, manifest parsing, and whitespace checks passed. Fresh Chrome verified a 352px centerpiece with Message vertical position at -320px: the heading and recipient moved into the released space below the image, the image remained clear, and all eight editor tabs remained available. It also confirmed Greeting size is present in Layout and absent from Type.
-- **Live verification:** Pending deployment of v1.42.0.
+- **Live verification (PASS):** GitHub Pages workflow `36194751997` deployed commit `3655798`; a fresh Chrome profile opened the live app at v1.42.0 and confirmed the -320px to +140px vertical range, Greeting size in Layout, its absence from Type, and all eight editor tabs.
 
 ### Task 043 Impact Record and Implementation Record — Editable occasion heading
 
