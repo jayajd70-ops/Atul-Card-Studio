@@ -1578,7 +1578,7 @@ const DesignPreferences = createFavouriteStore("design-preferences", () => Desig
 // Application version. Shown in the header, stamped onto exported
 // backups, and kept in step with SW_VERSION in sw.js so a released
 // shell and the code inside it always report the same number.
-const APP_VERSION = "1.37.0";
+const APP_VERSION = "1.38.0";
 
 // A closer crop is sometimes necessary for a wide framed photo. Keep this
 // one shared bound for slider, pinch, renderer and Smart Person Focus so
@@ -1953,15 +1953,15 @@ const FestivalDesignRegistry = (() => {
    only to Birthday, and is runtime-cached after its first online use. */
 const BirthdayDesignRegistry = (() => {
   const designs = [
-    { id: "birthday-elegant", label: "Candlelit Elegance", hint: "Warm gold balloons and floral cake", asset: "assets/birthday-designs/birthday-elegant.jpg", overlay: 0.50 },
-    { id: "birthday-bright", label: "Bright Celebration", hint: "Colourful balloons and confetti cake", asset: "assets/birthday-designs/birthday-bright.jpg", overlay: 0.25 },
-    { id: "elegant-gold", label: "Golden Celebration", hint: "Gold balloons, roses, and gifts", asset: "assets/birthday-designs/elegant-gold-v2.webp", overlay: 0.22 },
-    { id: "celebration-blue", label: "Blue Celebration", hint: "Cool, refined birthday setting", asset: "assets/birthday-designs/celebration-blue-v2.webp", overlay: 0.30 },
-    { id: "fresh-natural", label: "Fresh Natural", hint: "Soft botanical birthday setting", asset: "assets/birthday-designs/fresh-natural-v2.webp", overlay: 0.26 },
-    { id: "lavender-dream", label: "Lavender Dream", hint: "Gentle lavender celebration", asset: "assets/birthday-designs/lavender-dream-v1.webp", overlay: 0.27 },
-    { id: "midnight-silver", label: "Midnight Silver", hint: "Dark, modern silver celebration", asset: "assets/birthday-designs/midnight-silver-v1.webp", overlay: 0.42 },
-    { id: "romantic-pink", label: "Romantic Pink", hint: "Soft rose-pink birthday setting", asset: "assets/birthday-designs/romantic-pink-v2.webp", overlay: 0.26 },
-    { id: "sunshine-yellow", label: "Sunshine Yellow", hint: "Bright, joyful birthday setting", asset: "assets/birthday-designs/sunshine-yellow-v1.webp", overlay: 0.24 },
+    { id: "birthday-elegant", label: "Candlelit Elegance", hint: "Warm gold balloons and floral cake", asset: "assets/birthday-designs/birthday-elegant.jpg", overlay: 0.50, textTone: "light" },
+    { id: "birthday-bright", label: "Bright Celebration", hint: "Colourful balloons and confetti cake", asset: "assets/birthday-designs/birthday-bright.jpg", overlay: 0.25, textTone: "dark" },
+    { id: "elegant-gold", label: "Golden Celebration", hint: "Gold balloons, roses, and gifts", asset: "assets/birthday-designs/elegant-gold-v2.webp", overlay: 0.22, textTone: "dark" },
+    { id: "celebration-blue", label: "Blue Celebration", hint: "Cool, refined birthday setting", asset: "assets/birthday-designs/celebration-blue-v2.webp", overlay: 0.30, textTone: "dark" },
+    { id: "fresh-natural", label: "Fresh Natural", hint: "Soft botanical birthday setting", asset: "assets/birthday-designs/fresh-natural-v2.webp", overlay: 0.26, textTone: "dark" },
+    { id: "lavender-dream", label: "Lavender Dream", hint: "Gentle lavender celebration", asset: "assets/birthday-designs/lavender-dream-v1.webp", overlay: 0.27, textTone: "dark" },
+    { id: "midnight-silver", label: "Midnight Silver", hint: "Dark, modern silver celebration", asset: "assets/birthday-designs/midnight-silver-v1.webp", overlay: 0.42, textTone: "light" },
+    { id: "romantic-pink", label: "Romantic Pink", hint: "Soft rose-pink birthday setting", asset: "assets/birthday-designs/romantic-pink-v2.webp", overlay: 0.26, textTone: "dark" },
+    { id: "sunshine-yellow", label: "Sunshine Yellow", hint: "Bright, joyful birthday setting", asset: "assets/birthday-designs/sunshine-yellow-v1.webp", overlay: 0.24, textTone: "dark" },
   ];
   const imageCache = new Map();
   function list() { return designs.map((design) => ({ ...design })); }
@@ -4801,7 +4801,7 @@ const Renderer = (() => {
         overlay.addColorStop(1, "rgba(8,6,12," + Math.min(0.68, strength + 0.16) + ")");
         ctx.fillStyle = overlay;
         ctx.fillRect(0, 0, W, H);
-        return "birthday-artwork";
+        return { kind: "birthday-artwork", textTone: birthdayDesign.textTone };
       }
     }
     const festivalDesign = FestivalDesignRegistry.get(occasionId, project && project.content && project.content.festivalDesignId);
@@ -4819,7 +4819,7 @@ const Renderer = (() => {
         overlay.addColorStop(1, "rgba(8,6,12," + Math.min(0.72, strength + 0.18) + ")");
         ctx.fillStyle = overlay;
         ctx.fillRect(0, 0, W, H);
-        return "festival-artwork"; // artwork drawn: the text layer must stay light
+        return { kind: "festival-artwork", textTone: "light" };
       }
     }
     const design = OccasionRegistry.getDesign(
@@ -5863,7 +5863,7 @@ const Renderer = (() => {
     return { id, x: cx - width / 2, y: topY, width, height, priority, movable: false };
   }
 
-  async function renderTextLayers(ctx, project, theme, pairing, diagnostics, quality, onFestivalArtwork) {
+  async function renderTextLayers(ctx, project, theme, pairing, diagnostics, quality, artworkTextTone) {
     const effective = getEffectiveTextStyle(project);
     const design = effective.design;
     const typography = effective.typography;
@@ -5912,14 +5912,16 @@ const Renderer = (() => {
       mutedColor = design.palette.muted;
       signatureColor = design.palette.signature;
     }
-    // A light theme's dark ink is unreadable over the darkened festival
-    // artwork, so on artwork the card text always uses light ink and the
-    // sender takes the foil treatment used on dark themes.
-    const lightInkOnArtwork = !!onFestivalArtwork;
+    const lightInkOnArtwork = artworkTextTone === "light";
+    const darkInkOnArtwork = artworkTextTone === "dark";
     if (lightInkOnArtwork) {
       textColor = "#f7f2e9";
       mutedColor = "#e6dccb";
       signatureColor = "#e6dccb";
+    } else if (darkInkOnArtwork) {
+      textColor = "#2a1720";
+      mutedColor = "#4b2f34";
+      signatureColor = "#603843";
     }
 
     // Recipient name (highest text priority)
@@ -5939,7 +5941,7 @@ const Renderer = (() => {
 
     const recipientMask = createWorkCanvas(W, H);
     const rmCtx = recipientMask.getContext("2d");
-    const solidRecipientInk = !!(theme.background && theme.background.light && !lightInkOnArtwork);
+    const solidRecipientInk = darkInkOnArtwork || !!(theme.background && theme.background.light && !lightInkOnArtwork);
     rmCtx.fillStyle = solidRecipientInk ? textColor : "#fff";
     const recipientLineHeight = recipientFit.size * (typography.lineHeight || pairing.lineHeight);
     LayoutEngine.drawLines(rmCtx, recipientFit.lines, {
@@ -6072,7 +6074,7 @@ const Renderer = (() => {
       if (senderFit.overflow) diagnostics.textOverflow = true;
       if (senderFit.clamped) diagnostics.textClamped = true;
       boxes.push(textBoxToLayoutBox("sender-signature", cx, signY - senderFit.size, senderFit.maxLineWidth, senderFit.size * 1.3, 95));
-      if (isCondolence || (theme.background && theme.background.light && !lightInkOnArtwork)) {
+      if (isCondolence || darkInkOnArtwork || (theme.background && theme.background.light && !lightInkOnArtwork)) {
         ctx.save();
         ctx.fillStyle = signatureColor;
         LayoutEngine.drawLines(ctx, senderFit.lines, {
@@ -6215,9 +6217,8 @@ const Renderer = (() => {
     };
 
     ctx.clearRect(0, 0, W, H);
-    const artworkKind = await renderBackground(ctx, theme, quality, project);
-    const onFestivalArtwork = !!artworkKind;
-    if (artworkKind !== "birthday-artwork") await renderThemeBorderDecorations(ctx, project, theme);
+    const artwork = await renderBackground(ctx, theme, quality, project);
+    if (!artwork || artwork.kind !== "birthday-artwork") await renderThemeBorderDecorations(ctx, project, theme);
     renderLuxuryBorder(ctx, theme, quality, project);
 
     renderStampsForLayer(ctx, project, theme, "background", getInitials(project));
@@ -6235,7 +6236,7 @@ const Renderer = (() => {
     }
     await renderPhoto(ctx, project, theme, photoImage, getInitials(project), quality);
 
-    const textBoxes = await renderTextLayers(ctx, project, theme, pairing, diagnostics, quality, onFestivalArtwork);
+    const textBoxes = await renderTextLayers(ctx, project, theme, pairing, diagnostics, quality, artwork && artwork.textTone);
 
     renderStampsForLayer(ctx, project, theme, "foreground", getInitials(project));
     renderStampsForLayer(ctx, project, theme, "top", getInitials(project));

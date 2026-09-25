@@ -587,9 +587,19 @@ Task 003 implementation and release were explicitly authorized. The Current Task
 
 ## 9. Current Task
 
-- **Approved Current Task:** Task 039 — owner-supplied, professional Birthday card backgrounds from the internal Birthday Card Maker and WishCraft source libraries.
-- **Current release:** v1.37.0 (application, manifest, service worker and shell cache), schema v6, backup format `atul-birthday-card-studio` version 1.
+- **Approved Current Task:** Task 040 — Birthday background text-contrast correction and fresh-shell recovery after the owner reported a blank editor panel when toggling the card date.
+- **Current release:** v1.38.0 (application, manifest, service worker and shell cache), schema v6, backup format `atul-birthday-card-studio` version 1.
 - **Owner decision recorded:** no R5 personal sub-occasion selector; R5 is complete at the approved relationship-aware scope.
+
+### Task 040 Impact Record and Implementation Record — Birthday contrast and fresh shell
+
+- **Baseline:** `main` at `89fcfb2`, Task 039 release v1.37.0, clean and equal to `origin/main`.
+- **Reported evidence:** On the owner’s saved Birthday card, using a light full-card Birthday design left recipient, greeting, and sender text in the white/light artwork treatment; the recipient was especially faint. The owner also observed a blank editor panel after enabling Show date on card.
+- **Finding:** The new Birthday artwork path treated every design as dark, so all nine inherited the light festival-artwork text treatment. The date-toggle path was reproduced in a fresh local profile and against live v1.37.0: the checkbox enabled correctly, the editor retained its eight tabs and three child sections, and no browser error occurred. This points to a stale mixed application shell rather than a data or date-handler failure.
+- **Change:** Each Birthday design now declares the required ink treatment. The seven light settings use solid dark plum ink for recipient, message, and sender; Candlelit Elegance and Midnight Silver retain light ink. v1.38.0 creates a fresh application cache so an updated shell cannot mix with the previous implementation. Existing card values and date visibility are not altered.
+- **Compatibility:** No schema/backup change. Saved cards, photo/manual framing, centrepieces, occasions, and offline runtime caching remain intact. New-card recipient/sender/date defaults are deliberately unchanged pending exact owner-provided values; stored cards are never overwritten.
+- **Verification (local, PASS):** JavaScript syntax, service-worker syntax, manifest parsing, and whitespace checks passed. A fresh service-worker-blocked browser profile visually confirmed dark recipient/sender ink on Bright Celebration. With recipient, sender, greeting, and date enabled, the date switch retained all eight editor tabs and the panel’s content with no browser errors.
+- **Not yet verified:** Live v1.38.0 after deployment, plus the exact recipient, sender, and date to use for new-card defaults.
 
 ### Task 039 Impact Record and Implementation Record — Birthday background library
 
