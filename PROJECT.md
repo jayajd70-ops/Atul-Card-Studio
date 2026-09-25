@@ -587,9 +587,18 @@ Task 003 implementation and release were explicitly authorized. The Current Task
 
 ## 9. Current Task
 
-- **Approved Current Task:** Task 038 — mobile editor placement and touch-gesture correction reported by the owner after live phone use.
-- **Current release:** v1.36.0 (application, manifest, service worker and shell cache), schema v6, backup format `atul-birthday-card-studio` version 1.
+- **Approved Current Task:** Task 039 — owner-supplied, professional Birthday card backgrounds from the internal Birthday Card Maker and WishCraft source libraries.
+- **Current release:** v1.37.0 (application, manifest, service worker and shell cache), schema v6, backup format `atul-birthday-card-studio` version 1.
 - **Owner decision recorded:** no R5 personal sub-occasion selector; R5 is complete at the approved relationship-aware scope.
+
+### Task 039 Impact Record and Implementation Record — Birthday background library
+
+- **Baseline:** `main` at `74e62a3`, Task 038 release v1.36.0, clean and equal to `origin/main`.
+- **Source and scope:** Nine owner-supplied Birthday assets from the internal Birthday Card Maker and WishCraft/Greeting Card & Poster Studio libraries are bundled under `assets/birthday-designs/`. No WishCraft product name or branding is presented in Atul Card Studio. The library is visible only while Birthday is selected.
+- **Change:** Content now offers the original selected-theme background plus nine named full-card Birthday settings. Selecting a setting changes only `content.birthdayDesignId`; recipient, sender, message, uploaded photo, manual framing/focus, centrepiece, typography, foil, border, decorations, and all other occasion state remain unchanged. The default remains the existing theme background. Full-card artwork suppresses theme corner decorations to prevent visual clashes, while photo/manual centerpiece and the card border remain available.
+- **Offline and compatibility:** Artwork is not added to the mandatory shell cache. It is bundled on the same origin and cached after first online use by the existing runtime strategy. The optional Birthday field is safely ignored by old saved cards and persisted inside Birthday's already isolated content state; no schema or backup-format change is required.
+- **Verification (local, PASS):** JavaScript syntax and whitespace checks passed. All ten choices (theme background plus nine artworks) render without browser errors. A visual review of Candlelit Elegance confirms artwork, readable text, border, and manual centerpiece compose correctly. Switching Birthday → Anniversary hides the Birthday library; switching back restores the selected Birthday setting. The library holds 1,680,983 bytes and is absent from `SHELL_ASSETS`.
+- **Not yet verified:** Live GitHub Pages and a physical phone after the v1.37.0 deployment.
 
 ### Task 038 Impact Record and Implementation Record — Mobile editor and canvas gestures
 

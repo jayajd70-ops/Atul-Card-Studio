@@ -1578,7 +1578,7 @@ const DesignPreferences = createFavouriteStore("design-preferences", () => Desig
 // Application version. Shown in the header, stamped onto exported
 // backups, and kept in step with SW_VERSION in sw.js so a released
 // shell and the code inside it always report the same number.
-const APP_VERSION = "1.36.0";
+const APP_VERSION = "1.37.0";
 
 // A closer crop is sometimes necessary for a wide framed photo. Keep this
 // one shared bound for slider, pinch, renderer and Smart Person Focus so
@@ -1947,6 +1947,31 @@ const FestivalDesignRegistry = (() => {
     return imageCache.get(design.asset);
   }
   return { list, get, isFestival, resolveImage };
+})();
+
+/* Owner-provided Birthday Card Maker artwork. It is bundled locally, applies
+   only to Birthday, and is runtime-cached after its first online use. */
+const BirthdayDesignRegistry = (() => {
+  const designs = [
+    { id: "birthday-elegant", label: "Candlelit Elegance", hint: "Warm gold balloons and floral cake", asset: "assets/birthday-designs/birthday-elegant.jpg", overlay: 0.50 },
+    { id: "birthday-bright", label: "Bright Celebration", hint: "Colourful balloons and confetti cake", asset: "assets/birthday-designs/birthday-bright.jpg", overlay: 0.25 },
+    { id: "elegant-gold", label: "Golden Celebration", hint: "Gold balloons, roses, and gifts", asset: "assets/birthday-designs/elegant-gold-v2.webp", overlay: 0.22 },
+    { id: "celebration-blue", label: "Blue Celebration", hint: "Cool, refined birthday setting", asset: "assets/birthday-designs/celebration-blue-v2.webp", overlay: 0.30 },
+    { id: "fresh-natural", label: "Fresh Natural", hint: "Soft botanical birthday setting", asset: "assets/birthday-designs/fresh-natural-v2.webp", overlay: 0.26 },
+    { id: "lavender-dream", label: "Lavender Dream", hint: "Gentle lavender celebration", asset: "assets/birthday-designs/lavender-dream-v1.webp", overlay: 0.27 },
+    { id: "midnight-silver", label: "Midnight Silver", hint: "Dark, modern silver celebration", asset: "assets/birthday-designs/midnight-silver-v1.webp", overlay: 0.42 },
+    { id: "romantic-pink", label: "Romantic Pink", hint: "Soft rose-pink birthday setting", asset: "assets/birthday-designs/romantic-pink-v2.webp", overlay: 0.26 },
+    { id: "sunshine-yellow", label: "Sunshine Yellow", hint: "Bright, joyful birthday setting", asset: "assets/birthday-designs/sunshine-yellow-v1.webp", overlay: 0.24 },
+  ];
+  const imageCache = new Map();
+  function list() { return designs.map((design) => ({ ...design })); }
+  function get(id) { return designs.find((design) => design.id === id) || null; }
+  function resolveImage(design) {
+    if (!design || !design.asset) return Promise.resolve(null);
+    if (!imageCache.has(design.asset)) imageCache.set(design.asset, Utils.loadImage(design.asset).catch(() => null));
+    return imageCache.get(design.asset);
+  }
+  return { list, get, resolveImage };
 })();
 
 /* =========================================================================
@@ -2835,6 +2860,7 @@ function createOccasionContent(occasionId, relationship) {
     festivalDesignId: FestivalDesignRegistry.isFestival(occasionId)
       ? ((FestivalDesignRegistry.get(occasionId) || {}).id || "")
       : "",
+    birthdayDesignId: "",
   };
 }
 
@@ -2852,6 +2878,9 @@ function snapshotOccasionContent(content, occasionId, relationship) {
       : String(relationship || ""),
     festivalDesignId: FestivalDesignRegistry.isFestival(occasionId)
       ? (FestivalDesignRegistry.get(occasionId, source.festivalDesignId) || {}).id || ""
+      : "",
+    birthdayDesignId: occasionId === "birthday" && BirthdayDesignRegistry.get(source.birthdayDesignId)
+      ? source.birthdayDesignId
       : "",
   };
 }
@@ -4757,6 +4786,24 @@ const Renderer = (() => {
   /* ---------------- 1-4: Background, texture, vignette ---------------- */
   async function renderBackground(ctx, theme, quality, project) {
     const occasionId = (project && project.occasion && project.occasion.id) || "birthday";
+    const birthdayDesign = occasionId === "birthday" && BirthdayDesignRegistry.get(project && project.content && project.content.birthdayDesignId);
+    if (birthdayDesign) {
+      const image = await BirthdayDesignRegistry.resolveImage(birthdayDesign);
+      if (image) {
+        const scale = Math.max(W / image.width, H / image.height);
+        const drawW = image.width * scale;
+        const drawH = image.height * scale;
+        ctx.drawImage(image, (W - drawW) / 2, (H - drawH) / 2, drawW, drawH);
+        const strength = birthdayDesign.overlay;
+        const overlay = ctx.createLinearGradient(0, 0, 0, H);
+        overlay.addColorStop(0, "rgba(8,6,12," + (strength * 0.36) + ")");
+        overlay.addColorStop(0.44, "rgba(8,6,12," + strength + ")");
+        overlay.addColorStop(1, "rgba(8,6,12," + Math.min(0.68, strength + 0.16) + ")");
+        ctx.fillStyle = overlay;
+        ctx.fillRect(0, 0, W, H);
+        return "birthday-artwork";
+      }
+    }
     const festivalDesign = FestivalDesignRegistry.get(occasionId, project && project.content && project.content.festivalDesignId);
     if (festivalDesign) {
       const image = await FestivalDesignRegistry.resolveImage(festivalDesign);
@@ -4772,7 +4819,7 @@ const Renderer = (() => {
         overlay.addColorStop(1, "rgba(8,6,12," + Math.min(0.72, strength + 0.18) + ")");
         ctx.fillStyle = overlay;
         ctx.fillRect(0, 0, W, H);
-        return true; // festival artwork drawn: the text layer must stay light
+        return "festival-artwork"; // artwork drawn: the text layer must stay light
       }
     }
     const design = OccasionRegistry.getDesign(
@@ -5868,7 +5915,7 @@ const Renderer = (() => {
     // A light theme's dark ink is unreadable over the darkened festival
     // artwork, so on artwork the card text always uses light ink and the
     // sender takes the foil treatment used on dark themes.
-    const lightInkOnArtwork = !!onFestivalArtwork && !!(theme.background && theme.background.light);
+    const lightInkOnArtwork = !!onFestivalArtwork;
     if (lightInkOnArtwork) {
       textColor = "#f7f2e9";
       mutedColor = "#e6dccb";
@@ -6168,8 +6215,9 @@ const Renderer = (() => {
     };
 
     ctx.clearRect(0, 0, W, H);
-    const onFestivalArtwork = (await renderBackground(ctx, theme, quality, project)) === true;
-    await renderThemeBorderDecorations(ctx, project, theme);
+    const artworkKind = await renderBackground(ctx, theme, quality, project);
+    const onFestivalArtwork = !!artworkKind;
+    if (artworkKind !== "birthday-artwork") await renderThemeBorderDecorations(ctx, project, theme);
     renderLuxuryBorder(ctx, theme, quality, project);
 
     renderStampsForLayer(ctx, project, theme, "background", getInitials(project));
@@ -7198,6 +7246,38 @@ const App = (() => {
     dom.occasionSelect.appendChild(festivals);
   }
 
+  function syncBirthdayDesignControls(project) {
+    if (!dom.birthdayDesignField || !dom.birthdayDesignList) return;
+    const isBirthday = ((project.occasion && project.occasion.id) || "birthday") === "birthday";
+    dom.birthdayDesignField.hidden = !isBirthday;
+    dom.birthdayDesignList.innerHTML = "";
+    if (!isBirthday) return;
+    const selectedId = (project.content && project.content.birthdayDesignId) || "";
+    const renderOption = (design) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "festival-design";
+      button.dataset.birthdayDesignId = design ? design.id : "";
+      button.setAttribute("role", "radio");
+      button.setAttribute("aria-checked", String((design ? design.id : "") === selectedId));
+      if (design) {
+        const image = document.createElement("img");
+        image.src = design.asset;
+        image.alt = "";
+        image.loading = "lazy";
+        button.appendChild(image);
+      }
+      const label = document.createElement("span");
+      label.textContent = design ? design.label : "Use theme background";
+      const hint = document.createElement("small");
+      hint.textContent = design ? design.hint : "Return to the selected colour theme";
+      button.append(label, hint);
+      dom.birthdayDesignList.appendChild(button);
+    };
+    renderOption(null);
+    BirthdayDesignRegistry.list().forEach(renderOption);
+  }
+
   function syncFestivalDesignControls(project) {
     if (!dom.festivalDesignField || !dom.festivalDesignList) return;
     const occasionId = (project.occasion && project.occasion.id) || "birthday";
@@ -7882,6 +7962,21 @@ const App = (() => {
           }
         }, { reason: "festival-design-change" });
         syncFestivalDesignControls(StateStore.getProject());
+      });
+    }
+    if (dom.birthdayDesignList) {
+      dom.birthdayDesignList.addEventListener("click", (e) => {
+        const button = e.target.closest("[data-birthday-design-id]");
+        if (!button) return;
+        const designId = button.dataset.birthdayDesignId || "";
+        StateStore.update((p) => {
+          if (((p.occasion && p.occasion.id) || "birthday") !== "birthday") return;
+          p.content.birthdayDesignId = BirthdayDesignRegistry.get(designId) ? designId : "";
+          if (p.occasion.contentByOccasion && p.occasion.contentByOccasion.birthday) {
+            p.occasion.contentByOccasion.birthday.birthdayDesignId = p.content.birthdayDesignId;
+          }
+        }, { reason: "birthday-design-change" });
+        syncBirthdayDesignControls(StateStore.getProject());
       });
     }
     dom.recipientName.addEventListener("input", (e) => {
@@ -9003,6 +9098,7 @@ const App = (() => {
     if (dom.occasionSelect) dom.occasionSelect.value = occasionId;
     populateEmotionRow(occasionId);
     syncOccasionEditor(project);
+    syncBirthdayDesignControls(project);
     syncFestivalDesignControls(project);
 
     if (dom.stampsTab) {
@@ -9181,6 +9277,7 @@ const App = (() => {
       recipientName: $("#recipient-name"), recipientRelationship: $("#recipient-relationship"),
       recipientRelationshipLabel: $("#recipient-relationship-label"), recipientRelationshipHint: $("#recipient-relationship-hint"),
       occasionSelect: $("#occasion-select"),
+      birthdayDesignField: $("#birthday-design-field"), birthdayDesignList: $("#birthday-design-list"),
       festivalDesignField: $("#festival-design-field"), festivalDesignList: $("#festival-design-list"),
       senderName: $("#sender-name"), cardDate: $("#card-date"), cardDateVisible: $("#card-date-visible"),
       creatorName: $("#creator-name"), creatorVisible: $("#creator-visible"),

@@ -10,7 +10,7 @@
 // Kept in step with APP_VERSION in js/app.js: bumping either one must
 // bump the other, since the cache name is what forces clients onto a
 // freshly released shell.
-const SW_VERSION = "v1.36.0";
+const SW_VERSION = "v1.37.0";
 const SHELL_CACHE = "atul-shell-" + SW_VERSION;
 
 // Smart Person Focus detector (MediaPipe runtime + BlazeFace model, ~12 MB).
@@ -131,10 +131,10 @@ function isShellRequest(url) {
   return url.origin === self.location.origin;
 }
 
-// Festival artwork is intentionally omitted from SHELL_ASSETS. The existing
-// same-origin strategy below caches an artwork after its first online use,
-// keeping it available offline without making every installation download the
-// complete festival collection.
+// Festival and optional Birthday artwork are intentionally omitted from
+// SHELL_ASSETS. The same-origin strategy below caches artwork after its first
+// online use, preserving offline reuse without making every installation
+// download the entire visual library.
 
 // Private user media (photo/audio blobs) never travels through fetch() at
 // all — it lives in IndexedDB and is read via URL.createObjectURL, which
