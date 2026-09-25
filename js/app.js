@@ -1578,14 +1578,14 @@ const DesignPreferences = createFavouriteStore("design-preferences", () => Desig
 // Application version. Shown in the header, stamped onto exported
 // backups, and kept in step with SW_VERSION in sw.js so a released
 // shell and the code inside it always report the same number.
-const APP_VERSION = "1.42.0";
+const APP_VERSION = "1.43.0";
 
 // A closer crop is sometimes necessary for a wide framed photo. Keep this
 // one shared bound for slider, pinch, renderer and Smart Person Focus so
 // preview and exported cards always agree.
 const MAX_PHOTO_ZOOM = 5;
 
-const CURRENT_SCHEMA_VERSION = 7;
+const CURRENT_SCHEMA_VERSION = 8;
 
 function localDateISO(timestamp) {
   const date = new Date(Number.isFinite(Number(timestamp)) ? Number(timestamp) : Date.now());
@@ -1616,14 +1616,14 @@ function createDefaultProject(overrides) {
       id: "birthday",
       subOccasion: null,
       contentByOccasion: {
-        birthday: { greeting: "", autoGreetingEnabled: false, emotion: "heartfelt", messageMode: "manual", relationship: "", occasionHeading: "Happy Birthday" },
-        condolence: { greeting: "", autoGreetingEnabled: false, emotion: "heartfelt", messageMode: "manual", relationship: "", occasionHeading: "With Deepest Sympathy" },
+        birthday: { greeting: "", autoGreetingEnabled: false, emotion: "heartfelt", messageMode: "manual", relationship: "", occasionHeading: "Happy Birthday", greetingLanguage: "en" },
+        condolence: { greeting: "", autoGreetingEnabled: false, emotion: "heartfelt", messageMode: "manual", relationship: "", occasionHeading: "With Deepest Sympathy", greetingLanguage: "en" },
       },
       stampsByOccasion: {},
     },
     recipient: { name: "", relationship: "" },
     sender: { name: "" },
-    content: { greeting: "", autoGreetingEnabled: false, emotion: "heartfelt", messageMode: "manual", relationship: "", occasionHeading: "Happy Birthday" },
+    content: { greeting: "", autoGreetingEnabled: false, emotion: "heartfelt", messageMode: "manual", relationship: "", occasionHeading: "Happy Birthday", greetingLanguage: "en" },
     theme: { id: "midnight-obsidian" },
     photo: null,
     layout: {
@@ -2422,6 +2422,47 @@ const GreetingGenerator = (() => {
     );
   });
 
+  // Gujarati drafts are authored locally, never translated remotely. Each
+  // festival keeps its own blessing; the four existing emotion buttons then
+  // offer four respectfully different editable phrasings of that blessing.
+  const GUJARATI_FESTIVAL_GREETINGS = {
+    diwali: ["શુભ દિવાળી!", "આપના જીવનમાં સુખ, શાંતિ અને સમૃદ્ધિનો પ્રકાશ ફેલાય તેવી હાર્દિક શુભેચ્છાઓ."],
+    "dhanteras-lakshmi-puja": ["શુભ ધનતેરસ!", "માતાજી લક્ષ્મીના આશીર્વાદથી તમારા જીવનમાં સમૃદ્ધિ, સુખ અને શાંતિ રહે તેવી હાર્દિક શુભેચ્છાઓ."],
+    "bestu-varas": ["સાલ મુબારક!", "નવું વર્ષ તમારા જીવનમાં આનંદ, આરોગ્ય અને સફળતા લઈને આવે તેવી શુભેચ્છાઓ."],
+    uttarayan: ["શુભ ઉત્તરાયણ!", "આકાશ રંગબેરંગી પતંગો અને જીવન ખુશીઓથી ભરાઈ જાય તેવી હાર્દિક શુભેચ્છાઓ."],
+    navratri: ["શુભ નવરાત્રી!", "માતાજીના આશીર્વાદથી તમારા જીવનમાં શક્તિ, શાંતિ અને સમૃદ્ધિ રહે તેવી પ્રાર્થના."],
+    holi: ["હોળીની હાર્દિક શુભેચ્છાઓ!", "રંગોની જેમ તમારું જીવન પણ આનંદ, પ્રેમ અને ખુશીઓથી ભરાઈ જાય."],
+    "raksha-bandhan": ["રક્ષાબંધનની હાર્દિક શુભેચ્છાઓ!", "ભાઈ-બહેનનો પ્રેમ અને વિશ્વાસનો બંધન હંમેશા અતૂટ રહે."],
+    janmashtami: ["શુભ જન્માષ્ટમી!", "શ્રીકૃષ્ણના આશીર્વાદથી તમારા જીવનમાં પ્રેમ, શાંતિ અને આનંદ રહે."],
+    "rath-yatra": ["શુભ રથયાત્રા!", "ભગવાન જગન્નાથના આશીર્વાદથી તમારા પરિવાર પર સુખ અને શાંતિ વરસે."],
+    "ganesh-chaturthi": ["શુભ ગણેશ ચતુર્થી!", "વિઘ્નહર્તા ગણપતિ બાપ્પા તમારા દરેક નવા કાર્યમાં સફળતા આપે."],
+    shivratri: ["શુભ મહાશિવરાત્રી!", "ભગવાન શિવના આશીર્વાદથી જીવનમાં શાંતિ, શક્તિ અને સદબુદ્ધિ મળે."],
+    dussehra: ["શુભ દશેરા!", "સત્ય અને સદાચારનો વિજય તમારા જીવનમાં હંમેશા પ્રકાશિત રહે."],
+    "independence-day": ["સ્વતંત્રતા દિવસની શુભેચ્છાઓ!", "દેશપ્રેમ, એકતા અને પ્રગતિનો ભાવ હંમેશા જીવંત રહે."],
+    "republic-day": ["પ્રજાસત્તાક દિવસની શુભેચ્છાઓ!", "ભારતની એકતા, લોકશાહી અને ગૌરવ આપણને સતત પ્રેરણા આપે."],
+    "eid-ul-fitr": ["ઈદ મુબારક!", "આ પવિત્ર ઈદ તમારા જીવનમાં શાંતિ, ખુશી અને પ્રેમ લઈને આવે."],
+    christmas: ["મેરી ક્રિસમસ!", "આ પવિત્ર તહેવાર તમારા ઘરમાં પ્રેમ, શાંતિ અને આનંદ ભરી દે."],
+    "new-year": ["નવા વર્ષની હાર્દિક શુભેચ્છાઓ!", "આવતું વર્ષ તમારા માટે આરોગ્ય, આનંદ અને નવી સફળતાઓ લઈને આવે."],
+    "ram-navami": ["શુભ રામ નવમી!", "ભગવાન રામના આશીર્વાદથી જીવનમાં ધૈર્ય, શાંતિ અને સદાચાર રહે."],
+    "holika-dahan": ["હોળિકા દહનની શુભેચ્છાઓ!", "આ પવિત્ર અગ્નિ જીવનમાંથી અંધકાર દૂર કરી આશા અને પ્રકાશ ભરી દે."],
+    "hanuman-jayanti": ["શુભ હનુમાન જયંતિ!", "હનુમાનજીના આશીર્વાદથી તમને શક્તિ, ભક્તિ અને સાહસ મળે."],
+    "guru-purnima": ["ગુરુ પૂર્ણિમાની હાર્દિક શુભેચ્છાઓ!", "ગુરુજનોના આશીર્વાદ અને માર્ગદર્શનથી જીવન સદાય પ્રકાશિત રહે."],
+    "bhai-dooj": ["ભાઈબીજની હાર્દિક શુભેચ્છાઓ!", "ભાઈ-બહેનનો સ્નેહ અને પરસ્પર કાળજી હંમેશા વધતી રહે."],
+  };
+
+  function gujaratiFestivalPool(occasionId, emotion) {
+    const entry = GUJARATI_FESTIVAL_GREETINGS[occasionId];
+    if (!entry) return null;
+    const [title, wish] = entry;
+    const options = {
+      heartfelt: [title + " " + wish],
+      poetic: [title + " " + wish + " દરેક નવો દિવસ આશા અને આનંદથી ઉજળો બને."],
+      professional: [title + " " + wish + " આપને અને આપના પરિવારને હાર્દિક શુભકામનાઓ."],
+      playful: [title + " " + wish + " તહેવારની ખુશીઓ સૌ સાથે વહેંચતા રહો!"],
+    };
+    return options[emotion] || options.heartfelt;
+  }
+
   // Old schema (v1) tone ids mapped onto the five supported birthday emotions.
   const LEGACY_EMOTION_MAP = {
     warm: "heartfelt",
@@ -2482,6 +2523,10 @@ const GreetingGenerator = (() => {
     if (isValid(id, occ.id)) return id;
     if (occ.id === "birthday" && LEGACY_EMOTION_MAP[id]) return LEGACY_EMOTION_MAP[id];
     return (occ.emotions[0] && occ.emotions[0].id) || "heartfelt";
+  }
+
+  function normalizeLanguage(language, occasionId) {
+    return FestivalDesignRegistry.isFestival(occasionId) && language === "gu" ? "gu" : "en";
   }
 
   function normalizeRelationship(relationship) {
@@ -2816,13 +2861,14 @@ const GreetingGenerator = (() => {
 
   // Returns a draft for `emotion` under `occasionId`, avoiding `previousText`
   // when the pool offers an alternative.
-  function generate(emotion, name, previousText, occasionId, relationship) {
+  function generate(emotion, name, previousText, occasionId, relationship, language) {
     const occ = OccasionRegistry.get(occasionId || "birthday");
     const normEmotion = normalizeEmotion(emotion, occ.id);
+    const languageId = normalizeLanguage(language, occ.id);
     const relationshipLabel = occ.id === "condolence" ? normalizeRelationship(relationship) : "";
     const birthdayRelationship = occ.id === "birthday" ? classifyBirthdayRelationship(relationship) : "";
     const anniversaryRelationship = occ.id === "anniversary" ? classifyAnniversaryRelationship(relationship) : "";
-    const occasionPool = occasionRelationshipPool(occ.id, relationship, normEmotion);
+    const occasionPool = languageId === "gu" ? gujaratiFestivalPool(occ.id, normEmotion) : occasionRelationshipPool(occ.id, relationship, normEmotion);
     const pool = relationshipLabel
       ? CONDOLENCE_RELATIONSHIP_POOLS[normEmotion]
       : birthdayRelationship
@@ -2844,13 +2890,14 @@ const GreetingGenerator = (() => {
 
   // Deterministic first draft, used by the "auto-write greeting" toggle so
   // the rendered card does not change text on every repaint.
-  function fallbackFor(emotion, name, occasionId, relationship) {
+  function fallbackFor(emotion, name, occasionId, relationship, language) {
     const occ = OccasionRegistry.get(occasionId || "birthday");
     const normEmotion = normalizeEmotion(emotion, occ.id);
+    const languageId = normalizeLanguage(language, occ.id);
     const relationshipLabel = occ.id === "condolence" ? normalizeRelationship(relationship) : "";
     const birthdayRelationship = occ.id === "birthday" ? classifyBirthdayRelationship(relationship) : "";
     const anniversaryRelationship = occ.id === "anniversary" ? classifyAnniversaryRelationship(relationship) : "";
-    const occasionPool = occasionRelationshipPool(occ.id, relationship, normEmotion);
+    const occasionPool = languageId === "gu" ? gujaratiFestivalPool(occ.id, normEmotion) : occasionRelationshipPool(occ.id, relationship, normEmotion);
     const pool = relationshipLabel
       ? CONDOLENCE_RELATIONSHIP_POOLS[normEmotion]
       : birthdayRelationship
@@ -2866,7 +2913,7 @@ const GreetingGenerator = (() => {
   function resolveProjectGreeting(project) {
     const occasionId = (project.occasion && project.occasion.id) || "birthday";
     return project.content.autoGreetingEnabled
-      ? fallbackFor(project.content.emotion, project.recipient.name, occasionId, project.recipient.relationship)
+      ? fallbackFor(project.content.emotion, project.recipient.name, occasionId, project.recipient.relationship, project.content.greetingLanguage)
       : (project.content.greeting || "");
   }
 
@@ -2885,7 +2932,7 @@ const GreetingGenerator = (() => {
   }
 
   return {
-    list, generate, fallbackFor, normalizeEmotion, isValid, validateSafety,
+    list, generate, fallbackFor, normalizeEmotion, normalizeLanguage, isValid, validateSafety,
     normalizeRelationship, classifyBirthdayRelationship, classifyAnniversaryRelationship, resolveProjectGreeting, validateProjectGreeting,
   };
 })();
@@ -2898,6 +2945,7 @@ function createOccasionContent(occasionId, relationship) {
     messageMode: "manual",
     relationship: String(relationship || ""),
     occasionHeading: OccasionRegistry.getDefaultHeading(occasionId),
+    greetingLanguage: "en",
     festivalDesignId: FestivalDesignRegistry.isFestival(occasionId)
       ? ((FestivalDesignRegistry.get(occasionId) || {}).id || "")
       : "",
@@ -2922,6 +2970,7 @@ function snapshotOccasionContent(content, occasionId, relationship) {
     occasionHeading: Object.prototype.hasOwnProperty.call(source, "occasionHeading")
       ? Utils.sanitizeText(String(source.occasionHeading || ""), 60)
       : OccasionRegistry.getDefaultHeading(occasionId),
+    greetingLanguage: GreetingGenerator.normalizeLanguage(source.greetingLanguage, occasionId),
     festivalDesignId: FestivalDesignRegistry.isFestival(occasionId)
       ? (FestivalDesignRegistry.get(occasionId, source.festivalDesignId) || {}).id || ""
       : "",
@@ -3230,6 +3279,12 @@ const Migrations = (() => {
     if (v < 7) {
       ensureOccasionContentStates(record);
       v = 7;
+    }
+    // v7 -> v8: Festival cards may opt into locally authored Gujarati-script
+    // drafts. Existing content remains English unless the owner changes it.
+    if (v < 8) {
+      ensureOccasionContentStates(record);
+      v = 8;
     }
     if (!record.cardDate || typeof record.cardDate !== "object") {
       record.cardDate = { value: localDateISO(record.createdAt || Date.now()), visible: false };
@@ -5418,7 +5473,7 @@ const Renderer = (() => {
       const linesThatFit = (size) => Math.max(1, Math.floor(availableHeight / (size * 1.5)));
       let greetingFit = LayoutEngine.fitText(measureCtx, {
         text: greetingText,
-        fontFamily: pairing.greetingFont,
+        fontFamily: fontForText(greetingText, pairing.greetingFont),
         weight: pairing.greetingWeight,
         maxSize: typography.greetingSize,
         minSize: 15,
@@ -5429,7 +5484,7 @@ const Renderer = (() => {
       const heightLimit = linesThatFit(greetingFit.size);
       if (greetingFit.lines.length > heightLimit) {
         greetingFit = LayoutEngine.clampResult(measureCtx, greetingFit, {
-          fontFamily: pairing.greetingFont,
+          fontFamily: fontForText(greetingText, pairing.greetingFont),
           weight: pairing.greetingWeight,
           maxWidth: maxWidth * 0.92,
           maxLines: heightLimit,
@@ -5574,6 +5629,12 @@ const Renderer = (() => {
     const design = OccasionRegistry.getDesign(occasionId, project.content && project.content.emotion);
     const typography = design ? design.typography : project.typography;
     return { design, typography, pairing: FontPairings.getPairing(typography.pairingId) };
+  }
+
+  function fontForText(text, fallback) {
+    return /[\u0A80-\u0AFF]/.test(String(text || ""))
+      ? "'Noto Sans Gujarati', sans-serif"
+      : fallback;
   }
 
   function getArtGeometry(project) {
@@ -6118,7 +6179,7 @@ const Renderer = (() => {
 
       let greetingFit = LayoutEngine.fitText(measureCtx, {
         text: greetingText,
-        fontFamily: pairing.greetingFont,
+        fontFamily: fontForText(greetingText, pairing.greetingFont),
         weight: pairing.greetingWeight,
         maxSize: typography.greetingSize,
         minSize: greetingMinSize,
@@ -6132,7 +6193,7 @@ const Renderer = (() => {
       const heightLimit = linesThatFit(greetingFit.size);
       if (greetingFit.lines.length > heightLimit) {
         greetingFit = LayoutEngine.clampResult(measureCtx, greetingFit, {
-          fontFamily: pairing.greetingFont,
+          fontFamily: fontForText(greetingText, pairing.greetingFont),
           weight: pairing.greetingWeight,
           maxWidth: maxWidth * 0.92,
           maxLines: heightLimit,
@@ -6146,7 +6207,7 @@ const Renderer = (() => {
       const greetingLineRatio = isCondolence ? 1.6 : 1.5;
       const greetingLineHeight = greetingFit.size * greetingLineRatio;
       LayoutEngine.drawLines(ctx, greetingFit.lines, {
-        fontFamily: pairing.greetingFont, weight: pairing.greetingWeight,
+        fontFamily: fontForText(greetingText, pairing.greetingFont), weight: pairing.greetingWeight,
         size: greetingFit.size, letterSpacing: 0, lineHeight: greetingLineRatio,
         cx, startY: cursorY + greetingFit.size * 0.85,
       });
@@ -7028,9 +7089,11 @@ const ExportModule = (() => {
     }
   }
 
-  async function waitForFonts(pairing) {
+  async function waitForFonts(pairing, project) {
     if (!("fonts" in document)) return;
     const families = FontPairings.familiesFor(pairing);
+    const greeting = GreetingGenerator.resolveProjectGreeting(project || {});
+    if (/[\u0A80-\u0AFF]/.test(greeting)) families.push("Noto Sans Gujarati");
     try {
       await Promise.all(families.map((f) => document.fonts.load("600 32px '" + f + "'")));
       await document.fonts.ready;
@@ -7052,7 +7115,7 @@ const ExportModule = (() => {
     canvas.height = Renderer.H;
     const ctx = canvas.getContext("2d");
     const pairing = FontPairings.getPairing(project.typography.pairingId);
-    await waitForFonts(pairing);
+    await waitForFonts(pairing, project);
     const diagnostics = await Renderer.renderCard(ctx, project, AssetResolver, { quality: "export" });
     return { canvas, diagnostics };
   }
@@ -8060,6 +8123,7 @@ const App = (() => {
 
   function syncOccasionEditor(project) {
     const isCondolence = project.occasion && project.occasion.id === "condolence";
+    const isFestival = FestivalDesignRegistry.isFestival(project.occasion && project.occasion.id);
     [dom.themeTab, dom.typographyTab, dom.foilTab, dom.layoutTab].forEach((tab) => {
       if (!tab) return;
       const wasSelected = tab.getAttribute("aria-selected") === "true";
@@ -8080,6 +8144,10 @@ const App = (() => {
       dom.recipientRelationshipHint.textContent = isCondolence
         ? "Enter the recipient’s relationship to the deceased. No religion or ritual is inferred."
         : "";
+    }
+    if (dom.greetingLanguageField) {
+      dom.greetingLanguageField.hidden = !isFestival;
+      dom.greetingLanguage.value = GreetingGenerator.normalizeLanguage(project.content.greetingLanguage, project.occasion && project.occasion.id);
     }
   }
 
@@ -8178,6 +8246,13 @@ const App = (() => {
         p.cardDate.visible = !!e.target.checked;
       }, { reason: "card-date-visibility" });
     });
+    dom.greetingLanguage.addEventListener("change", (e) => {
+      StateStore.update((p) => {
+        const occasionId = (p.occasion && p.occasion.id) || "birthday";
+        p.content.greetingLanguage = GreetingGenerator.normalizeLanguage(e.target.value, occasionId);
+      }, { reason: "greeting-language" });
+      syncControlsFromState(StateStore.getProject());
+    });
     dom.occasionHeading.addEventListener("input", (e) => {
       const heading = Utils.sanitizeText(e.target.value, 60);
       StateStore.update((p) => {
@@ -8205,7 +8280,7 @@ const App = (() => {
       const emotion = btn.dataset.emotion;
       const project = StateStore.getProject();
       const occasionId = (project.occasion && project.occasion.id) || "birthday";
-      const draft = GreetingGenerator.generate(emotion, project.recipient.name, project.content.greeting, occasionId, project.recipient.relationship);
+      const draft = GreetingGenerator.generate(emotion, project.recipient.name, project.content.greeting, occasionId, project.recipient.relationship, project.content.greetingLanguage);
       StateStore.update((p) => {
         p.content.emotion = emotion;
         p.content.greeting = draft;
@@ -9446,6 +9521,7 @@ const App = (() => {
       occasionHeading: $("#occasion-heading"),
       creatorName: $("#creator-name"), creatorVisible: $("#creator-visible"),
       autoGreetingToggle: $("#auto-greeting-toggle"),
+      greetingLanguageField: $("#greeting-language-field"), greetingLanguage: $("#greeting-language"),
       emotionRow: $("#emotion-row"), greetingText: $("#greeting-text"), greetingCount: $("#greeting-count"),
       greetingSafetyWarning: $("#greeting-safety-warning"), useEditedMessageBtn: $("#use-edited-message-btn"),
 

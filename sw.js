@@ -10,7 +10,7 @@
 // Kept in step with APP_VERSION in js/app.js: bumping either one must
 // bump the other, since the cache name is what forces clients onto a
 // freshly released shell.
-const SW_VERSION = "v1.42.0";
+const SW_VERSION = "v1.43.0";
 const SHELL_CACHE = "atul-shell-" + SW_VERSION;
 
 // Smart Person Focus detector (MediaPipe runtime + BlazeFace model, ~12 MB).
@@ -77,6 +77,8 @@ const SHELL_ASSETS = [
   "./fonts/manrope-400-latin.woff2",
   "./fonts/montserrat-500-latin-ext.woff2",
   "./fonts/montserrat-500-latin.woff2",
+  "./fonts/noto-sans-gujarati-400.ttf",
+  "./fonts/noto-sans-gujarati-600.ttf",
   "./fonts/playfair-display-500-latin-ext.woff2",
   "./fonts/playfair-display-500-latin.woff2",
   "./fonts/source-sans-3-400-latin-ext.woff2",

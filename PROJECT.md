@@ -587,9 +587,19 @@ Task 003 implementation and release were explicitly authorized. The Current Task
 
 ## 9. Current Task
 
-- **Approved Current Task:** Task 044 — extend upward layout positioning after a smaller centerpiece and place Greeting size alongside the related layout controls.
-- **Current release:** v1.42.0 (application, manifest, service worker and shell cache), schema v7, backup format `atul-birthday-card-studio` version 1.
+- **Approved Current Task:** Task 045 — offer optional, editable Gujarati-script festival messages while keeping English as the default.
+- **Current release:** v1.43.0 (application, manifest, service worker and shell cache), schema v8, backup format `atul-birthday-card-studio` version 1.
 - **Owner decision recorded:** no R5 personal sub-occasion selector; R5 is complete at the approved relationship-aware scope.
+
+### Task 045 Impact Record and Implementation Record — Gujarati festival messages
+
+- **Baseline:** `main` at `4424c87`, Task 044 release v1.42.0, clean and equal to `origin/main`.
+- **Owner decision:** Festival cards need optional Gujarati-script messages for elderly relatives; transliteration is not required. The approved Diwali message is `શુભ દિવાળી! આપના જીવનમાં સુખ, શાંતિ અને સમૃદ્ધિનો પ્રકાશ ફેલાય તેવી હાર્દિક શુભેચ્છાઓ.`
+- **Change:** Festival cards alone now show a Festival message language selector: English or ગુજરાતી. English remains the default. Gujarati selection exposes four editable drafts through the existing Heartfelt, Poetic, Professional, and Playful buttons for all 22 festivals. Gujarati choices are isolated per festival and do not change Birthday or another personal occasion.
+- **Offline type:** Noto Sans Gujarati 400/600 is bundled locally under OFL 1.1, included in the application shell cache, and used by the canvas renderer and PNG export whenever Gujarati characters occur. No online translation or external font request is used.
+- **Data and compatibility:** Schema v8 adds `content.greetingLanguage`; existing saved cards migrate to English. Existing greetings, headings, names, dates, photos, manual centerpiece choices, backups, exports, occasion isolation, and offline behavior remain intact.
+- **Verification (local, PASS):** JavaScript and service-worker syntax, manifest parsing, whitespace checks, and local font loading passed. Fresh Chrome selected Diwali, ગુજરાતી, and Heartfelt, rendering the approved Diwali message in the bundled font with all eight tabs present. Navratri independently began in English, generated Gujarati after selection, and Diwali retained Gujarati after switching back.
+- **Live verification:** Pending deployment of v1.43.0.
 
 ### Task 044 Impact Record and Implementation Record — Flexible message balance
 

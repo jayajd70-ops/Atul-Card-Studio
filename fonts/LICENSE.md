@@ -20,11 +20,14 @@ redistribution and embedding in this form.
 | Manrope | 400, 500 | OFL 1.1 | https://fonts.google.com/specimen/Manrope |
 | DM Serif Display | 400 | OFL 1.1 | https://fonts.google.com/specimen/DM+Serif+Display |
 | Work Sans | 400, 500 | OFL 1.1 | https://fonts.google.com/specimen/Work+Sans |
+| Noto Sans Gujarati | 400, 600 | OFL 1.1 | https://fonts.google.com/noto/specimen/Noto+Sans+Gujarati |
 
 Only the `latin` and `latin-ext` subsets and the normal (non-italic) styles are
-included — nothing in the project requests an italic face. Several families are
-variable fonts whose payload is identical across the weights requested, so those
-files are stored once and shared by multiple `@font-face` rules.
+included for the Latin families. Noto Sans Gujarati is bundled in full normal
+400 and 600 faces so Gujarati-script festival text works identically offline,
+in preview, and in exported PNGs. Several Latin families are variable fonts
+whose payload is identical across the weights requested, so those files are
+stored once and shared by multiple `@font-face` rules.
 
 Regenerate with:
 
