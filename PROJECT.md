@@ -598,7 +598,7 @@ Task 003 implementation and release were explicitly authorized. The Current Task
 - **Change:** Every occasion now has an editable, per-occasion heading displayed below the photo/centerpiece and above the recipient name. Defaults include Happy Birthday, Happy Diwali, Saal Mubarak, Eid Mubarak, and a restrained With Deepest Sympathy for Condolence. Clearing the field hides the heading. Birthday Poetic and Milestone automatic drafts now explicitly use Birthday wording.
 - **Data and compatibility:** Schema v7 adds `content.occasionHeading`; migration gives existing cards their selected occasion’s default and preserves an intentionally blank user edit. The heading is isolated per occasion, is included in normal saved-card and backup data, and never changes existing names, greeting text, date, uploaded photo, manual crop, centrepiece selection, or offline behavior.
 - **Verification (local, PASS):** JavaScript and service-worker syntax, manifest parsing, and whitespace checks passed. A fresh Chrome profile confirmed the default Birthday heading, edited it to `Happy Birthday, Jayeshbhai`, switched to Diwali to receive its own `Happy Diwali` default, and switched back to confirm the Birthday edit was preserved. The editor retained all eight tabs and its content. A separate Birthday test generated each of the five emotion choices and confirmed each message contains Birthday wording.
-- **Live verification:** Pending deployment of v1.41.0.
+- **Live verification (PASS):** GitHub Pages workflow `36190359495` deployed commit `43fff2f`; a fresh Chrome profile opened the live app at v1.41.0 with the default `Happy Birthday` heading and all eight editor tabs present.
 
 ### Task 042 Impact Record and Implementation Record — Stable editor compositor layer
 
