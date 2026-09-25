@@ -599,7 +599,7 @@ Task 003 implementation and release were explicitly authorized. The Current Task
 - **Offline type:** Noto Sans Gujarati 400/600 is bundled locally under OFL 1.1, included in the application shell cache, and used by the canvas renderer and PNG export whenever Gujarati characters occur. No online translation or external font request is used.
 - **Data and compatibility:** Schema v8 adds `content.greetingLanguage`; existing saved cards migrate to English. Existing greetings, headings, names, dates, photos, manual centerpiece choices, backups, exports, occasion isolation, and offline behavior remain intact.
 - **Verification (local, PASS):** JavaScript and service-worker syntax, manifest parsing, whitespace checks, and local font loading passed. Fresh Chrome selected Diwali, ગુજરાતી, and Heartfelt, rendering the approved Diwali message in the bundled font with all eight tabs present. Navratri independently began in English, generated Gujarati after selection, and Diwali retained Gujarati after switching back.
-- **Live verification:** Pending deployment of v1.43.0.
+- **Live verification (PASS):** GitHub Pages workflow `36197221723` deployed commit `722de15`; a fresh live Chrome profile selected Diwali, ગુજરાતી, and Heartfelt, rendered the approved Gujarati message in Noto Sans Gujarati, and retained all eight editor tabs.
 
 ### Task 044 Impact Record and Implementation Record — Flexible message balance
 
