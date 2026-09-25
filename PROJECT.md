@@ -587,9 +587,18 @@ Task 003 implementation and release were explicitly authorized. The Current Task
 
 ## 9. Current Task
 
-- **Approved Current Task:** Task 042 — resolve the blank editor panel reproduced by multiple state-changing controls on the owner’s desktop browser.
-- **Current release:** v1.40.0 (application, manifest, service worker and shell cache), schema v6, backup format `atul-birthday-card-studio` version 1.
+- **Approved Current Task:** Task 043 — add an editable, prominent occasion heading to every card and make Birthday automatic messages explicitly say Happy Birthday.
+- **Current release:** v1.41.0 (application, manifest, service worker and shell cache), schema v7, backup format `atul-birthday-card-studio` version 1.
 - **Owner decision recorded:** no R5 personal sub-occasion selector; R5 is complete at the approved relationship-aware scope.
+
+### Task 043 Impact Record and Implementation Record — Editable occasion heading
+
+- **Baseline:** `main` at `8a6080e`, Task 042 release v1.40.0, clean and equal to `origin/main`.
+- **Reported evidence:** A Birthday card can show decorative birthday artwork while a poetic generated greeting does not itself say Happy Birthday. The owner requested a large occasion title below the photo or centerpiece, editable because festival wording can require a precise local choice.
+- **Change:** Every occasion now has an editable, per-occasion heading displayed below the photo/centerpiece and above the recipient name. Defaults include Happy Birthday, Happy Diwali, Saal Mubarak, Eid Mubarak, and a restrained With Deepest Sympathy for Condolence. Clearing the field hides the heading. Birthday Poetic and Milestone automatic drafts now explicitly use Birthday wording.
+- **Data and compatibility:** Schema v7 adds `content.occasionHeading`; migration gives existing cards their selected occasion’s default and preserves an intentionally blank user edit. The heading is isolated per occasion, is included in normal saved-card and backup data, and never changes existing names, greeting text, date, uploaded photo, manual crop, centrepiece selection, or offline behavior.
+- **Verification (local, PASS):** JavaScript and service-worker syntax, manifest parsing, and whitespace checks passed. A fresh Chrome profile confirmed the default Birthday heading, edited it to `Happy Birthday, Jayeshbhai`, switched to Diwali to receive its own `Happy Diwali` default, and switched back to confirm the Birthday edit was preserved. The editor retained all eight tabs and its content. A separate Birthday test generated each of the five emotion choices and confirmed each message contains Birthday wording.
+- **Live verification:** Pending deployment of v1.41.0.
 
 ### Task 042 Impact Record and Implementation Record — Stable editor compositor layer
 

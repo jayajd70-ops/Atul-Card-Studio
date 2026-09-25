@@ -1578,14 +1578,14 @@ const DesignPreferences = createFavouriteStore("design-preferences", () => Desig
 // Application version. Shown in the header, stamped onto exported
 // backups, and kept in step with SW_VERSION in sw.js so a released
 // shell and the code inside it always report the same number.
-const APP_VERSION = "1.40.0";
+const APP_VERSION = "1.41.0";
 
 // A closer crop is sometimes necessary for a wide framed photo. Keep this
 // one shared bound for slider, pinch, renderer and Smart Person Focus so
 // preview and exported cards always agree.
 const MAX_PHOTO_ZOOM = 5;
 
-const CURRENT_SCHEMA_VERSION = 6;
+const CURRENT_SCHEMA_VERSION = 7;
 
 function localDateISO(timestamp) {
   const date = new Date(Number.isFinite(Number(timestamp)) ? Number(timestamp) : Date.now());
@@ -1616,14 +1616,14 @@ function createDefaultProject(overrides) {
       id: "birthday",
       subOccasion: null,
       contentByOccasion: {
-        birthday: { greeting: "", autoGreetingEnabled: false, emotion: "heartfelt", messageMode: "manual", relationship: "" },
-        condolence: { greeting: "", autoGreetingEnabled: false, emotion: "heartfelt", messageMode: "manual", relationship: "" },
+        birthday: { greeting: "", autoGreetingEnabled: false, emotion: "heartfelt", messageMode: "manual", relationship: "", occasionHeading: "Happy Birthday" },
+        condolence: { greeting: "", autoGreetingEnabled: false, emotion: "heartfelt", messageMode: "manual", relationship: "", occasionHeading: "With Deepest Sympathy" },
       },
       stampsByOccasion: {},
     },
     recipient: { name: "", relationship: "" },
     sender: { name: "" },
-    content: { greeting: "", autoGreetingEnabled: false, emotion: "heartfelt", messageMode: "manual", relationship: "" },
+    content: { greeting: "", autoGreetingEnabled: false, emotion: "heartfelt", messageMode: "manual", relationship: "", occasionHeading: "Happy Birthday" },
     theme: { id: "midnight-obsidian" },
     photo: null,
     layout: {
@@ -1697,6 +1697,42 @@ const OccasionRegistry = (() => {
     fallbackCenterpiece: centerpieceId, emotions: PERSONAL_EMOTIONS,
     recommendedStampIds: ["gold-medallion", "floral-ornament", "celestial-ornament"],
   }));
+  // The heading is visible card content, not a fixed label: it gives every
+  // card an unmistakable occasion while remaining editable per occasion.
+  const DEFAULT_HEADINGS = {
+    birthday: "Happy Birthday",
+    anniversary: "Happy Anniversary",
+    congratulations: "Congratulations",
+    "new-baby": "Welcome Baby",
+    "new-home": "Welcome Home",
+    graduation: "Congratulations",
+    retirement: "Happy Retirement",
+    "get-well": "Get Well Soon",
+    "friendship-thanks": "Thank You",
+    condolence: "With Deepest Sympathy",
+    diwali: "Happy Diwali",
+    "dhanteras-lakshmi-puja": "Shubh Dhanteras",
+    "bestu-varas": "Saal Mubarak",
+    uttarayan: "Happy Uttarayan",
+    navratri: "Happy Navratri",
+    holi: "Happy Holi",
+    "raksha-bandhan": "Happy Raksha Bandhan",
+    janmashtami: "Happy Janmashtami",
+    "rath-yatra": "Happy Rath Yatra",
+    "ganesh-chaturthi": "Happy Ganesh Chaturthi",
+    shivratri: "Happy Mahashivratri",
+    dussehra: "Happy Dussehra",
+    "independence-day": "Happy Independence Day",
+    "republic-day": "Happy Republic Day",
+    "eid-ul-fitr": "Eid Mubarak",
+    christmas: "Merry Christmas",
+    "new-year": "Happy New Year",
+    "ram-navami": "Happy Ram Navami",
+    "holika-dahan": "Blessed Holika Dahan",
+    "hanuman-jayanti": "Happy Hanuman Jayanti",
+    "guru-purnima": "Happy Guru Purnima",
+    "bhai-dooj": "Happy Bhai Dooj",
+  };
   const OCCASIONS = [
     {
       id: "birthday",
@@ -1887,7 +1923,11 @@ const OccasionRegistry = (() => {
     if (normalizeOccasion(occasionId) !== "condolence") return null;
     return CONDOLENCE_DESIGNS[emotion] || CONDOLENCE_DESIGNS.heartfelt;
   }
-  return { list, get, isValid, normalizeOccasion, allowsPhoto, allowsStamps, getRecommendedStampIds, getDesign };
+  function getDefaultHeading(id) {
+    const occasion = get(id);
+    return DEFAULT_HEADINGS[occasion.id] || occasion.label;
+  }
+  return { list, get, isValid, normalizeOccasion, allowsPhoto, allowsStamps, getRecommendedStampIds, getDesign, getDefaultHeading };
 })();
 
 /* =========================================================================
@@ -2004,11 +2044,11 @@ const GreetingGenerator = (() => {
         "On your birthday, {name}, wishing you strength for every challenge, joy in every success, and warmth in every relationship.",
       ],
       poetic: [
-        "May each morning of the coming year bring fresh hope, {name}, and each evening leave your heart peaceful and grateful.",
-        "{name}, may your path be bright with purpose, your home warm with affection, and your days rich with beautiful memories.",
-        "Like a lamp that quietly brightens every corner, {name}, may your kindness continue to bring comfort and happiness to those around you.",
-        "May the year ahead unfold gently for you, {name}, with good health, sincere relationships, and dreams steadily taking shape.",
-        "{name}, may every season ahead carry its own happiness and every new beginning lead you towards fulfilment.",
+        "Happy birthday, {name}. May each morning of the coming year bring fresh hope and each evening leave your heart peaceful and grateful.",
+        "Happy birthday, {name}. May your path be bright with purpose, your home warm with affection, and your days rich with beautiful memories.",
+        "Happy birthday, {name}. Like a lamp that quietly brightens every corner, may your kindness continue to bring comfort and happiness to those around you.",
+        "Happy birthday, {name}. May the year ahead unfold gently with good health, sincere relationships, and dreams steadily taking shape.",
+        "Happy birthday, {name}. May every season ahead carry its own happiness and every new beginning lead you towards fulfilment.",
         "On your birthday, {name}, may life offer you calm mornings, hopeful journeys, and countless reasons to feel grateful.",
       ],
       professional: [
@@ -2028,11 +2068,11 @@ const GreetingGenerator = (() => {
         "{name}, wishing you a birthday with fewer responsibilities, more happy surprises, and a generous second serving of dessert.",
       ],
       milestone: [
-        "{name}, this milestone birthday honours a life enriched by experience, relationships, and many achievements. Warmest wishes for the years ahead.",
+        "Happy milestone birthday, {name}. This occasion honours a life enriched by experience, relationships, and many achievements.",
         "Happy milestone birthday, {name}. May you look back with pride and move forward with good health, confidence, and happiness.",
-        "{name}, today celebrates not only your age, but also the respect, memories, and affection you have gathered through the years.",
+        "Happy milestone birthday, {name}. Today celebrates the respect, memories, and affection you have gathered through the years.",
         "Warm congratulations on this special birthday, {name}. May the next chapter bring renewed purpose and many fulfilling moments.",
-        "{name}, your journey has touched many lives. Wishing you a milestone birthday filled with appreciation, dignity, and joy.",
+        "Happy milestone birthday, {name}. Your journey has touched many lives; may today be filled with appreciation, dignity, and joy.",
         "On this important birthday, {name}, may the years ahead be peaceful, active, and blessed with the company of those who value you most.",
       ],
     },
@@ -2857,6 +2897,7 @@ function createOccasionContent(occasionId, relationship) {
     emotion: GreetingGenerator.normalizeEmotion("heartfelt", occasionId),
     messageMode: "manual",
     relationship: String(relationship || ""),
+    occasionHeading: OccasionRegistry.getDefaultHeading(occasionId),
     festivalDesignId: FestivalDesignRegistry.isFestival(occasionId)
       ? ((FestivalDesignRegistry.get(occasionId) || {}).id || "")
       : "",
@@ -2876,6 +2917,11 @@ function snapshotOccasionContent(content, occasionId, relationship) {
     relationship: Object.prototype.hasOwnProperty.call(source, "relationship")
       ? String(source.relationship || "")
       : String(relationship || ""),
+    // An empty stored heading is intentional: clearing the editable field
+    // hides it. Older cards gain the safe occasion-specific default.
+    occasionHeading: Object.prototype.hasOwnProperty.call(source, "occasionHeading")
+      ? Utils.sanitizeText(String(source.occasionHeading || ""), 60)
+      : OccasionRegistry.getDefaultHeading(occasionId),
     festivalDesignId: FestivalDesignRegistry.isFestival(occasionId)
       ? (FestivalDesignRegistry.get(occasionId, source.festivalDesignId) || {}).id || ""
       : "",
@@ -3177,6 +3223,13 @@ const Migrations = (() => {
     if (v < 6) {
       ensureOccasionContentStates(record);
       v = 6;
+    }
+    // v6 -> v7: every occasion gains a visible, editable heading. Existing
+    // cards receive its occasion-specific default; an empty edited heading
+    // remains empty so owners can deliberately suppress it.
+    if (v < 7) {
+      ensureOccasionContentStates(record);
+      v = 7;
     }
     if (!record.cardDate || typeof record.cardDate !== "object") {
       record.cardDate = { value: localDateISO(record.createdAt || Date.now()), visible: false };
@@ -5303,7 +5356,31 @@ const Renderer = (() => {
     const regions = [];
     let cursorY = blockTop;
 
-    // 1. Recipient Name region (tight actual rendered bounds)
+    // 1. Editable occasion heading region.
+    const headingText = Utils.sanitizeText(project.content.occasionHeading || "", 60);
+    if (headingText) {
+      const headingFit = LayoutEngine.fitText(measureCtx, {
+        text: headingText,
+        fontFamily: pairing.recipientFont,
+        weight: pairing.recipientWeight,
+        maxSize: Utils.clamp(typography.recipientSize - 18, 38, 54),
+        minSize: 20,
+        maxWidth: maxWidth * 0.94,
+        maxLines: 2,
+        letterSpacingStart: Math.max(0.4, typography.letterSpacing * 0.82),
+      });
+      const headingHeight = headingFit.lines.length * headingFit.size * 1.16;
+      regions.push({
+        x: cx - Math.max(160, headingFit.maxLineWidth + 32) / 2,
+        y: cursorY - 10,
+        width: Math.max(160, headingFit.maxLineWidth + 32),
+        height: headingHeight + 20,
+        radius: 18,
+      });
+      cursorY += headingHeight + 22;
+    }
+
+    // 2. Recipient Name region (tight actual rendered bounds)
     const recipientText = Utils.sanitizeText(project.recipient.name || "Dear Friend", 40);
     const recipientFit = LayoutEngine.fitText(measureCtx, {
       text: recipientText,
@@ -5327,7 +5404,7 @@ const Renderer = (() => {
     });
     cursorY += recipientHeight + (isCondolence ? 34 : 26);
 
-    // 2. Greeting + optional relationship copy region
+    // 3. Greeting + optional relationship copy region
     const greetingValidation = GreetingGenerator.validateProjectGreeting(project);
     const greetingText = greetingValidation.safe
       ? Utils.truncateProse(greetingValidation.text || "", GREETING_MAX_CHARS)
@@ -5387,7 +5464,7 @@ const Renderer = (() => {
       });
     }
 
-    // 3. Sender signature region (if present)
+    // 4. Sender signature region (if present)
     const senderText = Utils.sanitizeText(project.sender.name || "", 40).replace(/\s*&\s*/g, " & ");
     if (senderText) {
       const signY = isNewBaby ? cursorY + 28 : Math.max(cursorY + (isCondolence ? 42 : 30), signatureTop);
@@ -5924,6 +6001,53 @@ const Renderer = (() => {
       signatureColor = "#603843";
     }
 
+    // The heading makes the selected occasion explicit in the card itself.
+    // It is independently editable (and may be blank) because festival names
+    // and regional wording need owner review rather than a fixed assumption.
+    const occasionHeading = Utils.sanitizeText(project.content.occasionHeading || "", 60);
+    const solidTextInk = darkInkOnArtwork || !!(theme.background && theme.background.light && !lightInkOnArtwork);
+    if (occasionHeading) {
+      const headingFit = LayoutEngine.fitText(measureCtx, {
+        text: occasionHeading,
+        fontFamily: pairing.recipientFont,
+        weight: pairing.recipientWeight,
+        maxSize: Utils.clamp(typography.recipientSize - 18, 38, 54),
+        minSize: 20,
+        maxWidth: maxWidth * 0.94,
+        maxLines: 2,
+        letterSpacingStart: Math.max(0.4, typography.letterSpacing * 0.82),
+      });
+      if (headingFit.overflow) diagnostics.textOverflow = true;
+      if (headingFit.clamped) diagnostics.textClamped = true;
+      const headingLineHeight = headingFit.size * 1.16;
+      const headingMask = createWorkCanvas(W, H);
+      const hmCtx = headingMask.getContext("2d");
+      hmCtx.fillStyle = solidTextInk ? textColor : "#fff";
+      LayoutEngine.drawLines(hmCtx, headingFit.lines, {
+        fontFamily: pairing.recipientFont, weight: pairing.recipientWeight,
+        size: headingFit.size, letterSpacing: headingFit.letterSpacing, lineHeight: 1.16,
+        cx, startY: cursorY + headingFit.size * 0.85,
+      });
+      if (solidTextInk) {
+        ctx.save();
+        ctx.drawImage(headingMask, 0, 0);
+        ctx.restore();
+      } else {
+        compositeFoil(ctx, W, H, (mctx) => mctx.drawImage(headingMask, 0, 0), {
+          presetId: recipientPreset,
+          mode: design ? design.foil.mode : project.foil.mode,
+          intensity: (design ? design.foil.intensity : project.foil.intensity) * 0.92,
+          grain: design ? design.foil.grain : project.foil.grain,
+          highlight: design ? design.foil.highlight : project.foil.highlight,
+          shadow: design ? design.foil.shadow : project.foil.shadow,
+          quality,
+        });
+      }
+      const headingHeight = headingFit.lines.length * headingLineHeight;
+      boxes.push(textBoxToLayoutBox("occasion-heading", cx, cursorY, headingFit.maxLineWidth, headingHeight, 105));
+      cursorY += headingHeight + 22;
+    }
+
     // Recipient name (highest text priority)
     const recipientText = Utils.sanitizeText(project.recipient.name || "Dear Friend", 40);
     const recipientFit = LayoutEngine.fitText(measureCtx, {
@@ -5941,7 +6065,7 @@ const Renderer = (() => {
 
     const recipientMask = createWorkCanvas(W, H);
     const rmCtx = recipientMask.getContext("2d");
-    const solidRecipientInk = darkInkOnArtwork || !!(theme.background && theme.background.light && !lightInkOnArtwork);
+    const solidRecipientInk = solidTextInk;
     rmCtx.fillStyle = solidRecipientInk ? textColor : "#fff";
     const recipientLineHeight = recipientFit.size * (typography.lineHeight || pairing.lineHeight);
     LayoutEngine.drawLines(rmCtx, recipientFit.lines, {
@@ -8054,6 +8178,18 @@ const App = (() => {
         p.cardDate.visible = !!e.target.checked;
       }, { reason: "card-date-visibility" });
     });
+    dom.occasionHeading.addEventListener("input", (e) => {
+      const heading = Utils.sanitizeText(e.target.value, 60);
+      StateStore.update((p) => {
+        p.content.occasionHeading = heading;
+      }, { skipHistory: true, reason: "occasion-heading-edit" });
+    });
+    dom.occasionHeading.addEventListener("change", (e) => {
+      const heading = Utils.sanitizeText(e.target.value, 60);
+      StateStore.update((p) => {
+        p.content.occasionHeading = heading;
+      }, { reason: "occasion-heading-accepted" });
+    });
     dom.autoGreetingToggle.addEventListener("change", (e) => {
       StateStore.update((p) => {
         p.content.autoGreetingEnabled = e.target.checked;
@@ -9137,6 +9273,7 @@ const App = (() => {
     dom.recipientName.value = project.recipient.name || "";
     dom.recipientRelationship.value = project.recipient.relationship || "";
     dom.senderName.value = project.sender.name || "";
+    dom.occasionHeading.value = project.content.occasionHeading || "";
     const cardDate = project.cardDate || { value: localDateISO(project.createdAt), visible: false };
     dom.cardDate.value = cardDate.value || localDateISO(project.createdAt);
     dom.cardDateVisible.checked = !!cardDate.visible;
@@ -9306,6 +9443,7 @@ const App = (() => {
       birthdayDesignField: $("#birthday-design-field"), birthdayDesignList: $("#birthday-design-list"),
       festivalDesignField: $("#festival-design-field"), festivalDesignList: $("#festival-design-list"),
       senderName: $("#sender-name"), cardDate: $("#card-date"), cardDateVisible: $("#card-date-visible"),
+      occasionHeading: $("#occasion-heading"),
       creatorName: $("#creator-name"), creatorVisible: $("#creator-visible"),
       autoGreetingToggle: $("#auto-greeting-toggle"),
       emotionRow: $("#emotion-row"), greetingText: $("#greeting-text"), greetingCount: $("#greeting-count"),
