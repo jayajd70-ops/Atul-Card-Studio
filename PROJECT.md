@@ -587,9 +587,19 @@ Task 003 implementation and release were explicitly authorized. The Current Task
 
 ## 9. Current Task
 
-- **Approved Current Task:** Task 041 — ensure the sender remains readable over full-card Birthday artwork and re-check the shared footer/date control path reported by the owner.
-- **Current release:** v1.39.0 (application, manifest, service worker and shell cache), schema v6, backup format `atul-birthday-card-studio` version 1.
+- **Approved Current Task:** Task 042 — resolve the blank editor panel reproduced by multiple state-changing controls on the owner’s desktop browser.
+- **Current release:** v1.40.0 (application, manifest, service worker and shell cache), schema v6, backup format `atul-birthday-card-studio` version 1.
 - **Owner decision recorded:** no R5 personal sub-occasion selector; R5 is complete at the approved relationship-aware scope.
+
+### Task 042 Impact Record and Implementation Record — Stable editor compositor layer
+
+- **Baseline:** `main` at `9b66b51`, Task 041 release v1.39.0, clean and equal to `origin/main`.
+- **Reported evidence:** After Auto-write Greeting, Show date on card, or Show footer, the owner’s desktop app showed an empty editor-panel surface while the card itself still redrew. The three controls use different logic but each schedules the same canvas redraw.
+- **Finding:** The common visual layer was the translucent `backdrop-filter` editor panel beside a large, redrawing canvas. The handlers and their state mutations are independent; clean profile runs retained the DOM, but the owner’s repeated screenshots are consistent with a Chromium/GPU compositing failure that renders the panel’s surface but drops its child layer.
+- **Change:** The editor is now an isolated, nearly opaque panel with no `backdrop-filter`. It preserves the visual hierarchy but prevents its controls from sharing the canvas backdrop-compositor path. The Birthday signature-plate correction from Task 041 is retained.
+- **Compatibility:** No state/schema/backup/rendering-data change. All occasions, card values, photo behavior, manual selections, and offline behaviour are unchanged.
+- **Verification (local, PASS):** JavaScript and service-worker syntax, manifest parsing, and whitespace checks passed. In a fresh service-worker-blocked browser profile, Date, Footer, and Auto-write Greeting were enabled in one sequence: all eight tabs, all three editor sections, and panel content remained present; no backdrop filter was computed on the editor.
+- **Not yet verified:** Owner desktop browser after live v1.40.0 installation/restart.
 
 ### Task 041 Impact Record and Implementation Record — Birthday signature legibility
 
