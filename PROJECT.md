@@ -599,7 +599,8 @@ Task 003 implementation and release were explicitly authorized. The Current Task
 - **Change:** The editor is now an isolated, nearly opaque panel with no `backdrop-filter`. It preserves the visual hierarchy but prevents its controls from sharing the canvas backdrop-compositor path. The Birthday signature-plate correction from Task 041 is retained.
 - **Compatibility:** No state/schema/backup/rendering-data change. All occasions, card values, photo behavior, manual selections, and offline behaviour are unchanged.
 - **Verification (local, PASS):** JavaScript and service-worker syntax, manifest parsing, and whitespace checks passed. In a fresh service-worker-blocked browser profile, Date, Footer, and Auto-write Greeting were enabled in one sequence: all eight tabs, all three editor sections, and panel content remained present; no backdrop filter was computed on the editor.
-- **Not yet verified:** Owner desktop browser after live v1.40.0 installation/restart.
+- **Live verification (PASS):** GitHub Pages workflow `36187096483` deployed commit `7c09972`; the live application script reports v1.40.0.
+- **Owner verification requested:** Fully close and reopen the installed app (or hard-refresh the browser) before checking Auto-write Greeting, Show date on card, and Show footer. This ensures the v1.40.0 service-worker shell replaces the previous v1.39.0 shell.
 
 ### Task 041 Impact Record and Implementation Record — Birthday signature legibility
 
