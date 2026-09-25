@@ -256,10 +256,6 @@
             <input id="recipient-size" type="range" min="40" max="120" step="1" value="72" />
           </div>
           <div class="field">
-            <label for="greeting-size">Greeting size <output id="greeting-size-out">30</output>px</label>
-            <input id="greeting-size" type="range" min="16" max="48" step="1" value="30" />
-          </div>
-          <div class="field">
             <label for="sender-size">Sender name size <output id="sender-size-out">36</output>px</label>
             <input id="sender-size" type="range" min="24" max="64" step="1" value="36" />
           </div>
@@ -377,9 +373,13 @@
             <input id="layout-photo-size" type="range" min="320" max="760" step="4" value="620" />
           </div>
           <div class="field">
+            <label for="greeting-size">Greeting size <output id="greeting-size-out">30</output>px</label>
+            <input id="greeting-size" type="range" min="16" max="48" step="1" value="30" />
+          </div>
+          <div class="field">
             <label for="layout-text-shift">Message vertical position <output id="layout-text-shift-out">0</output>px</label>
-            <input id="layout-text-shift" type="range" min="-90" max="90" step="2" value="0" />
-            <p class="field-hint">Negative lifts the message block; positive settles it lower.</p>
+            <input id="layout-text-shift" type="range" min="-320" max="140" step="2" value="0" />
+            <p class="field-hint">Negative lifts the message block into space released by a smaller centerpiece; it always stays below the image.</p>
           </div>
           <div class="field">
             <label for="layout-text-shift-x">Message horizontal position <output id="layout-text-shift-x-out">0</output>px</label>

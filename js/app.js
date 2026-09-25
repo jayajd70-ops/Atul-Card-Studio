@@ -1578,7 +1578,7 @@ const DesignPreferences = createFavouriteStore("design-preferences", () => Desig
 // Application version. Shown in the header, stamped onto exported
 // backups, and kept in step with SW_VERSION in sw.js so a released
 // shell and the code inside it always report the same number.
-const APP_VERSION = "1.41.0";
+const APP_VERSION = "1.42.0";
 
 // A closer crop is sometimes necessary for a wide framed photo. Keep this
 // one shared bound for slider, pinch, renderer and Smart Person Focus so
@@ -5348,7 +5348,7 @@ const Renderer = (() => {
       blockTop = Utils.clamp(design.textLayout.blockTop, 280, signatureTop - 300);
     } else {
       const anchored = design ? 960 : 960 + (project.layout.textPosition - 0.62) * 400;
-      const shift = design ? design.textLayout.shiftY : Utils.clamp(project.layout.textShift || 0, -90, 90);
+      const shift = design ? design.textLayout.shiftY : Utils.clamp(project.layout.textShift || 0, -320, 140);
       blockTop = Utils.clamp(Math.max(geo.bottom + 56, anchored) + shift, geo.bottom + 24, signatureTop - 170);
     }
 
@@ -5965,7 +5965,7 @@ const Renderer = (() => {
       blockTop = Utils.clamp(design.textLayout.blockTop, 280, signatureTop - 300);
     } else {
       const anchored = design ? 960 : 960 + (project.layout.textPosition - 0.62) * 400;
-      const shift = design ? design.textLayout.shiftY : Utils.clamp(project.layout.textShift || 0, -90, 90);
+      const shift = design ? design.textLayout.shiftY : Utils.clamp(project.layout.textShift || 0, -320, 140);
       blockTop = Utils.clamp(
         Math.max(geo.bottom + 56, anchored) + shift,
         geo.bottom + 24,

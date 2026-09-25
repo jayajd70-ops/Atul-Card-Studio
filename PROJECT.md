@@ -587,9 +587,18 @@ Task 003 implementation and release were explicitly authorized. The Current Task
 
 ## 9. Current Task
 
-- **Approved Current Task:** Task 043 — add an editable, prominent occasion heading to every card and make Birthday automatic messages explicitly say Happy Birthday.
-- **Current release:** v1.41.0 (application, manifest, service worker and shell cache), schema v7, backup format `atul-birthday-card-studio` version 1.
+- **Approved Current Task:** Task 044 — extend upward layout positioning after a smaller centerpiece and place Greeting size alongside the related layout controls.
+- **Current release:** v1.42.0 (application, manifest, service worker and shell cache), schema v7, backup format `atul-birthday-card-studio` version 1.
 - **Owner decision recorded:** no R5 personal sub-occasion selector; R5 is complete at the approved relationship-aware scope.
+
+### Task 044 Impact Record and Implementation Record — Flexible message balance
+
+- **Baseline:** `main` at `2dc3f8a`, Task 043 release v1.41.0, clean and equal to `origin/main`.
+- **Reported evidence:** After reducing a Birthday centerpiece to 352px, the Message vertical position control stopped at -90px despite substantial free space below the image. Greeting size was separated from the other controls used to balance that same block.
+- **Change:** Message vertical position now ranges from -320px to +140px. The renderer and stamp-protection geometry share those bounds and still clamp the message below the current photo or centerpiece, so the extra upward travel cannot overlap it. Greeting size has moved from Type to Layout without changing its saved value or behavior.
+- **Compatibility:** No schema, content, photo, occasion, manual centerpiece selection, export, backup, or offline change. Existing saved layout values retain their appearance; the only new behaviour is additional upward range when the owner chooses it.
+- **Verification (local, PASS):** JavaScript and service-worker syntax, manifest parsing, and whitespace checks passed. Fresh Chrome verified a 352px centerpiece with Message vertical position at -320px: the heading and recipient moved into the released space below the image, the image remained clear, and all eight editor tabs remained available. It also confirmed Greeting size is present in Layout and absent from Type.
+- **Live verification:** Pending deployment of v1.42.0.
 
 ### Task 043 Impact Record and Implementation Record — Editable occasion heading
 
