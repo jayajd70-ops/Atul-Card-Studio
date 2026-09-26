@@ -587,8 +587,17 @@ Task 003 implementation and release were explicitly authorized. The Current Task
 
 ## 9. Current Task
 
-- **Approved Current Task:** Task 045 — offer optional, editable Gujarati-script festival messages while keeping English as the default.
-- **Current release:** v1.43.0 (application, manifest, service worker and shell cache), schema v8, backup format `atul-birthday-card-studio` version 1.
+- **Approved Current Task:** Task 046 — prevent the editor controls from disappearing after a state change on a full-card Birthday background.
+- **Current release:** v1.44.0 (application, manifest, service worker and shell cache), schema v8, backup format `atul-birthday-card-studio` version 1.
+
+### Task 046 Impact Record and Implementation Record — Birthday artwork editor stability
+
+- **Baseline:** `main` at `5ba97b5`, Task 045 release v1.43.0; only the pre-existing untracked `_diag_temp/` diagnostic folder was present.
+- **Confirmed gap:** On laptop and mobile, selecting one of the nine full-card Birthday backgrounds and then toggling Show date on card or Auto-write greeting could leave the visible editor panel blank. The card itself remained rendered.
+- **Cause addressed:** Every saved edit generated a Vault thumbnail through a second 1200 × 1760 canvas, then shrank it to 120 × 176. The Birthday artwork path adds a large photographic background to that unnecessary render, creating a mobile compositor-memory spike adjacent to the editor.
+- **Change:** Vault thumbnails now render directly at a 240 × 352 working size using the normal 1200 × 1760 logical coordinate system, then scale down to the existing 120 × 176 tile. The editor additionally uses paint containment so canvas uploads cannot invalidate its child controls.
+- **Compatibility:** Project schema and backup format remain v8 and 1. Existing card fields, all nine Birthday backgrounds, artwork selection, text toggles, preview/export rendering, saved thumbnails, occasion isolation, uploaded-photo priority, manual centerpiece choices, and offline behavior are retained.
+- **Verification:** JavaScript and service-worker syntax; version alignment; whitespace; phone and desktop Chromium tests covering all nine artwork backgrounds and both toggles passed with no page errors. The tests include the delayed autosave-thumbnail path. Physical-device repeat verification remains required after the new release is installed.
 - **Owner decision recorded:** no R5 personal sub-occasion selector; R5 is complete at the approved relationship-aware scope.
 
 ### Task 045 Impact Record and Implementation Record — Gujarati festival messages

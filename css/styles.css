@@ -409,6 +409,10 @@ input, select, textarea { font-family: inherit; }
      backdrop-filter contents after a state-changing control was used. */
   position: relative;
   isolation: isolate;
+  /* Keep this independently painted from the repeatedly redrawn card canvas.
+     This prevents a mobile compositor from discarding the editor's children
+     while it uploads a full-card Birthday artwork. */
+  contain: paint;
   background: linear-gradient(160deg, rgba(22,19,28,0.98), rgba(13,11,18,0.98));
   border: 1px solid var(--border-glass);
   border-radius: var(--radius-lg);

@@ -1578,7 +1578,7 @@ const DesignPreferences = createFavouriteStore("design-preferences", () => Desig
 // Application version. Shown in the header, stamped onto exported
 // backups, and kept in step with SW_VERSION in sw.js so a released
 // shell and the code inside it always report the same number.
-const APP_VERSION = "1.43.0";
+const APP_VERSION = "1.44.0";
 
 // A closer crop is sometimes necessary for a wide framed photo. Keep this
 // one shared bound for slider, pinch, renderer and Smart Person Focus so
@@ -9455,14 +9455,24 @@ const App = (() => {
   /* ---------------- Autosave + thumbnail ---------------- */
   async function generateThumbnail(project) {
     try {
+      // Vault tiles are displayed at 120 × 176. Rendering an intermediate
+      // 1200 × 1760 card solely to shrink it again consumed a second large
+      // canvas after every edit. With full-card Birthday artwork that extra
+      // render could exhaust a mobile Chromium compositor and make the
+      // adjacent editor appear blank. Render at 2× tile resolution instead;
+      // the renderer still receives its normal logical card coordinates.
+      const thumbnailScale = 0.2;
+      const thumbnailW = Math.round(Renderer.W * thumbnailScale);
+      const thumbnailH = Math.round(Renderer.H * thumbnailScale);
       const canvas = document.createElement("canvas");
       canvas.width = 120; canvas.height = 176;
-      const full = document.createElement("canvas");
-      full.width = Renderer.W; full.height = Renderer.H;
-      const fctx = full.getContext("2d");
-      await Renderer.renderCard(fctx, project, AssetResolver, { quality: "preview" });
+      const work = document.createElement("canvas");
+      work.width = thumbnailW; work.height = thumbnailH;
+      const wctx = work.getContext("2d");
+      wctx.setTransform(thumbnailScale, 0, 0, thumbnailScale, 0, 0);
+      await Renderer.renderCard(wctx, project, AssetResolver, { quality: "preview" });
       const ctx = canvas.getContext("2d");
-      ctx.drawImage(full, 0, 0, 120, 176);
+      ctx.drawImage(work, 0, 0, 120, 176);
       return canvas.toDataURL("image/jpeg", 0.7);
     } catch (err) {
       return null;
