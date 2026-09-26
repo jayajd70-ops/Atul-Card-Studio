@@ -598,6 +598,7 @@ Task 003 implementation and release were explicitly authorized. The Current Task
 - **Change:** Vault thumbnails now render directly at a 240 × 352 working size using the normal 1200 × 1760 logical coordinate system, then scale down to the existing 120 × 176 tile. The editor additionally uses paint containment so canvas uploads cannot invalidate its child controls.
 - **Compatibility:** Project schema and backup format remain v8 and 1. Existing card fields, all nine Birthday backgrounds, artwork selection, text toggles, preview/export rendering, saved thumbnails, occasion isolation, uploaded-photo priority, manual centerpiece choices, and offline behavior are retained.
 - **Verification:** JavaScript and service-worker syntax; version alignment; whitespace; phone and desktop Chromium tests covering all nine artwork backgrounds and both toggles passed with no page errors. The tests include the delayed autosave-thumbnail path. Physical-device repeat verification remains required after the new release is installed.
+- **Release:** `3ea95eb` — `fix: stabilize editor with birthday artwork`. GitHub Pages run [`36261461265`](https://github.com/jayajd70-ops/Atul-Card-Studio/actions/runs/36261461265) succeeded. Live sources serve app, manifest, and service-worker version 1.44.0; a phone-layout live browser check confirmed the editor controls render.
 - **Owner decision recorded:** no R5 personal sub-occasion selector; R5 is complete at the approved relationship-aware scope.
 
 ### Task 045 Impact Record and Implementation Record — Gujarati festival messages
