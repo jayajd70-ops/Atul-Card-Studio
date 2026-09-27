@@ -587,8 +587,16 @@ Task 003 implementation and release were explicitly authorized. The Current Task
 
 ## 9. Current Task
 
-- **Approved Current Task:** Task 046 — prevent the editor controls from disappearing after a state change on a full-card Birthday background.
-- **Current release:** v1.44.0 (application, manifest, service worker and shell cache), schema v8, backup format `atul-birthday-card-studio` version 1.
+- **Approved Current Task:** Task 047 — fix the blank editor after toggling date, auto greeting, or creator footer.
+- **Current release:** v1.45.0 (application, manifest, service worker and shell cache), schema v8, backup format `atul-birthday-card-studio` version 1.
+
+### Task 047 Impact Record — editor switch scrolling
+
+- **Baseline:** `main`/`origin/main` at `8dafc49`, v1.44.0, with the pre-existing untracked `_diag_temp/` folder.
+- **Reproduction:** On the Candlelit Elegance Birthday background, checking Show date on card scrolled `#editor-panel` itself 759 px while `.tabpanels` remained at scrollTop 0. The tabs moved above the outer panel; a screenshot showed the same blank gradient seen by the owner. Auto-write greeting and creator footer used the same switch markup. DOM visibility checks in Task 046 missed the visual failure.
+- **Confirmed cause:** `.switch-input` had absolute positioning without a positioned `.switch-label`, while `.editor-panel` used `overflow: hidden`, which Chromium may scroll programmatically despite hiding its scrollbar. Focus and click scrolling targeted the outer panel.
+- **Change:** Anchor each transparent checkbox to its label and make it the switch's click target; use `overflow: clip` on the outer editor so only `.tabpanels` scrolls. No card data or renderer logic changed. Task 046's canvas-memory explanation was incomplete and did not resolve this defect.
+- **Verification:** Desktop Chromium exercised all nine Birthday backgrounds with 54 on/off switch changes, keeping `#editor-panel.scrollTop` at 0, both tab rows visible, and zero page errors. Phone layout exercised all three switches with the same scroll invariant. Desktop and phone screenshots confirmed the controls were painted. Recipient and sender values stayed intact. JavaScript/service-worker syntax, aligned 1.45.0 versions, and whitespace checks passed. Live deployment evidence follows below.
 
 ### Task 046 Impact Record and Implementation Record — Birthday artwork editor stability
 
