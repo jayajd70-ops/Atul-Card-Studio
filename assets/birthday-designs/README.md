@@ -1,0 +1,11 @@
+# Birthday background artwork
+
+The two `champagne-garden-v1.webp` and `sapphire-evening-v2.webp` images were generated for Atul Card Studio with the built-in image generation tool on 27 September 2026, then re-encoded as WebP. They contain no card text; the app adds editable text, photo/centrepiece, border, and sender. They are fetched and cached only after first use, so a fresh offline install will not yet have these optional backgrounds.
+
+Final Champagne Garden prompt:
+
+> Use case: ads-marketing. Asset type: full-card photographic background for a luxury birthday greeting-card editor, portrait 2:3. Primary request: an elegant champagne-and-ivory birthday celebration setting, with delicate white garden roses and restrained champagne balloons around the side edges, a small finely decorated cake near the bottom edge. Style/medium: photorealistic high-end editorial still-life. Composition: keep the upper central circular area and the broad middle 45% of the card calm, low-detail, and unobstructed so the app can overlay a circular portrait, large heading, recipient name, and message. Place props at the margins and bottom; no built-in text, no people, no frame or border. Lighting: warm soft evening glow, understated, sophisticated. Constraints: readable tonal contrast in the middle, original composition, no lettering, no logos, no watermark, no UI elements.
+
+Final Sapphire Evening prompt:
+
+> Use case: ads-marketing. Asset type: full-card photographic background for a luxury birthday greeting-card editor, portrait 2:3. Primary request: sophisticated midnight-sapphire birthday still-life with deep-blue and silver balloons framing the upper side edges, white orchids and small silver star lights along the far side margins, and a tasteful small navy cake cropped at the lower LEFT corner only. Style: photorealistic high-end editorial photography. Critical composition: preserve a broad dark navy, low-detail central column for a circular portrait, title, name and greeting. Keep the entire lower CENTER (roughly x=35%-65%, y=78%-96%) plain dark navy and empty for a sender signature. Cake and other decorations must not enter that signature area. No built-in text, no people, no frame/border, no logos, no watermark, no UI. Warm ivory text should remain legible against the dark center.

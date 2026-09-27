@@ -1578,14 +1578,14 @@ const DesignPreferences = createFavouriteStore("design-preferences", () => Desig
 // Application version. Shown in the header, stamped onto exported
 // backups, and kept in step with SW_VERSION in sw.js so a released
 // shell and the code inside it always report the same number.
-const APP_VERSION = "1.45.0";
+const APP_VERSION = "1.46.0";
 
 // A closer crop is sometimes necessary for a wide framed photo. Keep this
 // one shared bound for slider, pinch, renderer and Smart Person Focus so
 // preview and exported cards always agree.
 const MAX_PHOTO_ZOOM = 5;
 
-const CURRENT_SCHEMA_VERSION = 8;
+const CURRENT_SCHEMA_VERSION = 9;
 
 function localDateISO(timestamp) {
   const date = new Date(Number.isFinite(Number(timestamp)) ? Number(timestamp) : Date.now());
@@ -1618,6 +1618,9 @@ function createDefaultProject(overrides) {
       contentByOccasion: {
         birthday: { greeting: "", autoGreetingEnabled: false, emotion: "heartfelt", messageMode: "manual", relationship: "", occasionHeading: "Happy Birthday", greetingLanguage: "en" },
         condolence: { greeting: "", autoGreetingEnabled: false, emotion: "heartfelt", messageMode: "manual", relationship: "", occasionHeading: "With Deepest Sympathy", greetingLanguage: "en" },
+      },
+      detailsByOccasion: {
+        personal: { recipientName: "", senderName: "", cardDate: { value: localDateISO(now), visible: false } },
       },
       stampsByOccasion: {},
     },
@@ -2002,6 +2005,8 @@ const BirthdayDesignRegistry = (() => {
     { id: "midnight-silver", label: "Midnight Silver", hint: "Dark, modern silver celebration", asset: "assets/birthday-designs/midnight-silver-v1.webp", overlay: 0.42, textTone: "light" },
     { id: "romantic-pink", label: "Romantic Pink", hint: "Soft rose-pink birthday setting", asset: "assets/birthday-designs/romantic-pink-v2.webp", overlay: 0.26, textTone: "dark" },
     { id: "sunshine-yellow", label: "Sunshine Yellow", hint: "Bright, joyful birthday setting", asset: "assets/birthday-designs/sunshine-yellow-v1.webp", overlay: 0.24, textTone: "dark" },
+    { id: "champagne-garden", label: "Champagne Garden", hint: "Ivory roses, warm light, and a floral cake", asset: "assets/birthday-designs/champagne-garden-v1.webp", overlay: 0.18, textTone: "dark" },
+    { id: "sapphire-evening", label: "Sapphire Evening", hint: "Midnight blue, silver lights, and orchids", asset: "assets/birthday-designs/sapphire-evening-v2.webp", overlay: 0.26, textTone: "light" },
   ];
   const imageCache = new Map();
   function list() { return designs.map((design) => ({ ...design })); }
@@ -3003,6 +3008,51 @@ function ensureOccasionContentStates(project) {
   return states;
 }
 
+// Personal occasions retain their existing shared names/date. Festivals get
+// their own details on first use, so moving from a personal card never prints
+// that card's people or date on a newly selected festival artwork.
+function snapshotCardDetails(project) {
+  const date = project.cardDate || {};
+  return {
+    recipientName: Utils.sanitizeText(project.recipient && project.recipient.name || "", 40),
+    senderName: Utils.sanitizeText(project.sender && project.sender.name || "", 40),
+    cardDate: {
+      value: /^\d{4}-\d{2}-\d{2}$/.test(String(date.value || "")) ? date.value : localDateISO(),
+      visible: !!date.visible,
+    },
+  };
+}
+
+function freshFestivalDetails() {
+  return { recipientName: "", senderName: "", cardDate: { value: localDateISO(), visible: false } };
+}
+
+function ensureOccasionDetailsStates(project) {
+  project.occasion = project.occasion && typeof project.occasion === "object"
+    ? project.occasion : { id: "birthday", subOccasion: null };
+  const activeId = OccasionRegistry.normalizeOccasion(project.occasion.id);
+  const existing = project.occasion.detailsByOccasion;
+  const states = existing && typeof existing === "object" && !Array.isArray(existing) ? existing : {};
+  const current = snapshotCardDetails(project);
+  if (!states.personal) states.personal = FestivalDesignRegistry.isFestival(activeId) ? freshFestivalDetails() : current;
+  // For a legacy festival record, only its active details are known. Keep
+  // those values on that festival, never invent the same people on Birthday.
+  if (FestivalDesignRegistry.isFestival(activeId) && !states[activeId]) states[activeId] = current;
+  project.occasion.detailsByOccasion = states;
+  return states;
+}
+
+function applyCardDetails(project, details) {
+  const source = details || freshFestivalDetails();
+  project.recipient.name = Utils.sanitizeText(source.recipientName || "", 40);
+  project.sender.name = Utils.sanitizeText(source.senderName || "", 40);
+  const date = source.cardDate || {};
+  project.cardDate = {
+    value: /^\d{4}-\d{2}-\d{2}$/.test(String(date.value || "")) ? date.value : localDateISO(),
+    visible: !!date.visible,
+  };
+}
+
 function cloneStamps(stamps) {
   return Array.isArray(stamps) ? stamps.map((stamp) => ({ ...stamp })) : [];
 }
@@ -3061,14 +3111,20 @@ function switchProjectOccasion(project, targetOccasionId) {
   const targetId = OccasionRegistry.normalizeOccasion(targetOccasionId);
   const currentId = OccasionRegistry.normalizeOccasion(project.occasion && project.occasion.id);
   const states = ensureOccasionContentStates(project);
+  const details = ensureOccasionDetailsStates(project);
   const stampStates = ensureOccasionStampStates(project);
   states[currentId] = snapshotOccasionContent(project.content, currentId, project.recipient.relationship);
+  details[FestivalDesignRegistry.isFestival(currentId) ? currentId : "personal"] = snapshotCardDetails(project);
   if (currentId !== "condolence") {
     stampStates[currentId] = cloneStamps(project.stamps);
   }
   project.occasion.id = targetId;
   project.occasion.subOccasion = states[targetId].festivalDesignId || null;
   project.content = snapshotOccasionContent(states[targetId], targetId, "");
+  if (FestivalDesignRegistry.isFestival(targetId) && !details[targetId]) {
+    details[targetId] = freshFestivalDetails();
+  }
+  applyCardDetails(project, details[FestivalDesignRegistry.isFestival(targetId) ? targetId : "personal"]);
   project.recipient.relationship = project.content.relationship;
   if (targetId !== "condolence") {
     project.stamps = cloneStamps(stampStates[targetId]);
@@ -3285,6 +3341,12 @@ const Migrations = (() => {
     if (v < 8) {
       ensureOccasionContentStates(record);
       v = 8;
+    }
+    // v8 -> v9: festival names/date are isolated from the shared personal
+    // details. The active legacy card keeps its exact existing values.
+    if (v < 9) {
+      ensureOccasionDetailsStates(record);
+      v = 9;
     }
     if (!record.cardDate || typeof record.cardDate !== "object") {
       record.cardDate = { value: localDateISO(record.createdAt || Date.now()), visible: false };
@@ -9088,6 +9150,123 @@ const App = (() => {
     });
   }
 
+  /* ---------------- Manual local calendar ---------------- */
+  function bindCalendar() {
+    const dialog = $("#calendar-dialog");
+    const grid = $("#calendar-grid");
+    const list = $("#calendar-events");
+    const form = $("#calendar-form");
+    const title = $("#calendar-event-title");
+    const date = $("#calendar-event-date");
+    const kind = $("#calendar-event-kind");
+    const repeat = $("#calendar-event-repeat");
+    const status = $("#calendar-status");
+    const today = localDateISO(Date.now());
+    let selectedDate = today;
+    let viewYear = Number(today.slice(0, 4));
+    let viewMonth = Number(today.slice(5, 7)) - 1;
+    let events = [];
+    let editingId = null;
+    const kinds = new Set(["birthday", "anniversary", "festival", "other"]);
+    const isoDate = (year, month, day) => String(year).padStart(4, "0") + "-" + String(month + 1).padStart(2, "0") + "-" + String(day).padStart(2, "0");
+    function validDate(value) {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+      const parsed = new Date(value + "T12:00:00");
+      return !Number.isNaN(parsed.getTime()) && localDateISO(parsed.getTime()) === value;
+    }
+    function occursInMonth(event) {
+      const shown = event.repeatYearly ? isoDate(viewYear, viewMonth, Number(event.date.slice(8))) : event.date;
+      return validDate(shown) && Number(shown.slice(0, 4)) === viewYear && Number(shown.slice(5, 7)) === viewMonth + 1 ? shown : null;
+    }
+    function resetForm() {
+      editingId = null;
+      form.reset();
+      date.value = selectedDate;
+      $("#calendar-form-title").textContent = "Add a date";
+      $("#calendar-cancel-edit").hidden = true;
+    }
+    function render() {
+      $("#calendar-month").textContent = new Intl.DateTimeFormat("en", { month: "long", year: "numeric" }).format(new Date(viewYear, viewMonth, 1));
+      grid.replaceChildren();
+      list.replaceChildren();
+      const firstDay = new Date(viewYear, viewMonth, 1).getDay();
+      const days = new Date(viewYear, viewMonth + 1, 0).getDate();
+      for (let gap = 0; gap < firstDay; gap++) grid.appendChild(document.createElement("span"));
+      for (let day = 1; day <= days; day++) {
+        const value = isoDate(viewYear, viewMonth, day);
+        const count = events.filter((event) => occursInMonth(event) === value).length;
+        const button = document.createElement("button");
+        button.type = "button";
+        button.textContent = String(day) + (count ? " •" : "");
+        button.setAttribute("aria-label", value + (count ? ", " + count + " saved date" + (count === 1 ? "" : "s") : ""));
+        button.setAttribute("aria-pressed", String(value === selectedDate));
+        button.dataset.events = String(count > 0);
+        button.addEventListener("click", () => { selectedDate = value; date.value = value; render(); });
+        grid.appendChild(button);
+      }
+      const shownEvents = events.map((event) => ({ event, shown: occursInMonth(event) })).filter((item) => item.shown).sort((a, b) => a.shown.localeCompare(b.shown) || a.event.title.localeCompare(b.event.title));
+      if (!shownEvents.length) {
+        const empty = document.createElement("li");
+        empty.textContent = "No dates saved for this month.";
+        list.appendChild(empty);
+      }
+      shownEvents.forEach(({ event, shown }) => {
+        const item = document.createElement("li");
+        const description = document.createElement("span");
+        description.textContent = shown.slice(8) + " · " + event.title + " (" + event.kind + (event.repeatYearly ? ", yearly" : "") + ")";
+        item.appendChild(description);
+        const edit = document.createElement("button");
+        edit.type = "button"; edit.className = "btn btn-ghost btn-small"; edit.textContent = "Edit";
+        edit.setAttribute("aria-label", "Edit " + event.title);
+        edit.addEventListener("click", () => {
+          editingId = event.id; title.value = event.title; date.value = event.date;
+          kind.value = event.kind; repeat.checked = event.repeatYearly;
+          $("#calendar-form-title").textContent = "Edit date";
+          $("#calendar-cancel-edit").hidden = false;
+          title.focus();
+        });
+        item.appendChild(edit);
+        const remove = document.createElement("button");
+        remove.type = "button"; remove.className = "btn btn-ghost btn-small"; remove.textContent = "Delete";
+        remove.setAttribute("aria-label", "Delete " + event.title);
+        remove.addEventListener("click", async () => {
+          if (!await confirmDialog("Delete “" + event.title + "” from this device's calendar?", "Delete calendar date")) return;
+          try {
+            const next = events.filter((entry) => entry.id !== event.id);
+            await DB.put("settings", { key: "calendar-events", value: next });
+            events = next; if (editingId === event.id) resetForm(); render(); status.textContent = "Date deleted.";
+          } catch (err) { status.textContent = "Could not delete the date. Storage may be unavailable."; }
+        });
+        item.appendChild(remove);
+        list.appendChild(item);
+      });
+    }
+    $("#open-calendar-btn").addEventListener("click", async () => {
+      try {
+        const stored = await DB.get("settings", "calendar-events");
+        events = Array.isArray(stored && stored.value) ? stored.value.filter((event) => event && typeof event.id === "string" && typeof event.title === "string" && validDate(event.date) && kinds.has(event.kind)) : [];
+        status.textContent = "";
+        render(); resetForm(); openDialog(dialog);
+      } catch (err) { toast("Could not open calendar storage on this device.", true); }
+    });
+    $("#calendar-prev").addEventListener("click", () => { const month = new Date(viewYear, viewMonth - 1, 1); viewYear = month.getFullYear(); viewMonth = month.getMonth(); render(); });
+    $("#calendar-next").addEventListener("click", () => { const month = new Date(viewYear, viewMonth + 1, 1); viewYear = month.getFullYear(); viewMonth = month.getMonth(); render(); });
+    $("#calendar-today").addEventListener("click", () => { selectedDate = localDateISO(Date.now()); viewYear = Number(selectedDate.slice(0, 4)); viewMonth = Number(selectedDate.slice(5, 7)) - 1; date.value = selectedDate; render(); });
+    $("#calendar-cancel-edit").addEventListener("click", resetForm);
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const cleanTitle = title.value.trim();
+      if (!cleanTitle || cleanTitle.length > 80 || !validDate(date.value) || !kinds.has(kind.value)) { status.textContent = "Enter a title and valid date."; return; }
+      const entry = { id: editingId || Utils.uuid(), title: cleanTitle, date: date.value, kind: kind.value, repeatYearly: repeat.checked };
+      const next = editingId ? events.map((current) => current.id === editingId ? entry : current) : [...events, entry];
+      try {
+        await DB.put("settings", { key: "calendar-events", value: next });
+        events = next; selectedDate = entry.date; viewYear = Number(selectedDate.slice(0, 4)); viewMonth = Number(selectedDate.slice(5, 7)) - 1;
+        resetForm(); render(); status.textContent = "Date saved on this device.";
+      } catch (err) { status.textContent = "Could not save the date. Storage may be full or unavailable."; }
+    });
+  }
+
   /* ---------------- Export dialog ---------------- */
   function bindExport() {
     let lastPngBlob = null, lastPngFilename = null;
@@ -9630,6 +9809,7 @@ const App = (() => {
     bindStampsTab();
     bindAudioTab();
     bindVault();
+    bindCalendar();
     bindExport();
     bindUndoRedo();
     bindProjectTitle();

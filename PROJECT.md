@@ -459,7 +459,7 @@ Parked ideas remain outside implementation scope until explicitly reviewed and p
 
 - **R18 Creator Footer:** approved by the owner on 24 September 2026 and implemented in Task 028.
 - **R16 further font/offline-asset enhancement:** optional; preserve current behavior, with no proactive expansion required.
-- Birthday/anniversary calendar and reminders.
+- Manual local calendar: implemented in Task 048. Reminders remain parked.
 - People & Events database.
 - Automatic online design acquisition or daily downloads.
 - AI generation strategy for new designs.
@@ -587,8 +587,16 @@ Task 003 implementation and release were explicitly authorized. The Current Task
 
 ## 9. Current Task
 
-- **Approved Current Task:** Task 047 — fix the blank editor after toggling date, auto greeting, or creator footer.
-- **Current release:** v1.45.0 (application, manifest, service worker and shell cache), schema v8, backup format `atul-birthday-card-studio` version 1.
+- **Approved Current Task:** Task 048 — start festival cards with blank names and a fresh date; add a manual local calendar and a small curated set of Birthday designs. The owner chose curated designs rather than a design-image importer.
+- **Current release:** v1.46.0 (application, manifest, service worker and shell cache), schema v9, backup format `atul-birthday-card-studio` version 1.
+
+### Task 048 Impact Record — festival details, calendar, and Birthday designs
+
+- **Baseline:** `main`/`origin/main` at `b6bb7db`, v1.45.0. The pre-existing untracked `_diag_temp/` folder was left untouched. The separately attached Codex worktree is older and was not used for implementation.
+- **Confirmed gap:** Festival content and artwork were occasion-specific, but recipient, sender, and card date remained shared with personal cards. Selecting a new festival could therefore carry over people's names and a stale date. No manual event calendar existed. The owner also asked for more curated Birthday art.
+- **Change:** Schema v9 stores recipient, sender, and date separately for each festival while personal occasions keep their established shared details. A festival's first visit starts with blank names and the current local date, hidden on the card until explicitly enabled. Returning to a festival restores its own edits. Migration preserves the active legacy card's details without copying them onto Birthday. A new Calendar dialog lets the owner manually add, edit, and delete device-local dates, choose a type, and optionally repeat them yearly. No dates are calculated, notifications sent, card fields rewritten, or cross-device sync performed. The Birthday picker gains two original generated full-card backgrounds: Champagne Garden and Sapphire Evening. Both were generated with the built-in image tool for a clear central text area and re-encoded to 113 KB and 97 KB WebP files. They are same-origin runtime cached after first use, not mandatory precache assets.
+- **Compatibility:** Existing card data, per-occasion messages, headings, stamps, artwork, photo priority, manual centerpiece, backup format, preview/export, and offline shell remain in place. Calendar entries live in the IndexedDB settings store and are not included in per-card backup files; users should not clear site storage without separately recording these dates.
+- **Verification:** Local desktop and phone-width Chrome passed calendar add/edit/delete and reload persistence, with no page errors or horizontal overflow. Yearly repeat appeared in the following year. Birthday details survived a switch to Diwali and Navratri; each new festival began blank with today's date, and Diwali's edits survived switching and reload. A v8 festival migration kept its existing names/date and left Birthday blank. Offline restart served the calendar and saved entry. Both new Birthday artworks were inspected as rendered cards; Sapphire Evening was regenerated because the first draft obscured the sender. Both rendered offline after first online use. A Sapphire Evening PNG downloaded at 1200×1760. JavaScript/service-worker syntax, manifest parsing, and whitespace checks passed. Live Pages verification follows release.
 
 ### Task 047 Impact Record — editor switch scrolling
 
