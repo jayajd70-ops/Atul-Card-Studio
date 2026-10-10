@@ -587,8 +587,15 @@ Task 003 implementation and release were explicitly authorized. The Current Task
 
 ## 9. Current Task
 
-- **Approved Current Task:** None; Task 048 is complete. New work needs a specific owner request.
-- **Current release:** v1.46.0 (application, manifest, service worker and shell cache), schema v9, backup format `atul-birthday-card-studio` version 1.
+- **Approved Current Task:** Task 049 — remove the tiny automatic Birthday badge from the portrait frame, and restore vertical placement of the photo/centrepiece alongside existing image and message size controls.
+- **Current release:** v1.47.0 (application, manifest, service worker and shell cache), schema v10, backup format `atul-birthday-card-studio` version 1.
+
+### Task 049 Impact Record — automatic Birthday frame badge
+
+- **Baseline:** `origin/main` at `d9737d3`, v1.46.0. The owner's `D:\Atul-Card-Studio` checkout and an older Codex worktree had unrelated tracked asset deletions; implementation used a clean worktree from `origin/main`. The pre-existing `_diag_temp/repro.tar.gz` was not touched.
+- **Confirmed cause:** Birthday's recommended stamps were `happy-birthday` and `ribbon-badge`. Their default positions put the small text badge at the portrait's top centre (x=0.5, y=0.12) and the ribbon at the left. Because stamps belong to the card, the label appeared across every Birthday background. The large, editable `content.occasionHeading` below the portrait is independent.
+- **Change:** New Birthday occasion defaults omit only the automatic `happy-birthday` stamp and leave the ribbon at its prior left position. Schema v10 removes one badge from an older card only when its asset, position, size, rotation, opacity and layer exactly match the automatic default. A moved or restyled badge stays. The badge remains in the decoration library for deliberate use. Layout now exposes photo/centrepiece size and a new vertical-position slider (-96 to +180 px) beside the existing message position, width, and greeting-size controls; message placement continues to clear the current image geometry. Reset layout balance restores the image position to zero.
+- **Compatibility:** Existing photo, heading, message, sender, date, theme, artwork, manual centerpiece, other occasion, and backup format remain intact. The optional `layout.artShiftY` defaults to zero for existing cards and round-trips with the project. Fixed Condolence designs retain their authored geometry. Preview and PNG export share the renderer; no offline asset was added. Tests and live release evidence are recorded at closeout.
 
 ### Task 048 Impact Record — festival details, calendar, and Birthday designs
 

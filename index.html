@@ -381,8 +381,13 @@
         <div class="tabpanel" id="panel-layout" role="tabpanel" aria-labelledby="tab-layout" hidden>
           <p class="field-hint">Balance the medallion against the message. The text engine re-fits itself as you drag.</p>
           <div class="field" id="layout-centerpiece-size-field">
-            <label for="layout-photo-size">Centrepiece size <output id="layout-photo-size-out">620</output>px</label>
+            <label for="layout-photo-size">Photo / centrepiece size <output id="layout-photo-size-out">620</output>px</label>
             <input id="layout-photo-size" type="range" min="320" max="760" step="4" value="620" />
+          </div>
+          <div class="field" id="layout-art-shift-field">
+            <label for="layout-art-shift">Photo / centrepiece vertical position <output id="layout-art-shift-out">0</output>px</label>
+            <input id="layout-art-shift" type="range" min="-96" max="180" step="2" value="0" />
+            <p class="field-hint">Negative moves the image up; positive moves it down. The message stays below it.</p>
           </div>
           <div class="field">
             <label for="greeting-size">Greeting size <output id="greeting-size-out">30</output>px</label>

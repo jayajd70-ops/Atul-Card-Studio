@@ -1578,14 +1578,14 @@ const DesignPreferences = createFavouriteStore("design-preferences", () => Desig
 // Application version. Shown in the header, stamped onto exported
 // backups, and kept in step with SW_VERSION in sw.js so a released
 // shell and the code inside it always report the same number.
-const APP_VERSION = "1.46.0";
+const APP_VERSION = "1.47.0";
 
 // A closer crop is sometimes necessary for a wide framed photo. Keep this
 // one shared bound for slider, pinch, renderer and Smart Person Focus so
 // preview and exported cards always agree.
 const MAX_PHOTO_ZOOM = 5;
 
-const CURRENT_SCHEMA_VERSION = 9;
+const CURRENT_SCHEMA_VERSION = 10;
 
 function localDateISO(timestamp) {
   const date = new Date(Number.isFinite(Number(timestamp)) ? Number(timestamp) : Date.now());
@@ -1636,6 +1636,7 @@ function createDefaultProject(overrides) {
       // Layout-balance controls: centrepiece diameter in canvas px and a
       // vertical and horizontal nudge (px) applied to the whole text block.
       centerpieceSize: 620,
+      artShiftY: 0,
       textShift: 0,
       textShiftX: 0,
       centerpieceId: "auto",
@@ -3060,19 +3061,38 @@ function cloneStamps(stamps) {
 function createRecommendedOccasionStamps(occasionId) {
   if (!OccasionRegistry.allowsStamps(occasionId)) return [];
   const recommended = OccasionRegistry.getRecommendedStampIds(occasionId);
-  return recommended.slice(0, 2).map((assetId, index) => {
-    const def = StampCollections.getDef(assetId);
-    return {
-      id: Utils.uuid(),
-      assetId,
-      x: index === 0 ? 0.5 : 0.16,
-      y: index === 0 ? 0.12 : 0.17,
-      scale: index === 0 ? 0.78 : 0.52,
-      rotation: 0,
-      opacity: index === 0 ? 0.92 : 0.78,
-      layer: def.defaultLayer || "foreground",
-    };
-  });
+  // The default Birthday text badge sits across the portrait's forehead.
+  // Keep the second, decorative ribbon in its original side position; the
+  // Happy Birthday badge remains available for deliberate manual placement.
+  return recommended.slice(0, 2)
+    .map((assetId, index) => ({ assetId, index }))
+    .filter(({ assetId }) => occasionId !== "birthday" || assetId !== "happy-birthday")
+    .map(({ assetId, index }) => {
+      const def = StampCollections.getDef(assetId);
+      return {
+        id: Utils.uuid(),
+        assetId,
+        x: index === 0 ? 0.5 : 0.16,
+        y: index === 0 ? 0.12 : 0.17,
+        scale: index === 0 ? 0.78 : 0.52,
+        rotation: 0,
+        opacity: index === 0 ? 0.92 : 0.78,
+        layer: def.defaultLayer || "foreground",
+      };
+    });
+}
+
+function isUntouchedBirthdayBadge(stamp) {
+  return stamp && stamp.assetId === "happy-birthday"
+    && stamp.x === 0.5 && stamp.y === 0.12
+    && stamp.scale === 0.78 && stamp.rotation === 0
+    && stamp.opacity === 0.92 && stamp.layer === "top";
+}
+
+function removeUntouchedBirthdayBadge(stamps) {
+  if (!Array.isArray(stamps)) return [];
+  const index = stamps.findIndex(isUntouchedBirthdayBadge);
+  return index < 0 ? stamps : stamps.filter((stamp, position) => position !== index);
 }
 
 function ensureOccasionStampStates(project) {
@@ -3347,6 +3367,18 @@ const Migrations = (() => {
     if (v < 9) {
       ensureOccasionDetailsStates(record);
       v = 9;
+    }
+    // v9 -> v10: remove only the untouched automatic Birthday badge. A badge
+    // moved or restyled by the owner remains part of their card.
+    if (v < 10) {
+      const stampsByOccasion = record.occasion && record.occasion.stampsByOccasion;
+      if (stampsByOccasion && Array.isArray(stampsByOccasion.birthday)) {
+        stampsByOccasion.birthday = removeUntouchedBirthdayBadge(stampsByOccasion.birthday);
+      }
+      if (record.occasion && record.occasion.id === "birthday") {
+        record.stamps = removeUntouchedBirthdayBadge(record.stamps);
+      }
+      v = 10;
     }
     if (!record.cardDate || typeof record.cardDate !== "object") {
       record.cardDate = { value: localDateISO(record.createdAt || Date.now()), visible: false };
@@ -5709,19 +5741,20 @@ const Renderer = (() => {
     const shapeValue = geometry ? geometry.shape : layout.photoShape;
     const shape = shapeValue === "rect" ? "rect" : "circle";
     const size = Utils.clamp(geometry ? geometry.centerpieceSize : (layout.centerpieceSize || 620), 320, 760);
+    const artTop = ART_TOP + (geometry ? 0 : Utils.clamp(layout.artShiftY || 0, -96, 180));
     const cx = W / 2;
     if (shape === "rect") {
       const width = Math.min(W - 300, size * 1.32);
       const height = size * 0.92;
       return {
-        shape, cx, cy: ART_TOP + height / 2, r: Math.min(width, height) / 2,
-        x: cx - width / 2, y: ART_TOP, width, height, bottom: ART_TOP + height,
+        shape, cx, cy: artTop + height / 2, r: Math.min(width, height) / 2,
+        x: cx - width / 2, y: artTop, width, height, bottom: artTop + height,
       };
     }
     const r = size / 2;
     return {
-      shape, cx, cy: ART_TOP + r, r,
-      x: cx - r, y: ART_TOP, width: size, height: size, bottom: ART_TOP + size,
+      shape, cx, cy: artTop + r, r,
+      x: cx - r, y: artTop, width: size, height: size, bottom: artTop + size,
     };
   }
 
@@ -7769,7 +7802,7 @@ const App = (() => {
       // design click, which was causing desktop flicker.
       { photoScale: project.layout.photoScale, textPosition: project.layout.textPosition,
         textMaxWidth: project.layout.textMaxWidth, centerpieceSize: project.layout.centerpieceSize,
-        textShift: project.layout.textShift, textShiftX: project.layout.textShiftX,
+        artShiftY: project.layout.artShiftY, textShift: project.layout.textShift, textShiftX: project.layout.textShiftX,
         centerpieceId: project.layout.centerpieceId, photoShape: project.layout.photoShape },
       project.stamps, project.typography.recipientSize,
       project.typography.greetingSize, project.typography.senderSize,
@@ -8607,6 +8640,7 @@ const App = (() => {
   function bindLayoutTab() {
     const bindings = [
       [dom.layoutPhotoSize, dom.layoutPhotoSizeOut, (p, v) => { p.layout.centerpieceSize = v; }, (v) => Math.round(v)],
+      [dom.layoutArtShift, dom.layoutArtShiftOut, (p, v) => { p.layout.artShiftY = v; }, (v) => Math.round(v)],
       [dom.layoutTextShift, dom.layoutTextShiftOut, (p, v) => { p.layout.textShift = v; }, (v) => Math.round(v)],
       [dom.layoutTextShiftX, dom.layoutTextShiftXOut, (p, v) => { p.layout.textShiftX = v; }, (v) => Math.round(v)],
       [dom.layoutTextWidth, dom.layoutTextWidthOut, (p, v) => { p.layout.textMaxWidth = v / 100; }, (v) => Math.round(v)],
@@ -8635,6 +8669,7 @@ const App = (() => {
     dom.resetLayoutBtn.addEventListener("click", () => {
       StateStore.update((p) => {
         p.layout.centerpieceSize = 620;
+        p.layout.artShiftY = 0;
         p.layout.textShift = 0;
         p.layout.textShiftX = 0;
         p.layout.textMaxWidth = 0.8;
@@ -9491,11 +9526,16 @@ const App = (() => {
     project.layout.textShiftX = shiftX;
 
     if (dom.layoutCenterpieceSizeField) {
-      dom.layoutCenterpieceSizeField.hidden = !!design && !design.showCenterpieceSize;
+      const showArtControls = !FestivalDesignRegistry.isFestival(project.occasion && project.occasion.id) &&
+        (!design || !!design.showCenterpieceSize);
+      dom.layoutCenterpieceSizeField.hidden = !showArtControls;
+      dom.layoutArtShiftField.hidden = !showArtControls;
     }
 
     dom.layoutPhotoSize.value = size;
     dom.layoutPhotoSizeOut.textContent = Math.round(size);
+    dom.layoutArtShift.value = project.layout.artShiftY || 0;
+    dom.layoutArtShiftOut.textContent = Math.round(project.layout.artShiftY || 0);
     dom.layoutTextShift.value = shift;
     dom.layoutTextShiftOut.textContent = Math.round(shift);
     if (dom.layoutTextShiftX) {
@@ -9750,6 +9790,8 @@ const App = (() => {
 
       layoutCenterpieceSizeField: $("#layout-centerpiece-size-field"),
       layoutPhotoSize: $("#layout-photo-size"), layoutPhotoSizeOut: $("#layout-photo-size-out"),
+      layoutArtShiftField: $("#layout-art-shift-field"),
+      layoutArtShift: $("#layout-art-shift"), layoutArtShiftOut: $("#layout-art-shift-out"),
       layoutTextShift: $("#layout-text-shift"), layoutTextShiftOut: $("#layout-text-shift-out"),
       layoutTextShiftX: $("#layout-text-shift-x"), layoutTextShiftXOut: $("#layout-text-shift-x-out"),
       layoutTextWidth: $("#layout-text-width"), layoutTextWidthOut: $("#layout-text-width-out"),
