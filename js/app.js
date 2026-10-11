@@ -1578,7 +1578,7 @@ const DesignPreferences = createFavouriteStore("design-preferences", () => Desig
 // Application version. Shown in the header, stamped onto exported
 // backups, and kept in step with SW_VERSION in sw.js so a released
 // shell and the code inside it always report the same number.
-const APP_VERSION = "1.48.0";
+const APP_VERSION = "1.49.0";
 
 // A closer crop is sometimes necessary for a wide framed photo. Keep this
 // one shared bound for slider, pinch, renderer and Smart Person Focus so
@@ -1964,18 +1964,102 @@ const FestivalDesignRegistry = (() => {
     "guru-purnima": "assets/festival-designs/guru-purnima-01.png",
     "bhai-dooj": "assets/festival-designs/bhai-dooj-01.png",
   };
-  const singleTemplate = new Set(["holika-dahan", "hanuman-jayanti", "guru-purnima", "bhai-dooj"]);
   const styles = [
     { id: "classic", label: "Classic", hint: "Traditional full-art composition", overlay: "warm" },
     { id: "radiant", label: "Radiant", hint: "Brighter message panel", overlay: "light" },
     { id: "midnight", label: "Midnight", hint: "Dramatic, high-contrast finish", overlay: "dark" },
   ];
-  const designs = Object.fromEntries(Object.entries(sources).map(([occasionId, asset]) => [
-    occasionId,
-    (singleTemplate.has(occasionId) ? styles.slice(0, 1) : styles).map((style) => ({
-      ...style, id: occasionId + "-" + style.id, asset,
-    })),
-  ]));
+  const singleTemplate = new Set(["holika-dahan", "hanuman-jayanti", "guru-purnima", "bhai-dooj"]);
+  function styleTreatments(occasionId) {
+    const asset = sources[occasionId];
+    return (singleTemplate.has(occasionId) ? styles.slice(0, 1) : styles).map((style) => ({
+      ...style,
+      id: occasionId + "-" + style.id,
+      asset,
+    }));
+  }
+  function imported(occasionId, id, label, hint, asset, overlay) {
+    return { id: occasionId + "-" + id, label, hint, asset, overlay: overlay || "warm" };
+  }
+  const designs = {
+    diwali: [
+      imported("diwali", "royal-deepawali", "Royal Deepawali", "Lamps, gold and festive warmth", "assets/festival-designs/pg-diwali-royal.jpg", "dark"),
+      imported("diwali", "rangoli-spark", "Rangoli & Spark", "Bright rangoli with Diwali lights", "assets/festival-designs/pg-diwali-vibrant.jpg", "warm"),
+      imported("diwali", "safe-health", "Safe & Healthy Diwali", "Poster-style diya celebration", "assets/festival-designs/pg-diwali-poster.jpg", "light"),
+      ...styleTreatments("diwali"),
+    ],
+    "dhanteras-lakshmi-puja": styleTreatments("dhanteras-lakshmi-puja"),
+    "bestu-varas": [
+      imported("bestu-varas", "nutan-gold", "Nutan Varshabhinandan Gold", "Gujarati New Year in gold tones", "assets/festival-designs/pg-bestuvaras-royal.jpg", "dark"),
+      imported("bestu-varas", "new-beginnings", "New Beginnings Poster", "Fresh Gujarati New Year wishes", "assets/festival-designs/pg-bestuvaras-poster.jpg", "light"),
+      ...styleTreatments("bestu-varas"),
+    ],
+    uttarayan: [
+      imported("uttarayan", "azure-sky", "Azure Sky Carnival", "Kites across a bright festive sky", "assets/festival-designs/pg-uttarayan-azure.jpg", "warm"),
+      imported("uttarayan", "fly-high", "Fly High, Stay Safe", "Poster-style Uttarayan wishes", "assets/festival-designs/pg-uttarayan-poster.jpg", "light"),
+      ...styleTreatments("uttarayan"),
+    ],
+    navratri: [
+      imported("navratri", "garba-raas", "Garba Raas Glow", "Royal dandiya dance artwork", "assets/festival-designs/pg-navratri-royal.jpg", "dark"),
+      imported("navratri", "dance-health", "Dance & Good Health", "Bright Navratri poster artwork", "assets/festival-designs/pg-navratri-poster.jpg", "light"),
+      ...styleTreatments("navratri"),
+    ],
+    holi: [
+      imported("holi", "gulal-explosion", "Gulal Explosion", "Colourful Holi celebration", "assets/festival-designs/pg-holi-vibrant.jpg", "warm"),
+      imported("holi", "play-safe", "Play Safe & Stay Healthy", "Poster-style Holi wishes", "assets/festival-designs/pg-holi-poster.jpg", "light"),
+      ...styleTreatments("holi"),
+    ],
+    "raksha-bandhan": [
+      imported("raksha-bandhan", "sacred-silk", "Sacred Silk & Gold", "Elegant rakhi artwork", "assets/festival-designs/pg-rakhi-royal.jpg", "dark"),
+      imported("raksha-bandhan", "sibling-joy", "Sibling Sweetness & Joy", "Warm family Raksha Bandhan scene", "assets/festival-designs/pg-raksha-bandhan.jpg", "warm"),
+      imported("raksha-bandhan", "bond-that-cares", "A Bond That Cares", "Poster-style Raksha Bandhan wishes", "assets/festival-designs/pg-rakhi-poster.jpg", "light"),
+      ...styleTreatments("raksha-bandhan"),
+    ],
+    janmashtami: [
+      imported("janmashtami", "peacock-radiance", "Peacock Radiance", "Divine Krishna-inspired artwork", "assets/festival-designs/pg-janmashtami-divine.jpg", "dark"),
+      imported("janmashtami", "joy-devotion", "Joy & Healthy Devotion", "Poster-style Janmashtami wishes", "assets/festival-designs/pg-janmashtami-poster.jpg", "light"),
+      ...styleTreatments("janmashtami"),
+    ],
+    "rath-yatra": styleTreatments("rath-yatra"),
+    "ganesh-chaturthi": [
+      imported("ganesh-chaturthi", "siddhivinayak-gold", "Siddhivinayak Gold", "Royal Ganesh Chaturthi artwork", "assets/festival-designs/pg-ganesh-royal.jpg", "dark"),
+      imported("ganesh-chaturthi", "emerald-blessings", "Emerald Blessings", "Green and gold Ganesh artwork", "assets/festival-designs/pg-ganesh-emerald.jpg", "warm"),
+      imported("ganesh-chaturthi", "pastel-modak", "Pastel Modak Blessings", "Soft pastel Ganesh artwork", "assets/festival-designs/pg-ganesh-pastel.jpg", "light"),
+      imported("ganesh-chaturthi", "responsible-poster", "Responsible Celebration Poster", "Poster-style Ganesh Chaturthi wishes", "assets/festival-designs/pg-ganesh.jpg", "light"),
+      ...styleTreatments("ganesh-chaturthi"),
+    ],
+    shivratri: styleTreatments("shivratri"),
+    dussehra: [
+      imported("dussehra", "vijayadashami-glory", "Vijayadashami Glory", "Royal Dussehra artwork", "assets/festival-designs/pg-dussehra-royal.jpg", "dark"),
+      imported("dussehra", "victory-wellness", "Victory & Wellness Poster", "Poster-style Dussehra wishes", "assets/festival-designs/pg-dussehra-poster.jpg", "light"),
+      ...styleTreatments("dussehra"),
+    ],
+    "independence-day": [
+      imported("independence-day", "freedom-health", "Freedom & Health", "Tricolour patriotic artwork", "assets/festival-designs/pg-independence.jpg", "warm"),
+      ...styleTreatments("independence-day"),
+    ],
+    "republic-day": [
+      imported("republic-day", "freedom-health", "Freedom & Health", "Tricolour patriotic artwork", "assets/festival-designs/pg-independence.jpg", "warm"),
+      ...styleTreatments("republic-day"),
+    ],
+    "eid-ul-fitr": [
+      imported("eid-ul-fitr", "peace-health", "Peace & Health", "Crescent-themed Eid artwork", "assets/festival-designs/pg-eid.svg", "dark"),
+      ...styleTreatments("eid-ul-fitr"),
+    ],
+    christmas: [
+      imported("christmas", "joy-health", "Joy & Health Poster", "Festive Christmas artwork", "assets/festival-designs/pg-christmas.jpg", "dark"),
+      ...styleTreatments("christmas"),
+    ],
+    "new-year": [
+      imported("new-year", "goals-health", "Goals & Health", "Celebratory New Year artwork", "assets/festival-designs/pg-newyear.svg", "dark"),
+      ...styleTreatments("new-year"),
+    ],
+    "ram-navami": styleTreatments("ram-navami"),
+    "holika-dahan": styleTreatments("holika-dahan"),
+    "hanuman-jayanti": styleTreatments("hanuman-jayanti"),
+    "guru-purnima": styleTreatments("guru-purnima"),
+    "bhai-dooj": styleTreatments("bhai-dooj"),
+  };
   const imageCache = new Map();
   function list(occasionId) { return (designs[occasionId] || []).map((design) => ({ ...design })); }
   function get(occasionId, designId) {
@@ -2944,6 +3028,7 @@ const GreetingGenerator = (() => {
 })();
 
 function createOccasionContent(occasionId, relationship) {
+  const greetingLanguage = FestivalDesignRegistry.isFestival(occasionId) ? "gu" : "en";
   return {
     greeting: "",
     autoGreetingEnabled: false,
@@ -2951,7 +3036,7 @@ function createOccasionContent(occasionId, relationship) {
     messageMode: "manual",
     relationship: String(relationship || ""),
     occasionHeading: OccasionRegistry.getDefaultHeading(occasionId),
-    greetingLanguage: "en",
+    greetingLanguage,
     festivalDesignId: FestivalDesignRegistry.isFestival(occasionId)
       ? ((FestivalDesignRegistry.get(occasionId) || {}).id || "")
       : "",
@@ -2976,7 +3061,12 @@ function snapshotOccasionContent(content, occasionId, relationship) {
     occasionHeading: Object.prototype.hasOwnProperty.call(source, "occasionHeading")
       ? Utils.sanitizeText(String(source.occasionHeading || ""), 60)
       : OccasionRegistry.getDefaultHeading(occasionId),
-    greetingLanguage: GreetingGenerator.normalizeLanguage(source.greetingLanguage, occasionId),
+    greetingLanguage: GreetingGenerator.normalizeLanguage(
+      Object.prototype.hasOwnProperty.call(source, "greetingLanguage")
+        ? source.greetingLanguage
+        : (FestivalDesignRegistry.isFestival(occasionId) ? "gu" : "en"),
+      occasionId
+    ),
     festivalDesignId: FestivalDesignRegistry.isFestival(occasionId)
       ? (FestivalDesignRegistry.get(occasionId, source.festivalDesignId) || {}).id || ""
       : "",

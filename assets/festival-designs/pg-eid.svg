@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" width="100%" height="100%">
+  <defs>
+    <linearGradient id="e_sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#022c22"/>
+      <stop offset="50%" stop-color="#064e3b"/>
+      <stop offset="100%" stop-color="#065f46"/>
+    </linearGradient>
+    <radialGradient id="e_glow" cx="50%" cy="40%" r="50%">
+      <stop offset="0%" stop-color="#fef08a" stop-opacity="0.9"/>
+      <stop offset="50%" stop-color="#10b981" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#022c22" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="800" height="500" fill="url(#e_sky)"/>
+  <circle cx="400" cy="200" r="260" fill="url(#e_glow)"/>
+
+  <!-- Golden Crescent Moon (Hilal) & Star -->
+  <g transform="translate(400, 200)">
+    <!-- Crescent Moon -->
+    <path d="M-40,-110 A110,110 0 1 0 70,80 A90,90 0 1 1 -40,-110 Z" fill="#facc15" stroke="#fef08a" stroke-width="2" filter="drop-shadow(0 0 14px #fde047)"/>
+    <!-- Glowing Star -->
+    <g transform="translate(30, -35) scale(0.65)">
+      <polygon points="0,-30 8,-8 30,0 8,8 0,30 -8,8 -30,0 -8,-8" fill="#fef08a" filter="drop-shadow(0 0 8px #ffffff)"/>
+    </g>
+  </g>
+
+  <!-- Hanging Fanoos Lanterns -->
+  <g transform="translate(180, 160)">
+    <line x1="0" y1="-160" x2="0" y2="0" stroke="#facc15" stroke-width="2"/>
+    <polygon points="0,-25 25,15 -25,15" fill="#d97706"/>
+    <polygon points="-25,15 25,15 0,55" fill="#f59e0b"/>
+    <circle cx="0" cy="20" r="10" fill="#fff" filter="drop-shadow(0 0 8px #ffeb3b)"/>
+  </g>
+  <g transform="translate(620, 160)">
+    <line x1="0" y1="-160" x2="0" y2="0" stroke="#facc15" stroke-width="2"/>
+    <polygon points="0,-25 25,15 -25,15" fill="#d97706"/>
+    <polygon points="-25,15 25,15 0,55" fill="#f59e0b"/>
+    <circle cx="0" cy="20" r="10" fill="#fff" filter="drop-shadow(0 0 8px #ffeb3b)"/>
+  </g>
+
+  <!-- Mosque Dome Silhouette on Bottom -->
+  <g transform="translate(400, 430)" fill="#022c22" stroke="#10b981" stroke-width="2">
+    <!-- Center Dome -->
+    <path d="M-90,70 Q-110,-20 0,-70 Q110,-20 90,70 Z"/>
+    <rect x="-10" y="-100" width="20" height="30" fill="#facc15"/>
+    <circle cx="0" cy="-105" r="5" fill="#facc15"/>
+    <!-- Minarets -->
+    <rect x="-180" y="-80" width="24" height="150" rx="4"/>
+    <polygon points="-168,-115 -152,-80 -184,-80" fill="#facc15"/>
+    <rect x="156" y="-80" width="24" height="150" rx="4"/>
+    <polygon points="168,-115 184,-80 152,-80" fill="#facc15"/>
+  </g>
+</svg>
