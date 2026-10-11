@@ -1578,14 +1578,14 @@ const DesignPreferences = createFavouriteStore("design-preferences", () => Desig
 // Application version. Shown in the header, stamped onto exported
 // backups, and kept in step with SW_VERSION in sw.js so a released
 // shell and the code inside it always report the same number.
-const APP_VERSION = "1.47.0";
+const APP_VERSION = "1.48.0";
 
 // A closer crop is sometimes necessary for a wide framed photo. Keep this
 // one shared bound for slider, pinch, renderer and Smart Person Focus so
 // preview and exported cards always agree.
 const MAX_PHOTO_ZOOM = 5;
 
-const CURRENT_SCHEMA_VERSION = 10;
+const CURRENT_SCHEMA_VERSION = 11;
 
 function localDateISO(timestamp) {
   const date = new Date(Number.isFinite(Number(timestamp)) ? Number(timestamp) : Date.now());
@@ -1699,7 +1699,7 @@ const OccasionRegistry = (() => {
     allowedCenterpieces: ["auto", centerpieceId, "theme-aura"],
     defaultCenterpieceMap: { heartfelt: centerpieceId, poetic: centerpieceId, professional: centerpieceId, playful: centerpieceId },
     fallbackCenterpiece: centerpieceId, emotions: PERSONAL_EMOTIONS,
-    recommendedStampIds: ["gold-medallion", "floral-ornament", "celestial-ornament"],
+    recommendedStampIds: [],
   }));
   // The heading is visible card content, not a fixed label: it gives every
   // card an unmistakable occasion while remaining editable per occasion.
@@ -3059,7 +3059,7 @@ function cloneStamps(stamps) {
 }
 
 function createRecommendedOccasionStamps(occasionId) {
-  if (!OccasionRegistry.allowsStamps(occasionId)) return [];
+  if (!OccasionRegistry.allowsStamps(occasionId) || FestivalDesignRegistry.isFestival(occasionId)) return [];
   const recommended = OccasionRegistry.getRecommendedStampIds(occasionId);
   // The default Birthday text badge sits across the portrait's forehead.
   // Keep the second, decorative ribbon in its original side position; the
@@ -3093,6 +3093,22 @@ function removeUntouchedBirthdayBadge(stamps) {
   if (!Array.isArray(stamps)) return [];
   const index = stamps.findIndex(isUntouchedBirthdayBadge);
   return index < 0 ? stamps : stamps.filter((stamp, position) => position !== index);
+}
+
+function removeUntouchedFestivalStamps(stamps) {
+  if (!Array.isArray(stamps)) return [];
+  const defaults = [
+    { assetId: "gold-medallion", x: 0.5, y: 0.12, scale: 0.78, opacity: 0.92, layer: "foreground" },
+    { assetId: "floral-ornament", x: 0.16, y: 0.17, scale: 0.52, opacity: 0.78, layer: "background" },
+  ];
+  const remaining = stamps.slice();
+  defaults.forEach((preset) => {
+    const index = remaining.findIndex((stamp) => stamp && stamp.assetId === preset.assetId
+      && stamp.x === preset.x && stamp.y === preset.y && stamp.scale === preset.scale
+      && stamp.rotation === 0 && stamp.opacity === preset.opacity && stamp.layer === preset.layer);
+    if (index >= 0) remaining.splice(index, 1);
+  });
+  return remaining;
 }
 
 function ensureOccasionStampStates(project) {
@@ -3379,6 +3395,20 @@ const Migrations = (() => {
         record.stamps = removeUntouchedBirthdayBadge(record.stamps);
       }
       v = 10;
+    }
+    // v10 -> v11: remove only the automatic festival seal and flourish.
+    // Moved, restyled, or additional manually placed stamps remain editable.
+    if (v < 11) {
+      const stampStates = record.occasion && record.occasion.stampsByOccasion;
+      OccasionRegistry.list().filter((occasion) => occasion.isFestival).forEach((occasion) => {
+        if (stampStates && Array.isArray(stampStates[occasion.id])) {
+          stampStates[occasion.id] = removeUntouchedFestivalStamps(stampStates[occasion.id]);
+        }
+      });
+      if (FestivalDesignRegistry.isFestival(record.occasion && record.occasion.id)) {
+        record.stamps = removeUntouchedFestivalStamps(record.stamps);
+      }
+      v = 11;
     }
     if (!record.cardDate || typeof record.cardDate !== "object") {
       record.cardDate = { value: localDateISO(record.createdAt || Date.now()), visible: false };
@@ -5477,6 +5507,7 @@ const Renderer = (() => {
   function getTextProtectionRegions(project) {
     const isCondolence = project && project.occasion && project.occasion.id === "condolence";
     const isNewBaby = project && project.occasion && project.occasion.id === "new-baby";
+    const isFestival = FestivalDesignRegistry.isFestival(project && project.occasion && project.occasion.id);
     const effective = getEffectiveTextStyle(project);
     const design = effective.design;
     const typography = effective.typography;
@@ -5544,13 +5575,15 @@ const Renderer = (() => {
     const recipientLineHeight = recipientFit.size * (typography.lineHeight || pairing.lineHeight);
     const recipientHeight = recipientFit.lines.length * recipientLineHeight;
     const recipientWidth = Math.max(160, recipientFit.maxLineWidth + 32);
-    regions.push({
-      x: cx - recipientWidth / 2,
-      y: cursorY - 12,
-      width: recipientWidth,
-      height: recipientHeight + 24,
-      radius: 18,
-    });
+    if (!isFestival) {
+      regions.push({
+        x: cx - recipientWidth / 2,
+        y: cursorY - 12,
+        width: recipientWidth,
+        height: recipientHeight + 24,
+        radius: 18,
+      });
+    }
     cursorY += recipientHeight + (isCondolence ? 34 : 26);
 
     // 3. Greeting + optional relationship copy region
@@ -6097,6 +6130,7 @@ const Renderer = (() => {
   }
 
   async function renderTextLayers(ctx, project, theme, pairing, diagnostics, quality, artworkTextTone) {
+    const isFestival = FestivalDesignRegistry.isFestival(project.occasion && project.occasion.id);
     const effective = getEffectiveTextStyle(project);
     const design = effective.design;
     const typography = effective.typography;
@@ -6216,39 +6250,41 @@ const Renderer = (() => {
       maxLines: 2,
       letterSpacingStart: typography.letterSpacing,
     });
-    if (recipientFit.overflow) diagnostics.textOverflow = true;
-    if (recipientFit.clamped) diagnostics.textClamped = true;
-
-    const recipientMask = createWorkCanvas(W, H);
-    const rmCtx = recipientMask.getContext("2d");
-    const solidRecipientInk = solidTextInk;
-    rmCtx.fillStyle = solidRecipientInk ? textColor : "#fff";
     const recipientLineHeight = recipientFit.size * (typography.lineHeight || pairing.lineHeight);
-    LayoutEngine.drawLines(rmCtx, recipientFit.lines, {
-      fontFamily: pairing.recipientFont, weight: pairing.recipientWeight,
-      size: recipientFit.size, letterSpacing: recipientFit.letterSpacing,
-      lineHeight: (typography.lineHeight || pairing.lineHeight),
-      cx, startY: cursorY + recipientFit.size * 0.85,
-    });
     const recipientHeight = recipientFit.lines.length * recipientLineHeight;
-    boxes.push(textBoxToLayoutBox("recipient-name", cx, cursorY, recipientFit.maxLineWidth, recipientHeight, 100));
-    // Foil is intentionally subtle on light stock; use the theme's solid
-    // ink for the highest-priority text so Soft Care and other light designs
-    // stay readable in both preview and export.
-    if (solidRecipientInk) {
-      ctx.save();
-      ctx.drawImage(recipientMask, 0, 0);
-      ctx.restore();
-    } else {
-      compositeFoil(ctx, W, H, (mctx) => mctx.drawImage(recipientMask, 0, 0), {
-        presetId: recipientPreset,
-        mode: design ? design.foil.mode : project.foil.mode,
-        intensity: design ? design.foil.intensity : project.foil.intensity,
-        grain: design ? design.foil.grain : project.foil.grain,
-        highlight: design ? design.foil.highlight : project.foil.highlight,
-        shadow: design ? design.foil.shadow : project.foil.shadow,
-        quality,
+    if (!isFestival) {
+      if (recipientFit.overflow) diagnostics.textOverflow = true;
+      if (recipientFit.clamped) diagnostics.textClamped = true;
+
+      const recipientMask = createWorkCanvas(W, H);
+      const rmCtx = recipientMask.getContext("2d");
+      const solidRecipientInk = solidTextInk;
+      rmCtx.fillStyle = solidRecipientInk ? textColor : "#fff";
+      LayoutEngine.drawLines(rmCtx, recipientFit.lines, {
+        fontFamily: pairing.recipientFont, weight: pairing.recipientWeight,
+        size: recipientFit.size, letterSpacing: recipientFit.letterSpacing,
+        lineHeight: (typography.lineHeight || pairing.lineHeight),
+        cx, startY: cursorY + recipientFit.size * 0.85,
       });
+      boxes.push(textBoxToLayoutBox("recipient-name", cx, cursorY, recipientFit.maxLineWidth, recipientHeight, 100));
+      // Foil is intentionally subtle on light stock; use the theme's solid
+      // ink for the highest-priority text so Soft Care and other light designs
+      // stay readable in both preview and export.
+      if (solidRecipientInk) {
+        ctx.save();
+        ctx.drawImage(recipientMask, 0, 0);
+        ctx.restore();
+      } else {
+        compositeFoil(ctx, W, H, (mctx) => mctx.drawImage(recipientMask, 0, 0), {
+          presetId: recipientPreset,
+          mode: design ? design.foil.mode : project.foil.mode,
+          intensity: design ? design.foil.intensity : project.foil.intensity,
+          grain: design ? design.foil.grain : project.foil.grain,
+          highlight: design ? design.foil.highlight : project.foil.highlight,
+          shadow: design ? design.foil.shadow : project.foil.shadow,
+          quality,
+        });
+      }
     }
     cursorY += recipientHeight + (isCondolence ? 34 : 26);
 
@@ -6515,6 +6551,8 @@ const Renderer = (() => {
     const quality = options.quality || "preview";
     const theme = ThemeRegistry.getTheme(project.theme.id);
     const pairing = FontPairings.getPairing(project.typography.pairingId);
+    const occasionId = (project.occasion && project.occasion.id) || "birthday";
+    const isFestival = FestivalDesignRegistry.isFestival(occasionId);
 
     const diagnostics = {
       textOverflow: false, textClamped: false, unsafeGreeting: false,
@@ -6523,12 +6561,13 @@ const Renderer = (() => {
 
     ctx.clearRect(0, 0, W, H);
     const artwork = await renderBackground(ctx, theme, quality, project);
-    if (!artwork || artwork.kind !== "birthday-artwork") await renderThemeBorderDecorations(ctx, project, theme);
+    if (!isFestival && (!artwork || artwork.kind !== "birthday-artwork")) {
+      await renderThemeBorderDecorations(ctx, project, theme);
+    }
     renderLuxuryBorder(ctx, theme, quality, project);
 
     renderStampsForLayer(ctx, project, theme, "background", getInitials(project));
 
-    const occasionId = (project.occasion && project.occasion.id) || "birthday";
     const allowPhoto = OccasionRegistry.allowsPhoto(occasionId);
     const allowStamps = OccasionRegistry.allowsStamps(occasionId);
     let photoImage = null;

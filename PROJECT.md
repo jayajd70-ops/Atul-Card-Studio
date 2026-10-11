@@ -587,8 +587,16 @@ Task 003 implementation and release were explicitly authorized. The Current Task
 
 ## 9. Current Task
 
-- **Approved Current Task:** Task 049 — remove the tiny automatic Birthday badge from the portrait frame, and restore vertical placement of the photo/centrepiece alongside existing image and message size controls.
-- **Current release:** v1.47.0 (application, manifest, service worker and shell cache), schema v10, backup format `atul-birthday-card-studio` version 1.
+- **Approved Current Task:** Task 050 — remove non-festival party overlays, automatic seal, and the recipient-name line from all festival cards.
+- **Current release:** v1.48.0 (application, manifest, service worker and shell cache), schema v11, backup format `atul-birthday-card-studio` version 1.
+
+### Task 050 Impact Record — clean festival composition
+
+- **Baseline:** `origin/main` at `447d03b`, v1.47.0, schema v10. The owner's `D:\Atul-Card-Studio` checkout has unrelated tracked asset deletions and an untracked diagnostic archive; implementation uses a clean managed worktree. Neither is touched.
+- **Confirmed cause:** Festival full-card artwork is followed by the personal theme's balloon/gift/rose corner assets (or Diwali corner assets); festival defaults also add a gold-medallion stamp over the artwork, and the text renderer substitutes `Dear Friend` for an empty recipient name. These are shared renderer defaults rather than pixels in the festival artwork.
+- **Smallest safe plan:** Skip theme corner decorations on festivals; create no automatic festival stamps and migrate away only exact untouched defaults in older saved festival cards; omit the visual recipient-name line on festival cards without erasing recipient data or moving the heading/message. Retain the editable festival heading, greeting language/message, optional sender/date, borders, manually positioned stamps, and personal-card rendering. Verify all festival IDs, save/reopen, PNG parity, and offline startup before release.
+- **Implementation:** Festival artwork no longer receives theme or occasion corner overlays. The registry no longer recommends decorative stamps for festivals; new festival cards start with none. Schema v11 removes only one exact default gold medallion and one exact default floral stamp per saved festival state, including the active card, while leaving moved/restyled/manual stamps intact. Festival cards do not draw the recipient-name line, but reserve its former vertical space to keep the heading, message and signature positions stable. Recipient data remains available for personalized messages and restores when reopening that festival.
+- **Local verification:** All 22 festival categories have artwork files, editable headings and zero automatic stamps; category switching and save/reopen preserved festival-specific recipient data without leaking it to Birthday. A v10 fixture migrated both active and per-festival default stamps away while keeping a moved seal. Navratri's Gujarati card was visually inspected with no balloons, seal, gift, roses or `Dear Friend`; its PNG exported at 1200×1760. A rendered-text probe confirmed a named festival recipient is not drawn, while Birthday still draws its recipient. A resolver probe confirmed festival theme corners are skipped while Birthday corners remain. Offline reload recovered the saved Navratri card and cached artwork. JavaScript/service-worker syntax, manifest parsing and whitespace checks passed. Physical-device touch was not tested.
 
 ### Task 049 Impact Record — automatic Birthday frame badge
 
