@@ -4,6 +4,7 @@ Thumbs.db
 *.swp
 .vscode/
 .idea/
+.env*
 
 # Local test/build output (not part of the app itself)
 *.log
@@ -11,6 +12,14 @@ node_modules/
 /test-results/
 /playwright-report/
 /screenshots/
+/uploads/
+/exports/
+/backups/
+/local-data/
+*.db
+*.sqlite
+*.sqlite3
+*.bak
 
 # Local card exports and private backup packages
 /atul-card-*.png

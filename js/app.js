@@ -1578,7 +1578,7 @@ const DesignPreferences = createFavouriteStore("design-preferences", () => Desig
 // Application version. Shown in the header, stamped onto exported
 // backups, and kept in step with SW_VERSION in sw.js so a released
 // shell and the code inside it always report the same number.
-const APP_VERSION = "1.49.0";
+const APP_VERSION = "1.50.0";
 
 // A closer crop is sometimes necessary for a wide framed photo. Keep this
 // one shared bound for slider, pinch, renderer and Smart Person Focus so
@@ -1983,13 +1983,18 @@ const FestivalDesignRegistry = (() => {
   }
   const designs = {
     diwali: [
+      imported("diwali", "twilight-courtyard", "Twilight Diwali Courtyard", "Diyas, rangoli and an elegant illuminated home", "assets/festival-designs/diwali-twilight-courtyard-v1.webp", "warm"),
       imported("diwali", "royal-deepawali", "Royal Deepawali", "Lamps, gold and festive warmth", "assets/festival-designs/pg-diwali-royal.jpg", "dark"),
       imported("diwali", "rangoli-spark", "Rangoli & Spark", "Bright rangoli with Diwali lights", "assets/festival-designs/pg-diwali-vibrant.jpg", "warm"),
       imported("diwali", "safe-health", "Safe & Healthy Diwali", "Poster-style diya celebration", "assets/festival-designs/pg-diwali-poster.jpg", "light"),
       ...styleTreatments("diwali"),
     ],
-    "dhanteras-lakshmi-puja": styleTreatments("dhanteras-lakshmi-puja"),
+    "dhanteras-lakshmi-puja": [
+      imported("dhanteras-lakshmi-puja", "prosperity-evening", "Prosperity Evening", "Silver coin, brass diya, rangoli and marigolds", "assets/festival-designs/dhanteras-prosperity-evening-v1.webp", "warm"),
+      ...styleTreatments("dhanteras-lakshmi-puja"),
+    ],
     "bestu-varas": [
+      imported("bestu-varas", "nutan-morning", "Nutan Varshabhinandan Morning", "Chopda pujan, sweets and a sunlit Gujarati home", "assets/festival-designs/bestu-varas-nutan-morning-v1.webp", "dark"),
       imported("bestu-varas", "nutan-gold", "Nutan Varshabhinandan Gold", "Gujarati New Year in gold tones", "assets/festival-designs/pg-bestuvaras-royal.jpg", "dark"),
       imported("bestu-varas", "new-beginnings", "New Beginnings Poster", "Fresh Gujarati New Year wishes", "assets/festival-designs/pg-bestuvaras-poster.jpg", "light"),
       ...styleTreatments("bestu-varas"),
@@ -2058,7 +2063,10 @@ const FestivalDesignRegistry = (() => {
     "holika-dahan": styleTreatments("holika-dahan"),
     "hanuman-jayanti": styleTreatments("hanuman-jayanti"),
     "guru-purnima": styleTreatments("guru-purnima"),
-    "bhai-dooj": styleTreatments("bhai-dooj"),
+    "bhai-dooj": [
+      imported("bhai-dooj", "sibling-blessings", "Bhaibij Sibling Blessings", "A warm tilak ceremony with diya and mithai", "assets/festival-designs/bhai-dooj-sibling-blessings-v1.webp", "dark"),
+      ...styleTreatments("bhai-dooj"),
+    ],
   };
   const imageCache = new Map();
   function list(occasionId) { return (designs[occasionId] || []).map((design) => ({ ...design })); }
