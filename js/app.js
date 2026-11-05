@@ -1578,7 +1578,7 @@ const DesignPreferences = createFavouriteStore("design-preferences", () => Desig
 // Application version. Shown in the header, stamped onto exported
 // backups, and kept in step with SW_VERSION in sw.js so a released
 // shell and the code inside it always report the same number.
-const APP_VERSION = "1.50.0";
+const APP_VERSION = "1.50.1";
 
 // A closer crop is sometimes necessary for a wide framed photo. Keep this
 // one shared bound for slider, pinch, renderer and Smart Person Focus so
@@ -2520,13 +2520,26 @@ const GreetingGenerator = (() => {
     );
   });
 
+  // Owner-authored Diwali-week messages are the reviewed default in every
+  // tone. Keeping one canonical line prevents an emotion change from
+  // substituting unrelated wording; the editor remains fully editable.
+  const DIWALI_WEEK_ENGLISH = {
+    "dhanteras-lakshmi-puja": "May Lord Kuber and Goddess Laxmi shower your home with endless wealth, health, and prosperity. Wishing you and your family a blessed and prosperous Dhanteras!",
+    diwali: "May the divine glow of diyas fill your life with eternal joy, peace, and success. Wishing you and your loved ones a very Happy and Bright Diwali!",
+    "bestu-varas": "Wishing you a year filled with new hopes, fresh opportunities, and continuous success. May this New Year bring abundant happiness to you and your family. Saal Mubarak!",
+    "bhai-dooj": "May the sacred bond of love and protection between brother and sister grow stronger with each passing year. Wishing you a joyous and heartwarming Bhaibij!",
+  };
+  Object.entries(DIWALI_WEEK_ENGLISH).forEach(([id, message]) => {
+    POOLS[id] = Object.fromEntries(["heartfelt", "poetic", "professional", "playful"].map((emotion) => [emotion, [message]]));
+  });
+
   // Gujarati drafts are authored locally, never translated remotely. Each
   // festival keeps its own blessing; the four existing emotion buttons then
   // offer four respectfully different editable phrasings of that blessing.
   const GUJARATI_FESTIVAL_GREETINGS = {
-    diwali: ["શુભ દિવાળી!", "આપના જીવનમાં સુખ, શાંતિ અને સમૃદ્ધિનો પ્રકાશ ફેલાય તેવી હાર્દિક શુભેચ્છાઓ."],
-    "dhanteras-lakshmi-puja": ["શુભ ધનતેરસ!", "માતાજી લક્ષ્મીના આશીર્વાદથી તમારા જીવનમાં સમૃદ્ધિ, સુખ અને શાંતિ રહે તેવી હાર્દિક શુભેચ્છાઓ."],
-    "bestu-varas": ["સાલ મુબારક!", "નવું વર્ષ તમારા જીવનમાં આનંદ, આરોગ્ય અને સફળતા લઈને આવે તેવી શુભેચ્છાઓ."],
+    diwali: ["", "દીવાળીનો આ પ્રકાશમય તહેવાર આપના જીવનમાં નવો ઉજાસ, ખુશીઓ અને અખંડ સમૃદ્ધિ લઈને આવે. આપ સૌને દિવાળીની ખૂબ ખૂબ શુભકામનાઓ!"],
+    "dhanteras-lakshmi-puja": ["", "ધનતેરસના પવિત્ર અવસરે માં લક્ષ્મી અને ભગવાન કુબેરની કૃપાથી આપના ઘરમાં સુખ, શાંતિ, ધન અને સમૃદ્ધિ હંમેશાં બની રહે તેવી હાર્દિક શુભકામનાઓ!"],
+    "bestu-varas": ["", "નવું વર્ષ આપના માટે સુખ, શાંતિ, સ્વાસ્થ્ય અને ઉત્તરોત્તર પ્રગતિ લઈને આવે તેવી ઈશ્વરને પ્રાર્થના. આપને અને આપના પરિવારને નૂતન વર્ષાભિનંદન - સાલ મુબારક!"],
     uttarayan: ["શુભ ઉત્તરાયણ!", "આકાશ રંગબેરંગી પતંગો અને જીવન ખુશીઓથી ભરાઈ જાય તેવી હાર્દિક શુભેચ્છાઓ."],
     navratri: ["શુભ નવરાત્રી!", "માતાજીના આશીર્વાદથી તમારા જીવનમાં શક્તિ, શાંતિ અને સમૃદ્ધિ રહે તેવી પ્રાર્થના."],
     holi: ["હોળીની હાર્દિક શુભેચ્છાઓ!", "રંગોની જેમ તમારું જીવન પણ આનંદ, પ્રેમ અને ખુશીઓથી ભરાઈ જાય."],
@@ -2545,18 +2558,19 @@ const GreetingGenerator = (() => {
     "holika-dahan": ["હોળિકા દહનની શુભેચ્છાઓ!", "આ પવિત્ર અગ્નિ જીવનમાંથી અંધકાર દૂર કરી આશા અને પ્રકાશ ભરી દે."],
     "hanuman-jayanti": ["શુભ હનુમાન જયંતિ!", "હનુમાનજીના આશીર્વાદથી તમને શક્તિ, ભક્તિ અને સાહસ મળે."],
     "guru-purnima": ["ગુરુ પૂર્ણિમાની હાર્દિક શુભેચ્છાઓ!", "ગુરુજનોના આશીર્વાદ અને માર્ગદર્શનથી જીવન સદાય પ્રકાશિત રહે."],
-    "bhai-dooj": ["ભાઈબીજની હાર્દિક શુભેચ્છાઓ!", "ભાઈ-બહેનનો સ્નેહ અને પરસ્પર કાળજી હંમેશા વધતી રહે."],
+    "bhai-dooj": ["", "ભાઈ-બહેનના અતૂટ પ્રેમ અને વિશ્વાસના પર્વ ભાઈબીજની આપ સૌને ખૂબ-ખૂબ શુભકામનાઓ! આપણો આ પવિત્ર સંબંધ સદા અખંડ અને મધુર રહે."],
   };
 
   function gujaratiFestivalPool(occasionId, emotion) {
     const entry = GUJARATI_FESTIVAL_GREETINGS[occasionId];
     if (!entry) return null;
     const [title, wish] = entry;
+    const base = [title, wish].filter(Boolean).join(" ");
     const options = {
-      heartfelt: [title + " " + wish],
-      poetic: [title + " " + wish + " દરેક નવો દિવસ આશા અને આનંદથી ઉજળો બને."],
-      professional: [title + " " + wish + " આપને અને આપના પરિવારને હાર્દિક શુભકામનાઓ."],
-      playful: [title + " " + wish + " તહેવારની ખુશીઓ સૌ સાથે વહેંચતા રહો!"],
+      heartfelt: [base],
+      poetic: [base + " દરેક નવો દિવસ આશા અને આનંદથી ઉજળો બને."],
+      professional: [base + " આપને અને આપના પરિવારને હાર્દિક શુભકામનાઓ."],
+      playful: [base + " તહેવારની ખુશીઓ સૌ સાથે વહેંચતા રહો!"],
     };
     return options[emotion] || options.heartfelt;
   }

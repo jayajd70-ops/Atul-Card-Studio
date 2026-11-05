@@ -587,8 +587,16 @@ Task 003 implementation and release were explicitly authorized. The Current Task
 
 ## 9. Current Task
 
-- **Approved Current Task:** Task 051 — add polished, original Diwali-week designs for Dhanteras, Diwali, Nutan Varshabhinandan and Bhaibij.
-- **Current release:** v1.50.0 (application, manifest, service worker and shell cache), schema v11, backup format `atul-birthday-card-studio` version 1.
+- **Approved Current Task:** Task 052 — revise the Prosperity Evening Dhanteras and Nutan Varshabhinandan Morning artwork.
+- **Current release:** v1.50.1 (application, manifest, service worker and shell cache), schema v11, backup format `atul-birthday-card-studio` version 1.
+
+### Task 052 Impact Record — revised Dhanteras and Gujarati New Year artwork
+
+- **Baseline:** `origin/main` at `d2b10a7`, v1.50.0, schema v11; clean task worktree.
+- **Approved scope:** Replace only the new Prosperity Evening Dhanteras and Nutan Varshabhinandan Morning backgrounds. Dhanteras requires three distinct Laxmi, Ganesha and Shrinathji metal medallions, exact `शुभ`/`लाभ` lettering, a brass diya, marigolds and silver/copper tokens. Gujarati New Year requires Chopda Pujan, a silver pen, kaju katli, torans and a multigenerational family exchanging folded-hand greetings and embraces. Add the owner-supplied English and Gujarati defaults for Dhanteras, Diwali, Nutan Varshabhinandan and Bhaibij; the Diwali Gujarati message must end with `ખૂબ ખૂબ શુભકામનાઓ!` and contain no Mubarak wording. Preserve both design IDs and asset paths so existing saved cards remain compatible.
+- **Implementation:** The built-in image generator produced two original vertical compositions. Dhanteras places the requested embossed devotional medallions and exact Devanagari words in the upper third, keeps an uncluttered dark text band, and places the diya/tokens at the foot. Nutan Varshabhinandan places the family celebration and torans above, a calm sunlit text band through the middle, and the decorated Chopda, pen and sweets below. Both selected PNGs were resized to exactly 1200×1760 and encoded as metadata-free quality-90 WebP replacements for their existing v1 asset paths. The four reviewed English and Gujarati messages are the deterministic auto-write defaults in every tone while manual edits remain untouched and editable. No card data, registry, schema, design choice, network dependency or mandatory precache entry changed.
+- **Verification (local, PASS):** JavaScript/service-worker syntax, manifest parsing and whitespace checks passed. Fresh desktop and 390×844 profiles resolved all eight supplied language/occasion messages exactly (118–167 characters, under the 220-character limit), selected and decoded both revised 1200×1760 WebP assets, preserved the chosen Nutan design through reload, and decoded both artworks after an offline restart without page errors. Normal UI exports for Dhanteras and Nutan Varshabhinandan were visually inspected at exactly 1200×1760: devotional/family artwork, headings and Gujarati text remain legible with no overlap or clipping.
+- **Privacy and release gate (PASS):** Both generated assets are synthetic, contain no personal data, and have no EXIF, XMP or ICC metadata. The change adds no user record, backup, database, credential, privileged secret or external request; final static files remain appropriate for the public repository.
 
 ### Task 051 Impact Record — polished Diwali-week designs
 
