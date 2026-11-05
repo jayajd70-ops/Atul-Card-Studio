@@ -156,7 +156,7 @@
           <div class="field">
             <label for="occasion-heading">Occasion heading</label>
             <input id="occasion-heading" type="text" maxlength="60" autocomplete="off" />
-            <p class="field-hint">Shown large below the photo or centerpiece. Edit it for the precise festival wording, or clear it to hide it.</p>
+            <p class="field-hint">Shown prominently on the card. Edit the wording here, move Festival titles in Layout, or clear it to hide it.</p>
           </div>
           <div class="field">
             <label for="recipient-name">Recipient name</label>
@@ -392,6 +392,17 @@
           <div class="field">
             <label for="greeting-size">Greeting size <output id="greeting-size-out">30</output>px</label>
             <input id="greeting-size" type="range" min="16" max="48" step="1" value="30" />
+          </div>
+          <div id="festival-heading-position-field" hidden>
+            <div class="field">
+              <label for="festival-heading-shift-x">Festival title horizontal position <output id="festival-heading-shift-x-out">0</output>px</label>
+              <input id="festival-heading-shift-x" type="range" min="-240" max="240" step="2" value="0" />
+            </div>
+            <div class="field">
+              <label for="festival-heading-shift-y">Festival title vertical position <output id="festival-heading-shift-y-out">0</output>px</label>
+              <input id="festival-heading-shift-y" type="range" min="-650" max="420" step="2" value="0" />
+              <p class="field-hint">Move the festival name independently to suit the selected artwork; the greeting message stays in place.</p>
+            </div>
           </div>
           <div class="field">
             <label for="layout-text-shift">Message vertical position <output id="layout-text-shift-out">0</output>px</label>

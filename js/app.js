@@ -1578,7 +1578,7 @@ const DesignPreferences = createFavouriteStore("design-preferences", () => Desig
 // Application version. Shown in the header, stamped onto exported
 // backups, and kept in step with SW_VERSION in sw.js so a released
 // shell and the code inside it always report the same number.
-const APP_VERSION = "1.50.2";
+const APP_VERSION = "1.50.3";
 
 // A closer crop is sometimes necessary for a wide framed photo. Keep this
 // one shared bound for slider, pinch, renderer and Smart Person Focus so
@@ -3058,6 +3058,8 @@ function createOccasionContent(occasionId, relationship) {
     messageMode: "manual",
     relationship: String(relationship || ""),
     occasionHeading: OccasionRegistry.getDefaultHeading(occasionId),
+    headingShiftX: 0,
+    headingShiftY: 0,
     greetingLanguage,
     festivalDesignId: FestivalDesignRegistry.isFestival(occasionId)
       ? ((FestivalDesignRegistry.get(occasionId) || {}).id || "")
@@ -3083,6 +3085,8 @@ function snapshotOccasionContent(content, occasionId, relationship) {
     occasionHeading: Object.prototype.hasOwnProperty.call(source, "occasionHeading")
       ? Utils.sanitizeText(String(source.occasionHeading || ""), 60)
       : OccasionRegistry.getDefaultHeading(occasionId),
+    headingShiftX: Utils.clamp(Number(source.headingShiftX) || 0, -240, 240),
+    headingShiftY: Utils.clamp(Number(source.headingShiftY) || 0, -650, 420),
     greetingLanguage: GreetingGenerator.normalizeLanguage(
       Object.prototype.hasOwnProperty.call(source, "greetingLanguage")
         ? source.greetingLanguage
@@ -5666,10 +5670,17 @@ const Renderer = (() => {
         letterSpacingStart: Math.max(0.4, typography.letterSpacing * 0.82),
       });
       const headingHeight = headingFit.lines.length * headingFit.size * 1.16;
+      const headingWidth = Math.max(160, headingFit.maxLineWidth + 32);
+      const headingCx = isFestival
+        ? Utils.clamp(cx + (project.content.headingShiftX || 0), margin + headingWidth / 2, W - margin - headingWidth / 2)
+        : cx;
+      const headingY = isFestival
+        ? Utils.clamp(cursorY + (project.content.headingShiftY || 0), LayoutEngine.SAFE_MARGIN.top, signatureTop - headingHeight - 24)
+        : cursorY;
       regions.push({
-        x: cx - Math.max(160, headingFit.maxLineWidth + 32) / 2,
-        y: cursorY - 10,
-        width: Math.max(160, headingFit.maxLineWidth + 32),
+        x: headingCx - headingWidth / 2,
+        y: headingY - 10,
+        width: headingWidth,
         height: headingHeight + 20,
         radius: 18,
       });
@@ -6317,7 +6328,9 @@ const Renderer = (() => {
         text: occasionHeading,
         fontFamily: pairing.recipientFont,
         weight: pairing.recipientWeight,
-        maxSize: Utils.clamp(typography.recipientSize - 18, 38, 54),
+        maxSize: isFestival
+          ? Utils.clamp(typography.recipientSize - 4, 48, 68)
+          : Utils.clamp(typography.recipientSize - 18, 38, 54),
         minSize: 20,
         maxWidth: maxWidth * 0.94,
         maxLines: 2,
@@ -6326,13 +6339,33 @@ const Renderer = (() => {
       if (headingFit.overflow) diagnostics.textOverflow = true;
       if (headingFit.clamped) diagnostics.textClamped = true;
       const headingLineHeight = headingFit.size * 1.16;
+      const headingHeight = headingFit.lines.length * headingLineHeight;
+      const headingWidth = Math.max(160, headingFit.maxLineWidth + 32);
+      const headingCx = isFestival
+        ? Utils.clamp(cx + (project.content.headingShiftX || 0), margin + headingWidth / 2, W - margin - headingWidth / 2)
+        : cx;
+      const headingY = isFestival
+        ? Utils.clamp(cursorY + (project.content.headingShiftY || 0), LayoutEngine.SAFE_MARGIN.top, signatureTop - headingHeight - 24)
+        : cursorY;
+      if (isFestival) {
+        ctx.save();
+        ctx.shadowColor = "rgba(0,0,0,0.42)";
+        ctx.shadowBlur = 24;
+        ctx.fillStyle = "rgba(8,6,12,0.60)";
+        ctx.strokeStyle = "rgba(246,213,138,0.38)";
+        ctx.lineWidth = 2;
+        roundRectPath(ctx, headingCx - headingWidth / 2 - 20, headingY - 14, headingWidth + 40, headingHeight + 28, 24);
+        ctx.fill();
+        ctx.stroke();
+        ctx.restore();
+      }
       const headingMask = createWorkCanvas(W, H);
       const hmCtx = headingMask.getContext("2d");
       hmCtx.fillStyle = solidTextInk ? textColor : "#fff";
       LayoutEngine.drawLines(hmCtx, headingFit.lines, {
         fontFamily: pairing.recipientFont, weight: pairing.recipientWeight,
         size: headingFit.size, letterSpacing: headingFit.letterSpacing, lineHeight: 1.16,
-        cx, startY: cursorY + headingFit.size * 0.85,
+        cx: headingCx, startY: headingY + headingFit.size * 0.85,
       });
       if (solidTextInk) {
         ctx.save();
@@ -6349,8 +6382,7 @@ const Renderer = (() => {
           quality,
         });
       }
-      const headingHeight = headingFit.lines.length * headingLineHeight;
-      boxes.push(textBoxToLayoutBox("occasion-heading", cx, cursorY, headingFit.maxLineWidth, headingHeight, 105));
+      boxes.push(textBoxToLayoutBox("occasion-heading", headingCx, headingY, headingFit.maxLineWidth, headingHeight, 105));
       cursorY += headingHeight + 22;
     }
 
@@ -8796,6 +8828,8 @@ const App = (() => {
     const bindings = [
       [dom.layoutPhotoSize, dom.layoutPhotoSizeOut, (p, v) => { p.layout.centerpieceSize = v; }, (v) => Math.round(v)],
       [dom.layoutArtShift, dom.layoutArtShiftOut, (p, v) => { p.layout.artShiftY = v; }, (v) => Math.round(v)],
+      [dom.festivalHeadingShiftX, dom.festivalHeadingShiftXOut, (p, v) => { p.content.headingShiftX = v; }, (v) => Math.round(v)],
+      [dom.festivalHeadingShiftY, dom.festivalHeadingShiftYOut, (p, v) => { p.content.headingShiftY = v; }, (v) => Math.round(v)],
       [dom.layoutTextShift, dom.layoutTextShiftOut, (p, v) => { p.layout.textShift = v; }, (v) => Math.round(v)],
       [dom.layoutTextShiftX, dom.layoutTextShiftXOut, (p, v) => { p.layout.textShiftX = v; }, (v) => Math.round(v)],
       [dom.layoutTextWidth, dom.layoutTextWidthOut, (p, v) => { p.layout.textMaxWidth = v / 100; }, (v) => Math.round(v)],
@@ -8825,6 +8859,8 @@ const App = (() => {
       StateStore.update((p) => {
         p.layout.centerpieceSize = 620;
         p.layout.artShiftY = 0;
+        p.content.headingShiftX = 0;
+        p.content.headingShiftY = 0;
         p.layout.textShift = 0;
         p.layout.textShiftX = 0;
         p.layout.textMaxWidth = 0.8;
@@ -9681,16 +9717,22 @@ const App = (() => {
     project.layout.textShiftX = shiftX;
 
     if (dom.layoutCenterpieceSizeField) {
-      const showArtControls = !FestivalDesignRegistry.isFestival(project.occasion && project.occasion.id) &&
+      const isFestival = FestivalDesignRegistry.isFestival(project.occasion && project.occasion.id);
+      const showArtControls = !isFestival &&
         (!design || !!design.showCenterpieceSize);
       dom.layoutCenterpieceSizeField.hidden = !showArtControls;
       dom.layoutArtShiftField.hidden = !showArtControls;
+      dom.festivalHeadingPositionField.hidden = !isFestival;
     }
 
     dom.layoutPhotoSize.value = size;
     dom.layoutPhotoSizeOut.textContent = Math.round(size);
     dom.layoutArtShift.value = project.layout.artShiftY || 0;
     dom.layoutArtShiftOut.textContent = Math.round(project.layout.artShiftY || 0);
+    dom.festivalHeadingShiftX.value = project.content.headingShiftX || 0;
+    dom.festivalHeadingShiftXOut.textContent = Math.round(project.content.headingShiftX || 0);
+    dom.festivalHeadingShiftY.value = project.content.headingShiftY || 0;
+    dom.festivalHeadingShiftYOut.textContent = Math.round(project.content.headingShiftY || 0);
     dom.layoutTextShift.value = shift;
     dom.layoutTextShiftOut.textContent = Math.round(shift);
     if (dom.layoutTextShiftX) {
@@ -9947,6 +9989,9 @@ const App = (() => {
       layoutPhotoSize: $("#layout-photo-size"), layoutPhotoSizeOut: $("#layout-photo-size-out"),
       layoutArtShiftField: $("#layout-art-shift-field"),
       layoutArtShift: $("#layout-art-shift"), layoutArtShiftOut: $("#layout-art-shift-out"),
+      festivalHeadingPositionField: $("#festival-heading-position-field"),
+      festivalHeadingShiftX: $("#festival-heading-shift-x"), festivalHeadingShiftXOut: $("#festival-heading-shift-x-out"),
+      festivalHeadingShiftY: $("#festival-heading-shift-y"), festivalHeadingShiftYOut: $("#festival-heading-shift-y-out"),
       layoutTextShift: $("#layout-text-shift"), layoutTextShiftOut: $("#layout-text-shift-out"),
       layoutTextShiftX: $("#layout-text-shift-x"), layoutTextShiftXOut: $("#layout-text-shift-x-out"),
       layoutTextWidth: $("#layout-text-width"), layoutTextWidthOut: $("#layout-text-width-out"),
