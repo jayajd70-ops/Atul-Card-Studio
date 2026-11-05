@@ -1578,7 +1578,7 @@ const DesignPreferences = createFavouriteStore("design-preferences", () => Desig
 // Application version. Shown in the header, stamped onto exported
 // backups, and kept in step with SW_VERSION in sw.js so a released
 // shell and the code inside it always report the same number.
-const APP_VERSION = "1.50.1";
+const APP_VERSION = "1.50.2";
 
 // A closer crop is sometimes necessary for a wide framed photo. Keep this
 // one shared bound for slider, pinch, renderer and Smart Person Focus so
@@ -5633,7 +5633,9 @@ const Renderer = (() => {
     const shiftX = design ? design.textLayout.shiftX : Utils.clamp(project.layout.textShiftX || 0, -maxShiftX, maxShiftX);
     const cx = W / 2 + shiftX;
     const geo = getArtGeometry(project);
-    const signatureTop = H - 150;
+    // Festival artwork benefits from a little more breathing room above its
+    // decorative lower edge; reserve that space for the centered signature.
+    const signatureTop = H - (isFestival ? 205 : 150);
 
     let blockTop;
     if (isTextLed) {
@@ -5655,7 +5657,9 @@ const Renderer = (() => {
         text: headingText,
         fontFamily: pairing.recipientFont,
         weight: pairing.recipientWeight,
-        maxSize: Utils.clamp(typography.recipientSize - 18, 38, 54),
+        maxSize: isFestival
+          ? Utils.clamp(typography.recipientSize - 4, 48, 68)
+          : Utils.clamp(typography.recipientSize - 18, 38, 54),
         minSize: 20,
         maxWidth: maxWidth * 0.94,
         maxLines: 2,
@@ -6506,7 +6510,7 @@ const Renderer = (() => {
 
     // Sender signature — pinned near the bottom, never overlapping name/greeting
     if (senderText) {
-      const signY = isNewBaby ? cursorY + 28 : Math.max(cursorY + (isCondolence ? 42 : 30), H - 150);
+      const signY = isNewBaby ? cursorY + 28 : Math.max(cursorY + (isCondolence ? 42 : 30), signatureTop);
       const senderFit = LayoutEngine.fitText(measureCtx, {
         text: "— " + senderText,
         fontFamily: pairing.signatureFont,

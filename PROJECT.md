@@ -587,8 +587,16 @@ Task 003 implementation and release were explicitly authorized. The Current Task
 
 ## 9. Current Task
 
-- **Approved Current Task:** Task 052 — revise the Prosperity Evening Dhanteras and Nutan Varshabhinandan Morning artwork.
-- **Current release:** v1.50.1 (application, manifest, service worker and shell cache), schema v11, backup format `atul-birthday-card-studio` version 1.
+- **Approved Current Task:** Task 053 — enlarge festival occasion headings and raise sender signatures into the lower safe area.
+- **Current release:** v1.50.2 (application, manifest, service worker and shell cache), schema v11, backup format `atul-birthday-card-studio` version 1.
+
+### Task 053 Impact Record — festival heading and signature placement
+
+- **Baseline:** `origin/main` at `8a1a327`, v1.50.1, schema v11; clean task worktree.
+- **Approved scope:** Increase the editable occasion heading shown on festival full-art cards and place the sender signature more cleanly above the lower border/artwork. Apply the geometry consistently to every festival design while preserving the user's text, typography controls, dates, design choices and occasion isolation.
+- **Implementation:** Festival headings now use up to 68px instead of the shared 54px cap. Festival text layout reserves its signature line 205px above the card foot rather than 150px, and the signature uses that same reserved anchor, moving it 55px upward while retaining collision protection against long greetings. Non-festival card geometry is unchanged; no schema or saved-data migration is required.
+- **Verification (local, PASS):** Normal UI exports for Dhanteras, Diwali, Nutan Varshabhinandan and Bhaibij were visually inspected together at exactly 1200×1760 with synthetic sender data. All four headings are larger, every signature plate is centered above the lower border, and no heading, Gujarati message, signature or artwork overlaps. A fresh 390×844 profile had no horizontal overflow or page errors; occasion and sender persisted through reload. After a real offline restart, v1.50.2 and all four tested artwork files reopened byte-complete from the service-worker cache.
+- **Privacy and release gate (PASS):** The change contains geometry, version and documentation only; tests used synthetic names. No personal record, generated asset, backup, database, credential, privileged secret or external runtime request was added.
 
 ### Task 052 Impact Record — revised Dhanteras and Gujarati New Year artwork
 
